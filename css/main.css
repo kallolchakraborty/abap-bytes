@@ -53,7 +53,7 @@ html.dark {
   --svg-accent-text: #ddd6fe;
 }
 html { font-size: 14.4px; }
-body { font-family: 'Ubuntu', system-ui, -apple-system, sans-serif; }
+body { font-family: 'Ubuntu', sans-serif; }
 a { text-decoration: none; }
 button, input { border: none; outline: none; font-family: inherit; }
 #search-modal .search-header-container:has(#modal-search-input:focus) { border-bottom-color: var(--brand-primary) !important; background-color: rgba(37,99,235,0.02) !important; }

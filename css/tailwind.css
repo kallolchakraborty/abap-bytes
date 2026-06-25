@@ -3,7 +3,7 @@
   Only includes classes used in this project — minimal output.
 */
 *,::before,::after{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}
-html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:Ubuntu,system-ui,ui-sans-serif,sans-serif}
+html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:Ubuntu,sans-serif}
 body{margin:0;line-height:inherit}
 a{color:inherit;text-decoration:inherit}
 img,svg,video,canvas,iframe{display:block;vertical-align:middle}
@@ -144,7 +144,7 @@ ul,ol{padding:0;list-style:none}
 .text-\[16px\]{font-size:16px}
 .text-\[18px\]{font-size:18px}
 .text-\[20px\]{font-size:20px}
-.font-sans{font-family:Ubuntu,system-ui,ui-sans-serif,sans-serif}
+.font-sans{font-family:Ubuntu,sans-serif}
 .font-mono{font-family:'JetBrains Mono',monospace}
 .font-medium{font-weight:500}
 .font-semibold{font-weight:600}
