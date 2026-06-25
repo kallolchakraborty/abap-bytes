@@ -1,0 +1,225 @@
+{
+  "id": "staff-data-engineering",
+  "title": "Data Engineering & Analytics Infrastructure at FAANG for Staff+ Engineers",
+  "category": "Technical",
+  "subcategory": "Data Engineering",
+  "language": "text",
+  "description": "<p>Data engineering infrastructure is the backbone of every FAANG company. Staff+ engineers routinely work with data pipelines, data warehouses, real-time analytics, experimentation data, and business intelligence systems. This article covers the data landscape at FAANG — Spark, Flink, Airflow, data warehouses (BigQuery, Snowflake, Redshift), feature stores, data quality, data governance, and how SAP's ECC/BW data world maps to FAANG's big data ecosystem.</p>",
+  "tags": ["FAANG", "Staff+", "Data Engineering", "Analytics", "Data Pipeline", "Spark", "Data Warehouse", "Big Data"],
+  "sections": [
+    {
+      "title": "The FAANG Data Landscape",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Data at FAANG flows through a fundamentally different architecture than most SAP engineers are used to. Instead of a single monolithic ERP system with tightly coupled transactional and reporting data, FAANG companies operate event-driven data platforms. Every user action — a click, a search, a scroll, a like, a purchase — generates an event. These events flow through ingestion systems into streaming and batch pipelines, land in data warehouses and data lakes, and feed analytics, dashboards, ML models, and experimentation platforms.</p>"
+        },
+        {
+          "type": "text",
+          "value": "<p><b>Key FAANG Data Components:</b> Event ingestion (Kafka, Kinesis, Pub/Sub), stream processing (Flink, Kafka Streams, Spark Streaming), batch processing (Spark, Hive, MapReduce), workflow orchestration (Airflow, Dagster, Prefect), data warehouses (BigQuery, Snowflake, Redshift), data lakes (S3, GCS, ADLS with Iceberg/Delta Lake), feature stores (Feast, Tecton), and experimentation platforms (Google's Experimentation Framework, Meta's PlanOut, Netflix's A/B testing platform). Each of these represents a data sub-discipline that an SAP engineer may need to learn.</p>"
+        },
+        {
+          "type": "text",
+          "value": "<p><b>Contrast with SAP:</b> In SAP, your data lived in ECC tables (transactional) or BW cubes (analytical). Reporting meant ABAP reports, SAP BusinessObjects, or Analysis for Office. Data warehouses meant BW on HANA or BW/4HANA. The data model was rigid, predefined by SAP, and changed via transports. At FAANG, data models evolve continuously, schemas are versioned and can break, and engineers are expected to think critically about data design rather than accepting a vendor-prescribed model.</p>"
+        },
+        {
+          "type": "text",
+          "value": "<p><b>The Staff+ Role in Data:</b> At the Staff+ level, you may not be a data engineer — but you will work with data engineers, make decisions about data infrastructure, and design systems that produce and consume data. You need to understand the landscape well enough to ask the right questions: how is this data produced? What is its quality? What are the latency requirements? How is it governed? What happens when the pipeline breaks? These questions are as important as the functional requirements of your system.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Data Pipeline Architecture",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Data pipelines at FAANG come in two flavors: batch and streaming. Batch pipelines process data in large chunks at scheduled intervals (hourly, daily). Streaming pipelines process data continuously with low latency (seconds to minutes). Most FAANG systems use a lambda architecture — streaming for freshness, batch for accuracy — though newer architectures (Kappa architecture) try to unify both.</p>"
+        },
+        {
+          "type": "text",
+          "value": "<p><b>Batch Processing:</b> Apache Spark is the dominant batch processing engine at FAANG. Jobs run on ephemeral clusters (EMR, Dataproc, or custom Kubernetes-based solutions) and are orchestrated by Airflow. A typical batch pipeline reads from a data lake (Parquet files on S3/GCS), transforms the data using Spark, and writes to a data warehouse or analytics store. SAP engineers will recognize the batch mindset — daily BW loads, InfoPackage scheduling, process chains — but the scale is different. FAANG batch pipelines routinely process terabytes to petabytes per run.</p>"
+        },
+        {
+          "type": "code",
+          "value": "// Typical FAANG batch pipeline (conceptual)\n// 1. Airflow triggers DAG at 2:00 AM daily\n// 2. Spark job reads raw events from S3 (last 24h, ~500GB)\n// 3. Spark transforms: filter, join with dimension tables, aggregate\n// 4. Write results to BigQuery partitioned table\n// 5. Airflow runs data quality checks\n// 6. On failure: alert, backfill strategy triggered\n// 7. On success: downstream dashboards and ML pipelines update"
+        },
+        {
+          "type": "text",
+          "value": "<p><b>Streaming Processing:</b> Apache Flink is the streaming engine of choice at FAANG (followed by Kafka Streams and Spark Streaming). Streaming pipelines handle real-time use cases: fraud detection, real-time dashboards, personalization, monitoring and alerting. The key difference from batch is state management — streaming pipelines maintain state across events, handle out-of-order events, and manage exactly-once processing semantics. For SAP engineers, streaming is the biggest conceptual leap: data is infinite, not bounded; processing is event-driven, not schedule-driven.</p>"
+        },
+        {
+          "type": "quantifiedTradeoff",
+          "value": {
+            "title": "Batch vs Streaming Pipelines",
+            "description": "Choosing between batch and streaming depends on latency requirements and operational complexity.",
+            "rows": [
+              {"label": "Latency", "option1": "Minutes to hours", "option2": "Sub-second to seconds"},
+              {"label": "State Management", "option1": "Stateless - process each batch independently", "option2": "Stateful - maintain state across events"},
+              {"label": "Operational Complexity", "option1": "Lower - simpler to debug and backfill", "option2": "Higher - state management, exactly-once, watermarking"},
+              {"label": "Cost", "option1": "Lower - batch is more resource-efficient", "option2": "Higher - continuous processing"},
+              {"label": "Use Case Fit", "option1": "Reporting, dashboards, ML training data", "option2": "Real-time alerts, fraud detection, personalization"}
+            ]
+          }
+        },
+        {
+          "type": "text",
+          "value": "<p><b>Pipeline Monitoring & Backfill:</b> Data pipelines break — it's not a matter of if, but when. Every pipeline needs monitoring (data freshness, data volume, row count anomalies, schema violations). Every pipeline needs a backfill strategy — the ability to reprocess historical data when the pipeline logic changes or when upstream data is corrected. At FAANG, backfills are routine and automated. At SAP, backfills were rare because data was reloaded through standard BW processes. The shift in mindset: data is never final, and pipelines must be designed for re-execution.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Warehousing & Analytics at FAANG",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Data warehousing at FAANG is a competitive sport. The three major cloud data warehouses — BigQuery (Google Cloud), Snowflake (multi-cloud), and Redshift (AWS) — dominate the landscape. Each has different strengths: BigQuery excels at serverless petabyte-scale analytics, Snowflake at ease of use and data sharing, Redshift at cost-effectiveness for predictable workloads. FAANG companies often use multiple warehouses for different use cases, with data replicated across them via pipelines.</p>"
+        },
+        {
+          "type": "text",
+          "value": "<p><b>Data Modeling Approaches:</b> While SAP BW has a rigid data modeling paradigm (InfoObjects, InfoCubes, DSOs, MultiProviders), FAANG data engineering uses more flexible approaches. Star schemas are common for dimensional modeling. Data vault is used for enterprise data warehouses that need to track historical changes. Some teams use wide tables (denormalized) for analytical simplicity. The key difference: in SAP BW, you modeled data based on what SAP's predefined structures required. At FAANG, you model data based on query patterns and performance requirements.</p>"
+        },
+        {
+          "type": "adversarialResponse",
+          "value": {
+            "title": "\"Why can't we just use a single data warehouse for everything?\"",
+            "scenario": "A team proposes using Snowflake as the single data warehouse for all analytics, ML features, and real-time dashboards. You see that BigQuery would be better for ML data and Redshift would be more cost-effective for the reporting workload.",
+            "bad": {
+              "label": "Force a Single Vendor",
+              "text": "\"Using multiple warehouses adds complexity. Let's just standardize on Snowflake and make it work for everything, even if it's suboptimal for some use cases.\""
+            },
+            "good": {
+              "label": "Right Tool for the Job",
+              "text": "\"Let's use a polyglot data architecture. Snowflake for BI reporting (its strength), BigQuery for ML training data (BigQuery ML + Vertex AI integration), and Redshift for cost-sensitive historical queries. We'll build a data replication layer to keep them in sync. The complexity of managing 3 warehouses is less than the cost of using the wrong tool for each job.\""
+            }
+          }
+        },
+        {
+          "type": "text",
+          "value": "<p><b>Cost Management:</b> Data warehouse costs at FAANG can spiral out of control quickly. A single expensive query on BigQuery can cost thousands of dollars. Snowflake credits can burn through budget if warehouses are left running. Redshift requires careful node sizing and workload management. Staff+ engineers need to understand data warehouse cost models, implement cost controls (query budgets, consumption-based alerts, BI tool caching), and design cost-efficient data models. This is a skill that SAP engineers rarely develop — in SAP, the BW hardware cost was a sunk cost, and you didn't think about per-query costs.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Data Quality & Governance",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Data quality is the #1 concern for FAANG data platforms. Bad data leads to bad decisions, bad ML models, and bad user experiences. At FAANG scale, data quality issues cascade rapidly — a bug in one pipeline can corrupt data that feeds 50 downstream systems before anyone notices. Data quality engineering is a discipline unto itself, and Staff+ engineers are expected to champion data quality practices across their teams.</p>"
+        },
+        {
+          "type": "checklist",
+          "value": {
+            "title": "Data Quality Practices at FAANG",
+            "items": [
+              {"label": "Data contracts between producers and consumers (schema, freshness, completeness SLOs)", "checked": false},
+              {"label": "Schema evolution with backward compatibility enforcement", "checked": false},
+              {"label": "Automated data quality checks at every pipeline stage", "checked": false},
+              {"label": "Data lineage tracking (what data came from where, what transformed it)", "checked": false},
+              {"label": "Data freshness SLOs with automated alerting on violations", "checked": false},
+              {"label": "PII detection and redaction in data pipelines", "checked": false},
+              {"label": "Data retention and deletion policies (GDPR, CCPA compliance)", "checked": false}
+            ]
+          }
+        },
+        {
+          "type": "text",
+          "value": "<p><b>Data Contracts:</b> A data contract is a formal agreement between a data producer and a data consumer. It specifies: schema (what fields, what types), freshness (how recent the data must be), completeness (acceptable null rates), and availability (SLA for uptime). Violations trigger alerts and escalation. At FAANG, data contracts are enforced programmatically — the pipeline that produces the data is responsible for meeting its contracts, not the consumer. This is a significant shift from SAP, where data quality was assumed because data was entered through SAP transactions with validation rules.</p>"
+        },
+        {
+          "type": "quantifiedTradeoff",
+          "value": {
+            "title": "Schema Evolution Strategies",
+            "description": "How you handle schema changes affects downstream consumers and data quality.",
+            "rows": [
+              {"label": "Backward Compatibility", "option1": "Always maintained - only additive changes", "option2": "Breaking changes allowed with migration window"},
+              {"label": "Consumer Impact", "option1": "Zero - consumers never break on update", "option2": "May require consumer updates"},
+              {"label": "Development Speed", "option1": "Slower - must maintain compatibility", "option2": "Faster - can evolve schema freely"},
+              {"label": "Operational Overhead", "option1": "Lower - no migration coordination needed", "option2": "Higher - need to coordinate with all consumers"}
+            ]
+          }
+        },
+        {
+          "type": "text",
+          "value": "<p><b>Data Lineage:</b> Data lineage answers the question: where did this data come from, and what transformations were applied? At FAANG, data lineage is critical for debugging, compliance, and impact analysis. Tools like Apache Atlas, DataHub, Amundsen, and open-lineage provide column-level lineage across pipelines. When a data quality issue is found, lineage enables root cause analysis: which pipeline introduced the bug? Which downstream systems need to be replayed? SAP engineers will recognize this from data flow tracing in BW — but FAANG's data lineage is more complex because data crosses more systems and transformations.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Working with Data Engineers and Analysts",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>As a Staff+ engineer, you will work closely with data engineers and data analysts — even if you are not a data engineer yourself. Your role is to understand the data needs of the systems you build, ensure that data infrastructure decisions align with product and business goals, and advocate for data best practices across your organization.</p>"
+        },
+        {
+          "type": "text",
+          "value": "<p><b>The Staff+ Role in Data Infrastructure:</b> You may be called upon to make decisions about: whether to build a data platform or use a SaaS product (see Build vs Buy article), how to design data models for new product features, what data needs to be collected and retained, how to handle data privacy and compliance, and how to scale data pipelines as the business grows. These decisions have long-term impact — a poorly designed data architecture can cost millions in compute and engineering time.</p>"
+        },
+        {
+          "type": "adversarialResponse",
+          "value": {
+            "title": "\"We don't need a data platform — just write SQL queries on the production database\"",
+            "scenario": "A product engineer suggests that the team should query the production database directly for analytics, arguing that setting up a proper data pipeline and warehouse is overkill for their small team.",
+            "bad": {
+              "label": "Accept the Shortcut",
+              "text": "\"Sure, it's faster. Just run SELECT queries on the production replica. We'll worry about proper data infrastructure when we're bigger.\""
+            },
+            "good": {
+              "label": "Invest in Data Infrastructure",
+              "text": "\"Querying production for analytics is dangerous — it impacts production performance, bypasses data quality checks, and creates a maintenance nightmare. Let's set up a lightweight pipeline: events to Kafka, streaming to BigQuery, and a simple Looker dashboard. It's 2 weeks of work now versus months of cleanup later.\""
+            }
+          }
+        },
+        {
+          "type": "text",
+          "value": "<p><b>Data Platform Thinking:</b> FAANG companies invest heavily in data platforms — internal tools and services that make it easy for teams to produce, consume, and analyze data. Examples include Uber's Databook (data discovery), Netflix's Genie (data workflow orchestration), and LinkedIn's WhereHows (data lineage). As a Staff+ engineer, you should think in terms of platforms rather than point solutions. What is the common data infrastructure that multiple teams can leverage? How do you reduce duplication of data pipelines across the organization? These questions separate Staff+ thinking from senior engineer thinking.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "The SAP Engineer's Data Bridge",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>SAP engineers have a hidden advantage: deep understanding of enterprise data. You know how transactional data flows through business processes. You understand master data, transactional data, and configuration data. You have worked with data quality issues in real-world implementations. You know that data is messy and that business rules are complex. These skills are directly transferable to FAANG data engineering — but you need to learn the tools, the paradigms, and the scale.</p>"
+        },
+        {
+          "type": "text",
+          "value": "<p><b>From ECC/BW to Data Lakes:</b> SAP ECC tables are normalized, rigidly structured, and defined by SAP. FAANG data lakes are denormalized, schema-on-read, and continuously evolving. The mental shift: instead of designing tables that fit a predefined data model, you design data models that fit your query patterns. Instead of loading data through SAP's extraction tools (e.g., ODP, SLT, DXC), you write Spark jobs that read from Kafka topics and write to Parquet files partitioned by date.</p>"
+        },
+        {
+          "type": "code",
+          "value": "// SAP-to-FAANG data concept mapping\n// SAP ECC Table          -> Kafka Topic (event stream)\n// SAP BW InfoCube        -> BigQuery table (analytical)\n// ABAP Report            -> Spark job + Looker dashboard\n// BW Process Chain       -> Airflow DAG\n// DataSource/Extraction  -> Data contract + schema registry\n// Transport Request      -> CI/CD pipeline with schema validation\n// InfoObject             -> Column with data type and constraints\n// ODS/DSO                -> Data lake raw zone (bronze layer)"
+        },
+        {
+          "type": "text",
+          "value": "<p><b>From Batch ABAP to Streaming Pipelines:</b> Your experience with ABAP report programming and batch data processing (BDC, LSMW, batch input) is conceptually similar to batch data processing at FAANG. The difference is scale and tooling. Instead of a daily ABAP report that processes 100,000 records, you'll write a Spark job that processes 100 million records. Instead of LSMW for data migration, you'll write Flink jobs for real-time data transformation. The principles are the same — data in, transform, data out — but the tools and scale are different.</p>"
+        },
+        {
+          "type": "text",
+          "value": "<p><b>From Report Painstakingly Built in SAP to Self-Serve Analytics:</b> At SAP, building a report was a multi-week process: gather requirements, write ABAP code, create selection screens, test, transport, train users. At FAANG, analysts build their own dashboards using Looker or Tableau on top of data warehouses. The Staff+ engineer's job is to ensure the data is clean, well-modeled, and accessible — not to build every report yourself. This is a shift from being a report builder to being a data platform enabler.</p>"
+        },
+        {
+          "type": "quantifiedTradeoff",
+          "value": {
+            "title": "SAP Data Skills Translation to FAANG",
+            "description": "How your SAP data experience maps to FAANG roles and responsibilities.",
+            "rows": [
+              {"label": "Data Modeling", "option1": "SAP: InfoObjects, DSOs, InfoCubes, MultiProviders", "option2": "FAANG: Star schema, data vault, wide tables, Iceberg/Delta Lake"},
+              {"label": "Data Processing", "option1": "SAP: ABAP reports, BW process chains, DTP", "option2": "FAANG: Spark, Flink, Airflow, Kafka Streams"},
+              {"label": "Data Quality", "option1": "SAP: Input validation in transactions, manual checks", "option2": "FAANG: Automated quality checks, data contracts, SLOs"},
+              {"label": "Reporting", "option1": "SAP: ABAP reports, BusinessObjects, Analysis for Office", "option2": "FAANG: Looker, Tableau, Superset, self-serve analytics"}
+            ]
+          }
+        }
+      ],
+      "codeBlock": ""
+    }
+  ],
+  "details": "<p><b>Staff+ Insight:</b> SAP engineers have deep data experience — you understand transactional data, master data, and reporting at enterprise scale. The gap is not data knowledge — it's data infrastructure knowledge. FAANG's data stack is entirely different from SAP's. You don't need to become a data engineer, but you need to understand the landscape enough to design systems that produce and consume data correctly.</p>"
+}

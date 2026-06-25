@@ -1,0 +1,274 @@
+{
+  "id": "staff-build-vs-buy",
+  "title": "Build vs Buy & Vendor Evaluation at FAANG",
+  "category": "Engineering Strategy",
+  "subcategory": "Decision Making",
+  "language": "text",
+  "description": "<p>One of the most common decisions a Staff+ engineer faces is whether to build a solution internally, buy a SaaS product, or use open source. At SAP, almost everything was built or bought from SAP. At FAANG, you choose. This article covers the build vs buy decision framework, total cost of ownership (TCO) analysis, vendor evaluation criteria, open source evaluation, build vs buy traps, and how to make these decisions transparently and defensibly.</p>",
+  "tags": ["FAANG", "Staff+", "Build vs Buy", "Vendor", "Procurement", "TCO", "Architecture", "Decision Making"],
+  "sections": [
+    {
+      "title": "Why Build vs Buy Is a Staff+ Decision",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Build vs buy decisions are among the highest-leverage decisions a Staff+ engineer makes. A single decision to build a platform internally can commit 10-50 engineers for 2-3 years. A decision to buy a SaaS product can lock your company into a vendor relationship — and a migration path — for a decade. These decisions shape engineering culture, determine technology stack, and impact company velocity for years. That is why they cannot be delegated to a junior engineer or made casually in a hallway conversation.</p>"
+        },
+        {
+          "type": "text",
+          "value": "<p><b>The Scope of the Decision:</b> Build vs buy decisions at FAANG span everything from CI/CD platforms and monitoring systems to data warehouses, ML platforms, and internal developer tools. At SAP, the decision was simple: if SAP offers it, use it. At FAANG, you evaluate 5-10 vendors, consider 2-3 open source alternatives, and estimate a build option — all before making a recommendation. The decision document itself can be 10-20 pages, reviewed by multiple Staff+ engineers and architects.</p>"
+        },
+        {
+          "type": "adversarialResponse",
+          "value": {
+            "title": "\"Why do we need a formal decision? Let's just pick something and move fast\"",
+            "scenario": "A team lead wants to quickly pick a monitoring solution without going through the full evaluation process. They argue that the team needs to move fast and a formal decision process will slow them down.",
+            "bad": {
+              "label": "Skip the Process",
+              "text": "\"You're right, speed matters. Let's just pick Datadog — everyone uses it. We can always migrate later if it doesn't work out.\""
+            },
+            "good": {
+              "label": "Right-Size the Process",
+              "text": "\"I agree we shouldn't over-engineer the decision, but a monitoring platform is hard to migrate from. Let's do a lightweight evaluation: 3 vendors, 1 week of POC each, a 3-page decision doc with clear criteria. That's 3 weeks of work to avoid a 3-year mistake.\""
+            }
+          }
+        },
+        {
+          "type": "checklist",
+          "value": {
+            "title": "When Build vs Buy Decisions Are Needed",
+            "items": [
+              {"label": "New infrastructure component (monitoring, CI/CD, data warehouse, ML platform)", "checked": false},
+              {"label": "Replacing an existing vendor or tool that is end-of-life or too expensive", "checked": false},
+              {"label": "Scaling a solution that was built for a smaller stage", "checked": false},
+              {"label": "Entering a new domain (e.g., adding a feature store for ML)", "checked": false},
+              {"label": "Consolidating multiple tools into a single platform", "checked": false}
+            ]
+          }
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "The Build vs Buy Framework",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>The most widely used framework for build vs buy decisions at FAANG is the <b>core vs context</b> framework, popularized by Geoffrey Moore. Core activities are those that differentiate your business — your competitive advantage. Context activities are necessary but do not differentiate you. The rule: build what is core; buy what is context. If a capability is central to how your company competes, you should own it. If it is a commodity that every company needs, buy it and focus your engineering energy on what makes you unique.</p>"
+        },
+        {
+          "type": "text",
+          "value": "<p><b>Total Cost of Ownership (TCO):</b> TCO analysis is the quantitative backbone of any build vs buy decision. For the build option, estimate: engineering time (initial build + ongoing maintenance + on-call), infrastructure cost (compute, storage, networking), and opportunity cost (what those engineers could have been building instead). For the buy option, estimate: licensing/subscription fees, integration cost, migration cost, training cost, and the cost of vendor management. Always project over a 3-year horizon — the first year of building is usually more expensive, but by year 3, buying may become more expensive as your scale grows.</p>"
+        },
+        {
+          "type": "code",
+          "value": "// TCO Analysis Template (3-year horizon)\n// Build Option:\n//   Year 1: 6 engineers x $300K = $1.8M + infrastructure $200K = $2.0M\n//   Year 2: 3 engineers x $300K = $0.9M + infrastructure $400K = $1.3M\n//   Year 3: 3 engineers x $300K = $0.9M + infrastructure $800K = $1.7M\n//   Total: $5.0M\n//\n// Buy Option:\n//   Year 1: License $500K + integration 2 engineers x $300K = $1.1M\n//   Year 2: License $600K + vendor management 0.5 engineer = $0.75M\n//   Year 3: License $720K + vendor management 0.5 engineer = $0.87M\n//   Total: $2.72M\n//\n// But if the capability is core, the build option gives control, customization,\n// and competitive advantage that may be worth the extra $2.28M"
+        },
+        {
+          "type": "quantifiedTradeoff",
+          "value": {
+            "title": "Build vs Buy Decision Matrix",
+            "description": "The right choice depends on whether the capability is core or context and how differentiated your needs are.",
+            "rows": [
+              {"label": "Strategic Importance", "option1": "Core to competitive advantage (Build)", "option2": "Context, commodity (Buy)"},
+              {"label": "Differentiation", "option1": "Highly differentiated needs (Build)", "option2": "Standard needs met by vendors (Buy)"},
+              {"label": "Engineering Capacity", "option1": "Dedicated team available (Build)", "option2": "No team to maintain long-term (Buy)"},
+              {"label": "Time to Market", "option1": "Can wait for internal development (Build)", "option2": "Need it now (Buy)"},
+              {"label": "Long-term Cost", "option1": "Lower at scale (Build)", "option2": "Lower at small scale (Buy)"}
+            ]
+          }
+        },
+        {
+          "type": "text",
+          "value": "<p><b>Build Time vs Integration Time:</b> A common mistake is comparing build time (12 months) to buy time (1 month to sign a contract) and concluding buying is faster. This ignores integration time. Buying a SaaS product still requires: security review (2-4 weeks), compliance review (2-4 weeks), procurement (4-8 weeks), integration engineering (4-12 weeks), data migration (4-12 weeks), and training (2-4 weeks). The total time to value for buying can be 4-6 months. Building may take 12 months, but you have full control over the timeline and don't depend on vendor responsiveness.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Vendor Evaluation at FAANG",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Vendor evaluation at FAANG is rigorous — far more than most companies. The bar is high because FAANG companies handle sensitive data, operate at massive scale, and have compliance requirements that most vendors don't encounter. The evaluation process typically involves engineering, security, legal, procurement, and finance teams, each with their own criteria and gate.</p>"
+        },
+        {
+          "type": "checklist",
+          "value": {
+            "title": "Vendor Evaluation Checklist",
+            "items": [
+              {"label": "Security review: SOC2 Type II, penetration test results, encryption at rest and in transit", "checked": false},
+              {"label": "Compliance: HIPAA, FedRAMP, GDPR, CCPA, PCI-DSS as applicable", "checked": false},
+              {"label": "Architecture review: multi-tenancy isolation, data residency, uptime SLA", "checked": false},
+              {"label": "Procurement: contract negotiation, pricing model, termination clauses, data export", "checked": false},
+              {"label": "POC: defined success criteria, 2-4 week proof of concept with real workloads", "checked": false},
+              {"label": "Exit plan: how to migrate data out, what is the vendor lock-in risk", "checked": false},
+              {"label": "Vendor health: funding, team size, customer count, growth trajectory, recent news", "checked": false}
+            ]
+          }
+        },
+        {
+          "type": "text",
+          "value": "<p><b>Security Review:</b> Every vendor must pass security review before any data touches their systems. FAANG security teams are notoriously thorough. They review: SOC2 Type II reports, penetration test results (not older than 12 months), data encryption (AES-256 at rest, TLS 1.2+ in transit), identity and access management (SSO, SCIM, RBAC), audit logging, incident response processes, and data deletion procedures. A vendor that cannot pass security review is a non-starter, regardless of how good their product is.</p>"
+        },
+        {
+          "type": "adversarialResponse",
+          "value": {
+            "title": "\"The vendor says they're SOC2 compliant, why do we need to do our own security review?\"",
+            "scenario": "A team is evaluating a monitoring vendor that claims SOC2 Type II compliance. The team wants to skip the internal security review to save time.",
+            "bad": {
+              "label": "Trust the Vendor's Claims",
+              "text": "\"They have SOC2, that's good enough. Let's move forward and start the POC.\""
+            },
+            "good": {
+              "label": "Verify Independently",
+              "text": "\"SOC2 is a starting point, not a replacement for our own review. Our security team needs to verify their specific controls: do they encrypt customer data at rest? Can they guarantee data residency in the US? What's their incident response SLA? We'll do a parallel security review during the POC to avoid delaying the timeline.\""
+            }
+          }
+        },
+        {
+          "type": "text",
+          "value": "<p><b>The Exit Plan:</b> Before signing any vendor contract, you must define the exit plan. How do you get your data out? What format? What are the data export fees? How long does the migration take? What happens if the vendor is acquired and changes their pricing model? FAANG engineers always negotiate data export terms upfront — including a contractual commitment to free data export within 90 days of termination. If a vendor won't agree to reasonable exit terms, that is a red flag that should weigh heavily against selection.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Open Source Evaluation",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Open source is often the third option in build vs buy decisions — and sometimes the best one. FAANG companies are major consumers and contributors to open source. Using open source gives you control (you can fork and modify), avoids vendor lock-in, and leverages community innovation. But open source also comes with risks: license compliance, maintenance burden, security vulnerability management, and community health.</p>"
+        },
+        {
+          "type": "checklist",
+          "value": {
+            "title": "Open Source Evaluation Checklist",
+            "items": [
+              {"label": "License compatibility: MIT, Apache 2.0, BSD (permissive) vs GPL, AGPL, SSPL (restrictive)", "checked": false},
+              {"label": "Community health: commit frequency, contributor diversity, response time to issues", "checked": false},
+              {"label": "Maintenance burden: do we need to maintain our own fork? How much engineering time?", "checked": false},
+              {"label": "Security: CVE history, vulnerability disclosure process, release cadence for security patches", "checked": false},
+              {"label": "Governance: who controls the project? A single vendor (e.g., Elastic, MongoDB) or a foundation?", "checked": false},
+              {"label": "Adoption: how many other FAANG companies use this? What is the broader industry adoption?", "checked": false}
+            ]
+          }
+        },
+        {
+          "type": "quantifiedTradeoff",
+          "value": {
+            "title": "Open Source License Comparison",
+            "description": "Different open source licenses have different implications for FAANG companies building commercial products.",
+            "rows": [
+              {"label": "Permissive (MIT, Apache 2.0)", "option1": "Use freely, modify, redistribute, no restrictions", "option2": "No need to contribute back changes"},
+              {"label": "Weak Copyleft (LGPL, MPL)", "option1": "Can link from proprietary code, modifications must be open", "option2": "Must open source changes to the library itself"},
+              {"label": "Strong Copyleft (GPLv3)", "option1": "Derivative works must be GPLv3 — dangerous for FAANG", "option2": "Internal use is OK, distributing externally requires GPL"},
+              {"label": "SSPL (MongoDB, Elastic)", "option1": "Intended for open source but restricts cloud providers", "option2": "May restrict internal use if offering as a service"}
+            ]
+          }
+        },
+        {
+          "type": "text",
+          "value": "<p><b>Community Health Assessment:</b> A healthy open source project has: multiple active committers from different organizations (not a single company), regular release cadence, responsive issue triage, clear governance model, and a published roadmap. Red flags: a single company controls all commits, long periods of inactivity, unresolved critical security issues, or a history of license changes that break existing users. Before adopting any open source project, check the contribution trends, recent activity, and the bus factor (how many people can maintain the project if the primary contributors leave).</p>"
+        },
+        {
+          "type": "text",
+          "value": "<p><b>Maintenance Burden Calculation:</b> When evaluating open source, estimate the maintenance burden: how many hours per week will your team spend upgrading versions? Patching security vulnerabilities? Debugging upstream issues? Supporting internal users? A rule of thumb: if an open source project requires more than 5% of a team's engineering time to maintain, it's not free — and buying a supported version (if available) may be cheaper.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Common Build vs Buy Traps",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Even experienced Staff+ engineers fall into build vs buy traps. The most common ones are predictable — and avoiding them is a mark of engineering maturity. Here are the traps you need to watch for, both in your own decisions and when reviewing others'.</p>"
+        },
+        {
+          "type": "text",
+          "value": "<p><b>1. Not-Invented-Here Syndrome:</b> The belief that internal solutions are always better because they understand your needs. In reality, building a mediocre internal platform that no one wants to use is worse than buying a good SaaS product. Guard against NIH by requiring the build option to demonstrate clear competitive advantage, not just comfort with building.</p>"
+        },
+        {
+          "type": "adversarialResponse",
+          "value": {
+            "title": "\"Let's build our own CI/CD platform — we have unique needs\"",
+            "scenario": "A senior engineer proposes building an internal CI/CD platform because GitHub Actions and GitLab CI don't perfectly match the team's workflow. The estimated build time is 18 months with a team of 8 engineers.",
+            "bad": {
+              "label": "Build Because We Can",
+              "text": "\"Our needs are unique. We can build something better than anything on the market. Let's start the design.\""
+            },
+            "good": {
+              "label": "Buy and Adapt",
+              "text": "\"The CI/CD space is mature — GitHub Actions, GitLab CI, Buildkite, and CircleCI all solve this problem. Our needs might be unique, but they're not so unique that building a platform from scratch is justified. Let's invest 2 months in making GitHub Actions work for us, and only consider building if there's a clear gap.\""
+            }
+          }
+        },
+        {
+          "type": "text",
+          "value": "<p><b>2. Underestimating Maintenance Cost:</b> The most common build trap. Engineers estimate the initial build cost accurately but ignore the 2-5 year maintenance cost: bug fixes, upgrades, on-call, migrations, feature requests, documentation, and training. A good rule: multiply the initial build cost by 3-5x for a 3-year TCO. If the buy option is still more expensive, building might make sense. But if the buy option is within 2x of the build TCO, buy it — the maintenance burden is real and painful.</p>"
+        },
+        {
+          "type": "text",
+          "value": "<p><b>3. Ignoring Integration Complexity:</b> Buying a solution seems simple until you realize it needs to integrate with 12 internal systems, each with different authentication, data formats, and APIs. Integration cost often doubles the total cost of buying. Always include integration in the TCO analysis, and budget for a dedicated integration engineer for at least 3-6 months.</p>"
+        },
+        {
+          "type": "text",
+          "value": "<p><b>4. Vendor Lock-In Denial:</b> \"We can always migrate later\" is a lie engineers tell themselves. Migrating off a deeply integrated vendor is a 6-18 month project that nobody will want to do. Before signing with any vendor, force yourself to write the exit plan: exactly how you would migrate data, the cost, the timeline, and who would do it. If the exit plan is painful, factor that into the decision.</p>"
+        },
+        {
+          "type": "checklist",
+          "value": {
+            "title": "Build vs Buy Decision Traps — Watch Out For",
+            "items": [
+              {"label": "Not-Invented-Here syndrome — building when you should buy", "checked": false},
+              {"label": "Underestimating maintenance cost over 3+ years", "checked": false},
+              {"label": "Ignoring integration complexity and cost", "checked": false},
+              {"label": "Vendor lock-in denial — everyone thinks they can migrate easily", "checked": false},
+              {"label": "Confusing build cost with build investment (build is CapEx, buy is OpEx)", "checked": false},
+              {"label": "Anchoring on a single option without considering alternatives", "checked": false},
+              {"label": "Overweighting first-year cost and underweighting long-term cost", "checked": false}
+            ]
+          }
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "The SAP Engineer's Build vs Buy Adjustment",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>If you come from SAP, the build vs buy decision process is one of the biggest cultural shocks. At SAP, the decision was made for you: you used SAP products for everything. Need a database? SAP HANA. Need an integration platform? SAP BTP. Need analytics? SAP BW/4HANA or SAP Analytics Cloud. Need a development language? ABAP. The stack was vertically integrated, and your job was to configure and extend what SAP provided — not to evaluate alternatives.</p>"
+        },
+        {
+          "type": "text",
+          "value": "<p><b>From Monoculture to Pluralism:</b> At FAANG, there is no single vendor. You will evaluate AWS vs GCP vs Azure for infrastructure. You will compare Snowflake vs BigQuery vs Redshift for warehousing. You will choose between Datadog, Grafana, Prometheus, and Honeycomb for observability. You will decide whether to use PostgreSQL, Cassandra, Spanner, or DynamoDB for your database. The first time you face this, it can feel overwhelming. The skill is not knowing the answer — it's knowing how to evaluate the options.</p>"
+        },
+        {
+          "type": "text",
+          "value": "<p><b>Learning to Say \"Let's Buy\":</b> SAP engineers often default to building, because at SAP, building was the only option. The instinct is to think \"I can build that\" and start coding. At FAANG, the best engineers learn to say \"let's buy\" without feeling like they're taking shortcuts. Buying is not a sign of weakness — it's a strategic decision to focus engineering energy on what matters. The FAANG companies that succeed are the ones that ruthlessly prioritize: buy everything that is not strategic, and build only what gives them a competitive edge.</p>"
+        },
+        {
+          "type": "quantifiedTradeoff",
+          "value": {
+            "title": "SAP Mindset vs FAANG Mindset on Build vs Buy",
+            "description": "The cultural shift from SAP's vertically integrated approach to FAANG's evaluation-driven approach.",
+            "rows": [
+              {"label": "Default Position", "option1": "SAP: Build or buy SAP (no choice)", "option2": "FAANG: Evaluate 5-10 options before deciding"},
+              {"label": "Decision Frequency", "option1": "SAP: Once per project (which SAP product?)", "option2": "FAANG: 5-10 times per year"},
+              {"label": "Risk Tolerance", "option1": "SAP: Low-risk, stick with SAP ecosystem", "option2": "FAANG: Calculated risk, may use startups or new tools"},
+              {"label": "Exit Strategy", "option1": "SAP: Never needed to exit SAP ecosystem", "option2": "FAANG: Exit plan required for every vendor"}
+            ]
+          }
+        },
+        {
+          "type": "text",
+          "value": "<p><b>Your Superpower:</b> SAP engineers have one advantage in build vs buy decisions: you understand enterprise requirements. You know what it takes to integrate with existing systems. You understand data migration complexity. You have seen what happens when a vendor solution doesn't quite fit and requires expensive customization. Use this experience: when evaluating a vendor, ask the hard questions about integration, customization, and migration that come from years of implementing enterprise software. Your FAANG colleagues may not have this perspective — and it is invaluable.</p>"
+        }
+      ],
+      "codeBlock": ""
+    }
+  ],
+  "details": "<p><b>Staff+ Insight:</b> In SAP, the build vs buy decision was made for you — everything was SAP. At FAANG, you will evaluate dozens of tools and services every year. The most common mistake is building when you should buy (underestimating maintenance) or buying when you should build (underestimating integration). Use the core vs context framework: if it's core to your competitive advantage, build it. If it's context, buy it.</p>"
+}
