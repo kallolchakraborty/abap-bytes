@@ -1,0 +1,38 @@
+{
+  "id": "sd-design-proximity-service",
+  "title": "Design Proximity Service (Yelp/Google Maps Nearby)",
+  "category": "System Design",
+  "subcategory": "FAANG Whiteboarding",
+  "language": "text",
+  "description": "<p>Design a location-based service that finds nearby places (restaurants, stores, landmarks). Covers geospatial indexing (geohash, quadtree, Google S2), spatial database tradeoffs (PostGIS vs MongoDB vs S2), filtering + ranking by distance/rating/relevance, real-time updates for moving objects, and how SAP's logistics route optimization and plant maintenance location tracking provide a conceptual bridge.</p>",
+  "tags": ["FAANG", "Staff+", "System Design", "Proximity", "Geospatial", "Yelp", "Location"],
+  "sections": [
+    {
+      "title": "Geospatial Indexing for Proximity Search",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>The core technical challenge: given a user's latitude/longitude (e.g., 37.7749, -122.4194), find all places within a 5 km radius, sorted by distance, filtered by category (restaurants, cafes), and ranked by rating. A naive query (SELECT * FROM places WHERE lat BETWEEN X1 AND X2 AND lon BETWEEN Y1 AND Y2) works for small datasets but fails at millions of places because the bounding box excludes areas near the poles and doesn't handle the curvature of the earth.</p><p><b>Geohash — grid-based spatial indexing:</b> The earth is divided into a grid of rectangles. Each rectangle is encoded as a geohash string (base32, variable length). A 5-character geohash represents a ~4.9 km × 4.9 km cell. To find nearby places: (1) Compute the user's geohash from their lat/lon (e.g., '9q8yy'). (2) Query all places with the same geohash prefix ('9q8yy'). (3) If the cell is smaller than the search radius, query neighboring cells too (at most 8 neighbors). (4) Filter by distance (remove places outside the circular radius). (5) Sort by distance/rating. <b>Pros:</b> simple, works with any key-value store, standard library support (GeoHash.encode()). <b>Cons:</b> cell boundaries cause hard-edge effects — a place 1 meter from the boundary is in a different cell.</p><p><b>Quadtree — adaptive grid:</b> Recursively divide the map into quadrants. Dense areas (downtown San Francisco) have many small quadrants; sparse areas (rural Nevada) have large quadrants. The quadtree is stored in memory as an unbalanced tree. <b>Pros:</b> adaptive precision — memory-efficient for sparse areas, fine-grained for dense areas. <b>Cons:</b> must be in-memory; tree updates on place add/edit require tree rebalancing.</p><p><b>Google S2 Geometry — library used by Google Maps:</b> Projects the earth onto a cube (6 faces), then applies a space-filling Hilbert curve to each face. The curve maps 2D coordinates to 1D cell IDs. S2 cells are non-overlapping and cover the earth at up to 31 levels of precision. Level 12 cells are ~10 km² — ideal for 'nearby places' queries. <b>Pros:</b> extremely fast (O(1) cell containment), built-in neighbor cells, used by Google Maps and Foursquare. <b>Cons:</b> complex library — requires understanding S2's projection and cell hierarchy.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Read/Write Architecture",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>The proximity service has different read and write patterns: reads are frequent (every pan/zoom in Google Maps), writes are infrequent (place added, hours updated). The architecture optimizes for reads.</p><p><b>Read path:</b> (1) Mobile/web client sends lat/lon, radius, filters (category, rating, open_now). (2) API gateway routes to the proximity service. (3) Proximity service computes the geohash/S2 cell for the user's location. (4) Queries the space-partitioned index for matching cells. (5) Fetches place details (name, address, rating, hours) from the place store (Cassandra, sharded by place_id). (6) Ranks results: primary sort by distance; secondary sort by rating. (7) Returns results to client (typically 10-20 places).</p><p><b>Write path — adding/updating a place:</b> (1) Place owner submits place details via API. (2) Place service validates and stores place in the place store. (3) Place service computes the geohash/S2 cell for the place's lat/lon. (4) Updates the geospatial index (INSERT into geohash cell list, or update quadtree). (5) If the place includes a new category or tag, update the category-based secondary indexes.</p><p><b>Index update strategy:</b> The geospatial index is typically rebuilt every few hours from the authoritative place store (batch processing). In-memory indexes (quadtree) are rebuilt from scratch. Database-backed indexes (PostGIS, geohash in Cassandra) are updated incrementally. The tradeoff: incremental updates provide fresh results (new place appears within 5 minutes of submission) but risk data inconsistency (if the update fails, the index diverges from the source of truth).</p>"
+        }
+      ],
+      "codeBlock": "",
+      "adversarialResponse": {
+        "challenge": "\"Your proximity system uses geohash but a user searches for 'closest vegan restaurant' and the radius is 10 km. At the geohash boundary, the user might miss restaurants just outside the cell. How do you handle this?\"",
+        "badResponse": "\"We query neighboring cells.\" (correct but incomplete — doesn't explain how many neighbors or the tradeoff)",
+        "goodResponse": "\"You're right — geohash has a boundary problem. The fix is to query the 8 neighboring cells in addition to the user's own cell. If the user's 5-character geohash cell is '9q8yy', we also query '9q8yz', '9q8yx', '9q8yv', etc. (the N, S, E, W, NE, NW, SE, SW neighbors). This ensures no place within the cell's bounding box and its immediate neighbors is missed. <b>However</b>, this increases the query scope by 9x. The optimization: pre-compute whether the user is near a cell boundary. If the user is near the center of a cell (inside a margin of 20% of the cell width), query only the user's cell — boundary effects are unlikely. If the user is within 20% of any cell edge, query the relevant neighbor cells. This reduces the 9x overhead to 2-3x for most queries. At Yelp, we used this approach with S2 cells and observed < 5% of queries needing neighbor cell queries.\"",
+        "pattern": "When a candidate mentions a spatial indexing limitation, the Staff+ answer provides a concrete mitigation (neighbor cells with boundary-aware optimization) and production data (5% neighbor query rate). Avoid abstract 'we handle it with more cells.' Show you've actually operated a production geospatial system."
+      }
+    }
+  ],
+  "details": "<p><b>FAANG Interview Tip:</b> The proximity service question tests: (1) Your understanding of geospatial indexing (geohash, quadtree, S2) and their tradeoffs. (2) Your ability to design a read-optimized system (indexing for fast nearby lookups). (3) Your handling of edge cases (cell boundaries, polar regions, the curvature of the earth). The SAP engineer can bridge from logistics: 'SAP Transportation Management optimizes routes using location data. The same geospatial indexing techniques apply, but at FAANG scale, we must handle millions of locations with sub-50ms query latency.'</p>"
+}

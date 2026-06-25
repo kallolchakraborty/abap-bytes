@@ -1,0 +1,112 @@
+{
+  "id": "design-integration-strategy",
+  "title": "Enterprise Integration Strategy",
+  "category": "System Design",
+  "subcategory": "API & Events",
+  "language": "text",
+  "description": "<p>Designing an enterprise-wide integration strategy for connecting SAP and non-SAP systems at scale. Covers integration patterns, protocol selection, API gateways, event-driven architecture, integration suite topology, governance, and migration from point-to-point to platform-based integration.</p>",
+  "tags": ["FAANG", "Staff+", "Integration", "Event-Driven", "API", "Platform", "Strategy"],
+  "sections": [
+    {
+      "title": "Integration Maturity Model",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Enterprise integration evolves through four maturity stages. Understanding where your organization sits on this maturity curve — and how to advance to the next stage — is a core Staff+ skill.</p><p><b>Stage 1: Point-to-Point (Chaos).</b> Every system connects directly to every other system. N systems produce N*(N-1)/2 connections. A typical SAP landscape with 20 connected systems produces 190 point-to-point connections. Each connection is custom-coded (RFC, IDoc, file transfer, direct JDBC). Changes break unpredictably. No monitoring, no governance, no security standardization. Anti-pattern: custom ABAP programs that directly call RFCs to 15 different systems.</p><p><b>Stage 2: Centralized Hub (ESB/EAI).</b> All connections route through a central integration platform (SAP PI/PO, MuleSoft, webMethods). N systems produce N connections — an 80% reduction. The hub handles message transformation, routing, protocol adaptation, and monitoring. This is SAP PI/PO's sweet spot. Limitation: the hub becomes a single point of failure and a scalability bottleneck. Every message passes through it, creating latency and throughput constraints.</p><p><b>Stage 3: Decentralized (API-Led).</b> Systems expose APIs and consume APIs through an API gateway (SAP API Management, Apigee, Kong). Integration is decomposed into: system APIs (expose backend capabilities), process APIs (orchestrate business logic), and experience APIs (optimize for specific consumers). This is SAP Integration Suite's recommended pattern using Cloud Integration (CPI) as the process API layer. Benefit: each API can scale independently, and the gateway handles cross-cutting concerns (auth, rate limiting, analytics).</p><p><b>Stage 4: Event-Driven (Platform).</b> Systems publish events to an event backbone (SAP Event Mesh, Kafka, RabbitMQ). Consumers subscribe to relevant events. Integration becomes asynchronous, decoupled, and real-time. The event backbone is the nervous system of the enterprise. This is the architectural direction of SAP's clean core + Event Mesh strategy.</p>"
+        },
+        {
+          "type": "svg",
+          "value": "<svg viewBox=\"0 0 700 340\" xmlns=\"http://www.w3.org/2000/svg\"><style>.is-box{fill:var(--bg-secondary);stroke:var(--brand-primary);stroke-width:2;rx:8}.is-stage{fill:var(--bg-secondary);stroke:var(--text-primary);stroke-width:2;rx:6}.is-lbl{fill:var(--text-primary);font-family:system-ui;font-size:11px;font-weight:600;text-anchor:middle}.is-sub{fill:var(--text-primary);font-family:system-ui;font-size:9px;text-anchor:middle}.is-edge{stroke:var(--border-default);stroke-width:1.5;fill:none;marker-end:url(#arrow)}</style><defs><marker id=\"arrow\" markerWidth=\"8\" markerHeight=\"6\" refX=\"8\" refY=\"3\" orient=\"auto\"><path d=\"M0,0 L8,3 L0,6Z\" fill=\"var(--text-primary)\"/></marker></defs><rect class=\"is-box\" x=\"15\" y=\"15\" width=\"670\" height=\"310\"/><text class=\"is-lbl\" x=\"350\" y=\"38\">Enterprise Integration Maturity Model</text><rect class=\"is-stage\" x=\"25\" y=\"55\" width=\"150\" height=\"70\" stroke=\"var(--svg-error-stroke)\"/><text class=\"is-lbl\" x=\"100\" y=\"78\">Stage 1: P2P</text><text class=\"is-sub\" x=\"100\" y=\"98\">Custom RFC/IDoc</text><text class=\"is-sub\" x=\"100\" y=\"113\">190 connections</text><line x1=\"175\" y1=\"90\" x2=\"200\" y2=\"90\" class=\"is-edge\"/><rect class=\"is-stage\" x=\"200\" y=\"55\" width=\"150\" height=\"70\" stroke=\"var(--svg-warning-stroke)\"/><text class=\"is-lbl\" x=\"275\" y=\"78\">Stage 2: Hub</text><text class=\"is-sub\" x=\"275\" y=\"98\">SAP PI/PO</text><text class=\"is-sub\" x=\"275\" y=\"113\">Centralized ESB</text><line x1=\"350\" y1=\"90\" x2=\"375\" y2=\"90\" class=\"is-edge\"/><rect class=\"is-stage\" x=\"375\" y=\"55\" width=\"150\" height=\"70\"/><text class=\"is-lbl\" x=\"450\" y=\"78\">Stage 3: API-Led</text><text class=\"is-sub\" x=\"450\" y=\"98\">CPI + API Mgmt</text><text class=\"is-sub\" x=\"450\" y=\"113\">System/Process/Exp</text><line x1=\"525\" y1=\"90\" x2=\"550\" y2=\"90\" class=\"is-edge\"/><rect class=\"is-stage\" x=\"550\" y=\"55\" width=\"130\" height=\"70\" stroke=\"var(--svg-success-stroke)\"/><text class=\"is-lbl\" x=\"615\" y=\"78\">Stage 4: Events</text><text class=\"is-sub\" x=\"615\" y=\"98\">Event Mesh</text><text class=\"is-sub\" x=\"615\" y=\"113\">Async Platform</text><rect class=\"is-box\" x=\"25\" y=\"145\" width=\"640\" height=\"70\"/><text class=\"is-lbl\" x=\"345\" y=\"165\">Each stage increases agility, reduces coupling, and improves scalability</text><text class=\"is-sub\" x=\"345\" y=\"185\">Maturity is not binary — different integration domains may be at different stages</text><rect class=\"is-box\" x=\"25\" y=\"235\" width=\"640\" height=\"55\" stroke=\"var(--svg-accent-stroke)\"/><text class=\"is-lbl\" x=\"345\" y=\"255\">Target Architecture: API-Led for synchronous, Event-Driven for asynchronous</text></svg>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Protocol Selection Framework",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Choosing the right integration protocol for each scenario is a key architectural decision. The wrong protocol creates operational friction, performance issues, or governance gaps. Here is the decision framework based on <b>message exchange pattern</b>, <b>timing</b>, and <b>data format</b>.</p><p><b>Synchronous Request-Reply:</b> Use REST/OData for direct system-to-system queries where the caller needs the response immediately. Use SOAP/RFC for legacy SAP integration where the remote system only supports SOAP/RFC. Use gRPC for high-throughput internal microservice communication. Synchronous patterns should only be used within a trust boundary (same data center, low latency, high reliability). Never use synchronous calls across geographic regions or unreliable networks.</p><p><b>Asynchronous Messaging:</b> Use Event Mesh / Kafka for event-driven integration: publish-and-subscribe patterns where producers don't need to know about consumers. Use JMS/AMQP for reliable point-to-point messaging with guaranteed delivery. Use tRFC/qRFC for SAP-to-SAP guaranteed delivery. Asynchronous messaging provides: temporal decoupling (sender and receiver don't need to be available simultaneously), load leveling (message queues absorb traffic spikes), and fault tolerance (messages persist until consumed).</p><p><b>File Transfer:</b> Use SFTP/S3 for batch data exchange where near-real-time is not required. Use DMEE (Data Medium Exchange Engine) for structured file generation (payment files, tax reports). File transfer is the lowest-common-denominator integration pattern — nearly every system supports it. But it creates operational overhead: file monitoring, error handling, retry logic, and reconciliation.</p>"
+        }
+      ],
+      "codeBlock": "",
+      "decisionTree": {
+        "prompt": "Which integration protocol should I use for connecting System A to System B?",
+        "firstQuestion": "\"Does System A need a response from System B before it can proceed?\" If yes, use synchronous (REST/gRPC/RFC). If no, use asynchronous (Event Mesh/Kafka/JMS). If the answer is 'eventually but not immediately,' use async with a callback pattern.",
+        "branches": [
+          {"condition": "Synchronous needed, both systems are SAP, low latency network", "path": "REST/OData via SAP Gateway or CPI. Use RFC only if the target is legacy ECC without Gateway. Monitor P99 latency — if it exceeds 500ms, consider async.", "selected": false},
+          {"condition": "Synchronous needed, one system is non-SAP, API governance required", "path": "REST via API Management (SAP API Management or Apigee). The gateway handles authentication, rate limiting, and analytics. The backend API is exposed through the gateway, not directly.", "selected": true},
+          {"condition": "Asynchronous, event-driven, multiple consumers for the same event", "path": "Event Mesh (SAP) or Kafka (non-SAP). Publish the event once, and all interested consumers subscribe independently. Events are immutable and persisted. Use schema registry for event format governance.", "selected": false},
+          {"condition": "Asynchronous, guaranteed delivery, exactly-once semantics", "path": "JMS queue (for Java/non-SAP) or qRFC (for SAP-to-SAP). Guaranteed delivery ensures the message is delivered exactly once. Use for: order creation, payment processing, invoice delivery.", "selected": false}
+        ],
+        "staffPlusTip": "A Staff+ answer never picks a single protocol for the entire enterprise. It classifies integrations by pattern (sync/async, request/event, batch/real-time) and uses the appropriate protocol for each class. The governance question (how do we enforce consistency across 50+ integration flows) is more important than the protocol question."
+      }
+    },
+    {
+      "title": "SAP Integration Suite Architecture",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>SAP Integration Suite is SAP's umbrella integration platform, replacing SAP PI/PO. It includes: <b>Cloud Integration (CPI)</b> — the process integration engine (replaces PI/PO). <b>API Management</b> — the API gateway with developer portal, rate limiting, and analytics. <b>Event Mesh</b> — the event backbone for pub/sub integration. <b>Open Connectors</b> — pre-built connectors for 200+ SaaS applications. <b>Integration Advisor</b> — AI-assisted mapping generation.</p><p><b>Cloud Integration (CPI) Architecture:</b> CPI runs on BTP Cloud Foundry. Integration flows (iFlows) are modeled graphically in the CPI web UI or deployed via CI/CD. Each iFlow has: a sender adapter (HTTP, SOAP, SFTP, JMS, RFC, IDoc), a integration process (content-based routing, mapping, transformation, enricher), and a receiver adapter. CPI provides: message monitoring dashboard, retry and error handling (exception subprocesses), message mapping (graphical, XSLT, or Groovy scripts), and secure connectivity via Cloud Connector to on-premise SAP systems.</p><p><b>API Management Architecture:</b> API Management sits in front of CPI and backend APIs. It provides: API proxy (expose backend APIs through a managed endpoint), developer portal (API catalog, documentation, API key self-service), rate limiting (per application, per API, per plan), API analytics (usage, latency, error rates), and security policies (OAuth 2.0, API key validation, IP allowlisting).</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Event-Driven Integration with Event Mesh",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>SAP Event Mesh is SAP's managed event backbone, based on CloudAMQP (RabbitMQ-compatible) with Kafka-like features for topics and partitions. It enables event-driven integration between S/4HANA, SAP cloud products, and custom applications on BTP.</p><p><b>Event Types:</b> S/4HANA publishes <b>business events</b> for standard business objects: BusinessPartner.Changed, SalesOrder.Created, MaterialDocument.Posted, PurchaseOrder.Approved. Custom ABAP events can be published using the <code>/iwbep/if_event_serv_int=>raise_event</code> API. Non-SAP systems publish events via the Event Mesh REST API or AMQP protocol.</p><p><b>Event Flow Architecture:</b> (1) S/4HANA business event occurs (e.g., sales order created). (2) The event is published to Event Mesh topic (e.g., sap/s4hana/orders/created). (3) Event Mesh persists the event and delivers it to all subscribers (Fan-out pattern). (4) Subscribers process the event: CPI iFlow transforms and forwards to external system, CAP/Steampunk app updates a custom table, analytics pipeline updates a real-time dashboard. Subscribers acknowledge processing; Event Mesh retries on failure (with dead-letter queue for persistent failures).</p>"
+        }
+      ],
+      "codeBlock": "",
+      "quantifiedTradeoff": {
+        "title": "Synchronous vs Event-Driven Integration Tradeoff",
+        "scenarios": [
+          {
+            "choice": "A: Synchronous REST API between two systems (request-reply)",
+            "tradeOff": "Simple to implement and debug. Total latency = network round trip + processing time. P99 latency: 50-200ms in same region",
+            "context": "Pros: caller knows immediately if the operation succeeded. Easy to trace (single request ID). No message persistence needed. Cons: caller is blocked during processing. If the downstream system is down, the caller fails. Tight coupling — both systems must be available simultaneously",
+            "recommendation": "Use for: real-time queries, user-facing operations where the user waits for confirmation."
+          },
+          {
+            "choice": "B: Event-driven with Event Mesh (publish-subscribe)",
+            "tradeOff": "Decouples systems but adds complexity. Producer publishes event and returns immediately. Total latency: 100ms-5s (event processing time)",
+            "context": "Pros: temporal decoupling — systems don't need to be available simultaneously. Load leveling — events queue up if consumer is slow. Multiple consumers can subscribe to the same event. Cons: eventual consistency — the producer doesn't know if/when the event was processed. Complex error handling — failed events go to dead-letter queue. Harder to trace (correlation IDs needed)",
+            "recommendation": "Use for: business processes where the caller doesn't need immediate confirmation, cross-system notifications, scenarios with multiple consumers."
+          },
+          {
+            "choice": "C: Hybrid — synchronous for command, event-driven for notification",
+            "tradeOff": "Best user experience but highest complexity. Command returns immediately (async) with a tracking ID; event notifies when the command is complete",
+            "context": "The caller submits a command via REST and gets back a 202 Accepted with a tracking ID. The backend processes the command asynchronously. When complete, it publishes a 'command.completed' event. The caller subscribes to this event or polls the tracking endpoint. This is the 'command-query-responsibility-segregation' (CQRS) pattern applied to integration",
+            "recommendation": "Best practice for enterprise integrations where the operation takes >1 second. User gets immediate feedback (order submitted), and the backend processes asynchronously."
+          }
+        ]
+      }
+    },
+    {
+      "title": "Integration Governance & Operations",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Integration governance is the set of policies, standards, and tools that ensure integration flows are consistent, secure, observable, and manageable at scale. Without governance, integration becomes unmanageable beyond 20-30 flows.</p><p><b>Integration Style Guide:</b> A living document that defines: naming conventions for APIs, events, queues, and files (e.g., <code>sap/s4hana/{business-object}.{event-type}.v1</code> for event topics). Error handling patterns (retry policy: 3 retries with exponential backoff, then dead-letter queue). Message format standards (CloudEvents specification for events, JSON:API for REST). Security requirements (all integrations must use OAuth 2.0 or mTLS; no shared credentials).</p><p><b>Integration Platform Operations:</b> Central monitoring dashboard showing all integration flows with: message count, error rate, P99 latency, and throughput. Automated alerts when error rate exceeds 1% or latency exceeds SLA threshold (e.g., 500ms P99). Monthly integration health report sent to platform owners. Quarterly integration architecture review with API owners.</p><p><b>Integration Lifecycle:</b> Each integration flow goes through: Request (business need documented, architect reviews), Design (iFlow design reviewed by integration architect), Implement (developer builds the flow), Test (integration test with consumer), Deploy (CI/CD pipeline with automated smoke tests), Operate (monitored in production dashboard), Deprecate (sunset the flow with 6-month notice to consumers).</p>"
+        }
+      ],
+      "codeBlock": "",
+      "organizationalDimension": {
+        "title": "Building an Integration Center of Excellence",
+        "migrationStrategy": "The Integration Center of Excellence (ICoE) is a cross-functional team that establishes integration standards, operates the integration platform, and mentors domain teams. Phase 1: Establish ICoE with 3 senior integration architects. Phase 2: Publish integration style guide and set up monitoring. Phase 3: Train domain teams on self-service integration. Phase 4: ICoE transitions to governance-only role.",
+        "stakeholders": [
+          {"who": "Domain Teams (SD, MM, FI)", "concern": "Integration platform adds latency and cost — direct connections are faster and simpler", "address": "Show the aggregate cost of point-to-point: each direct connection requires custom monitoring, error handling, and security. At 20+ connections, the total is higher than the shared platform cost. Also, the platform handles security and monitoring for free."},
+          {"who": "Integration Architects", "concern": "We need standards but don't want to block agility", "address": "Focus governance on critical patterns: security, error handling, and naming conventions. Leave implementation choices to domain teams as long as they follow the standards. Automated compliance checks in CI/CD."},
+          {"who": "CISO / Security Team", "concern": "Integration increases the attack surface — every new connection is a new entry point", "address": "The integration platform reduces the attack surface by replacing N*(N-1) connection-specific auth mechanisms with a single platform-level auth (OAuth 2.0 or mTLS). All flows go through the platform, which provides centralized logging and audit."}
+        ],
+        "adoptionPhases": "Phase 1 (month 1-3): Establish ICoE, publish integration style guide. Phase 2 (month 4-8): Migrate top 10 P2P integrations to platform. Phase 3 (month 9-12): Train domain teams on self-service integration. Phase 4 (month 13+): ICoE transitions to governance-only.",
+        "metrics": "Month 6: 50% of new integrations use platform. Month 12: 80% of all integrations use platform. Month 18: <10% of integrations are point-to-point.",
+        "antiPatterns": "ICoE becomes a bottleneck (all integrations must go through ICoE engineers — doesn't scale). No style guide (every integrator does it differently). No monitoring (integration failures detected by users)."
+      }
+    }
+  ],
+  "details": "<p><b>Staff+ Insight:</b> Enterprise integration strategy is not about choosing between CPI and MuleSoft — it's about designing a platform that makes integration easier, safer, and faster for every team in the organization. The Staff+ engineer designs the integration platform as a product: it has customers (domain teams), SLAs, a roadmap, and a lifecycle. The technology (CPI, Event Mesh, API Management) is the implementation detail; the platform design is the architecture.</p>"
+}

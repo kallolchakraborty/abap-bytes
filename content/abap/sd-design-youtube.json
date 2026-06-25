@@ -1,0 +1,52 @@
+{
+  "id": "sd-design-youtube",
+  "title": "Design YouTube — Video Platform",
+  "category": "System Design",
+  "subcategory": "FAANG Whiteboarding",
+  "language": "text",
+  "description": "<p>Design a video-sharing platform like YouTube. Covers video upload pipeline, transcoding queue, CDN distribution, video storage (blob storage vs chunked), recommendation system architecture, real-time view counting, streaming protocols, and how SAP's Document Management (DMS) and media archiving provide a bridge to understanding large-scale media processing.</p>",
+  "tags": ["FAANG", "Staff+", "System Design", "YouTube", "Video", "CDN", "Streaming"],
+  "sections": [
+    {
+      "title": "Video Upload Pipeline",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>The upload pipeline handles video ingestion from users and prepares it for worldwide streaming. The core challenge is to process a video (transcode, generate thumbnails, detect content) before it becomes available to viewers, while handling a massive upload volume (500+ hours of video uploaded per minute).</p><p><b>Upload flow:</b> (1) User selects video file in the browser/app. (2) The client sends metadata first (title, description, privacy settings) via REST API. (3) Server returns a pre-signed upload URL (pointing to blob storage — S3/GCS). (4) Client uploads the video file directly to blob storage via resumable upload. This decouples upload from the app server — the server is not a bottleneck. (5) Once uploaded, blob storage triggers a notification (S3 event → SQS/SNS → upload processing service). (6) Upload processing service writes video metadata to the database (title, description, upload timestamp, user ID — initial status: 'processing'). (7) Upload processing service creates a transcoding job and submits it to the transcoding queue.</p><p><b>Resumable upload protocol:</b> Split the video into chunks (typically 1-5 MB). The client uploads chunks sequentially. If the upload is interrupted, the client resumes from the last successfully uploaded chunk. YouTube uses a custom resumable upload protocol. This is critical because mobile users may lose connectivity during a long upload (500 MB video on a slow connection could take 10+ minutes).</p><p><b>Pre-processing checks:</b> Before the full upload, the server may: (1) Check video duration (shorter than 15 seconds? treated as a 'short'). (2) Check file format (only MP4, WebM, MKV accepted). (3) Run malware scan on the first few chunks. (4) Check copyright (audio fingerprint comparison against a database of copyrighted content — Content ID). If checks fail, the upload is rejected early, saving bandwidth.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Transcoding Pipeline — The CPU-Intensive Core",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Transcoding converts the uploaded video into multiple formats, resolutions, and bitrates for adaptive bitrate streaming (HLS/DASH). A single uploaded video (e.g., 1080p MP4) must be transcoded into: 4K (for premium), 1080p (HD), 720p (standard HD), 480p (SD), 360p (low), and audio-only.</p><p><b>Transcoding architecture:</b> (1) Transcoder pool — a cluster of worker nodes (dedicated or spot instances on AWS/GCP) that run FFmpeg or proprietary transcoders. (2) Job queue — the transcoding manager submits jobs to a priority queue. High-priority jobs (videos from prominent creators) are processed first. (3) Job splitting — a large video is split into 'chunks' of 10-30 seconds. Each chunk is transcoded independently (parallel processing). After all chunks are transcoded, the manifest file (M3U8 for HLS) is generated. (4) Thumbnail generation — extract frames at 1, 5, 10, 30, and 60-second marks. Generate 3-5 thumbnail options for the user to choose. (5) Audio track extraction — extract audio, transcribe to captions (speech-to-text), translate captions for internationalization.</p><p><b>Transcoding optimization — two-pass encoding:</b> First pass: analyze the video to determine optimal bitrate allocation (high-motion scenes get more bits, static scenes get fewer). Second pass: encode using the allocation from the first pass. Two-pass encoding produces 30-50% smaller files than one-pass at the same quality. The tradeoff: 2x transcoding time. YouTube uses two-pass for popular videos and one-pass for less-viewed videos.</p><p><b>SAP Bridge:</b> SAP DMS (Document Management System) handles document archiving and format conversion. A sales order PDF attached in SAP is analogous to an uploaded video — it must be stored, converted to a viewable format (PDF/A for archiving), and made available to viewers. The difference is scale: SAP DMS handles thousands of documents per day; YouTube handles 500+ hours of video per minute. The transcoding concept is the same (convert source to multiple output formats) but with dramatically different performance requirements.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Adaptive Bitrate Streaming & CDN",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Adaptive bitrate streaming (ABR) serves different quality levels to different viewers based on their network conditions and device capabilities. This is the core of YouTube's viewing experience — a viewer with 4G cellular gets 480p while a viewer with fiber optic gets 4K, from the same URL.</p><p><b>HLS (HTTP Live Streaming) — Apple's standard:</b> The video is split into small segments (typically 6-10 seconds each, called 'chunks'). The transcoder generates a <b>variant playlist</b> (M3U8) for each resolution/bitrate (e.g., 360p.m3u8, 720p.m3u8, 1080p.m3u8). A <b>master playlist</b> references all variant playlists and describes the resolution, bitrate, and codec of each. The client decides which variant to fetch based on available bandwidth. The client fetches chunk after chunk sequentially — switching between variants mid-stream if bandwidth changes.</p><p><b>CDN distribution:</b> Video chunks are cached at CDN edge nodes (PoPs — Points of Presence). A viewer in Tokyo fetches from a CDN node in Tokyo, not from YouTube's origin servers in the US. CDN caching is done at the chunk level — popular videos have all chunks cached at most edges; less popular videos are cached on fewer edges or served from a regional cache. Cache hierarchy: edge cache → regional cache → origin. YouTube uses Google's private CDN (Google Global Cache), not a third-party CDN.</p><p><b>Geographic caching placement:</b> YouTube determines the optimal CDN caching strategy based on viewer patterns. A video popular in India will be cached in Indian CDN nodes. A video going viral (sudden spike in views) triggers a 'cache warm' — proactively pushing the video's chunks to CDN nodes in regions where the spike is detected.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Recommendation System Architecture",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>YouTube's recommendation system is responsible for 70%+ of watch time. The architecture is divided into two stages: candidate generation (retrieval) and ranking.</p><p><b>Stage 1 — Candidate generation (recall):</b> From billions of videos, retrieve hundreds of candidates relevant to the user. Two main approaches: (1) Collaborative filtering — 'users who watched this video also watched these.' Computed offline via matrix factorization (ALS, SVD) on the view history matrix. (2) Content-based — 'this video has similar topics, tags, description.' Computed via embedding similarity (video embeddings generated by a neural network trained on watch sequences).</p><p><b>Stage 2 — Ranking (precision):</b> Score the candidates by predicted watch probability. Features: (1) User features — watch history, search history, subscription list, location, device type. (2) Video features — upload date, view count, like/dislike ratio, category, duration. (3) Context — time of day, day of week, session length. The ranking model predicts click-through rate (CTR) and expected watch time (EWT). YouTube's ranking model is a deep neural network (DNN) trained on billions of user-video interaction pairs.</p><p><b>Freshness bias:</b> A known challenge: recommendation systems favor older videos (more watch history data). To counter this, YouTube adds a 'freshness boost' to videos uploaded in the last 24-48 hours. This is why new videos from your subscribed channels appear in your feed even though you haven't watched them yet.</p>"
+        }
+      ],
+      "codeBlock": ""
+    }
+  ],
+  "details": "<p><b>FAANG Interview Tip:</b> The YouTube design question tests: (1) Your understanding of large-scale media processing (transcoding pipelines, job queues, parallel processing). (2) Your knowledge of CDN architecture and edge caching. (3) Your ability to design for latency (video start-up time < 2 seconds globally). (4) Your ML system design knowledge (recommendation systems). The SAP engineer can bridge from DMS/media archiving to YouTube but should emphasize the 'scale difference' — showing they understand distributed systems well enough to design at YouTube's scale.</p>"
+}

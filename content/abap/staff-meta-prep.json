@@ -1,0 +1,125 @@
+{
+  "id": "staff-meta-prep",
+  "title": "Meta Interview Preparation for SAP Engineers",
+  "category": "Leadership",
+  "subcategory": "Career Mastery",
+  "language": "text",
+  "description": "<p>Complete Meta interview prep guide for SAP engineers targeting E5/E6 (Staff) levels. Covers Meta's coding-first culture, the Product/Infrastructure Architecture rounds, behavioral expectation of \"low-ego intensity\", Move Fast culture adaptation, and SAP-specific preparation strategy.</p>",
+  "tags": [
+    "FAANG",
+    "Meta",
+    "Facebook",
+    "Interview",
+    "Staff Engineer",
+    "E5",
+    "E6",
+    "System Design",
+    "Behavioral",
+    "Coding",
+    "Leadership",
+    "Career Mastery"
+  ],
+  "sections": [
+    {
+      "title": "Meta's Interview Culture — Speed, Ambiguity, and Execution",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Meta prioritizes three things above all else: coding fluency, system design depth, and execution track record with low-ego high-agency culture fit. Unlike Amazon's written narratives or Google's structured rubric, Meta interviews are less standardized — each interviewer has significant discretion. The bar is calibrated daily through consensus debriefs, not rigid scorecards.</p><p>Key differences from Amazon and Google: no written narratives required, less structured rubric for behavioral answers, more emphasis on coding speed and volume (you may solve 2-3 problems per round), and design rounds that focus on consumer-scale products rather than internal enterprise systems.</p><p>For SAP engineers, three challenges emerge: coding speed (ABAP fluency does not translate to Python/Java), modern tech stack unfamiliarity (distributed caching, consistent hashing, gossip protocols), and product-sense culture (Meta hires builders who ship consumer features, not enterprise architects who design governance frameworks).</p>"
+        },
+        {
+          "type": "svg",
+          "value": "<svg viewBox=\"0 0 800 400\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"800\" height=\"400\" fill=\"#f8f9fa\" rx=\"8\"/><text x=\"400\" y=\"36\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"18\" font-weight=\"bold\" fill=\"#1c1e21\">Meta vs Amazon vs Google Interview Culture</text><rect x=\"40\" y=\"60\" width=\"220\" height=\"300\" rx=\"8\" fill=\"#1877f2\" opacity=\"0.9\"/><text x=\"150\" y=\"90\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"16\" font-weight=\"bold\" fill=\"#fff\">Meta</text><text x=\"150\" y=\"120\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"12\" fill=\"#fff\">Speed &amp; Volume</text><text x=\"150\" y=\"140\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"12\" fill=\"#fff\">2-3 coding problems/round</text><text x=\"150\" y=\"160\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"12\" fill=\"#fff\">Low-ego behavioral</text><text x=\"150\" y=\"180\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"12\" fill=\"#fff\">Consumer design</text><text x=\"150\" y=\"200\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"12\" fill=\"#fff\">No written narratives</text><text x=\"150\" y=\"220\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"12\" fill=\"#fff\">Debrief-calibrated bar</text><rect x=\"290\" y=\"60\" width=\"220\" height=\"300\" rx=\"8\" fill=\"#ff9900\" opacity=\"0.9\"/><text x=\"400\" y=\"90\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"16\" font-weight=\"bold\" fill=\"#fff\">Amazon</text><text x=\"400\" y=\"120\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"12\" fill=\"#fff\">Leadership Principles</text><text x=\"400\" y=\"140\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"12\" fill=\"#fff\">Written narratives</text><text x=\"400\" y=\"160\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"12\" fill=\"#fff\">Bar raiser system</text><text x=\"400\" y=\"180\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"12\" fill=\"#fff\">1 coding problem/round</text><text x=\"400\" y=\"200\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"12\" fill=\"#fff\">System design focused</text><text x=\"400\" y=\"220\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"12\" fill=\"#fff\">Structured rubric</text><rect x=\"540\" y=\"60\" width=\"220\" height=\"300\" rx=\"8\" fill=\"#34a853\" opacity=\"0.9\"/><text x=\"650\" y=\"90\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"16\" font-weight=\"bold\" fill=\"#fff\">Google</text><text x=\"650\" y=\"120\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"12\" fill=\"#fff\">Googleyness &amp; GR</text><text x=\"650\" y=\"140\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"12\" fill=\"#fff\">Structured rubric 1-4</text><text x=\"650\" y=\"160\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"12\" fill=\"#fff\">Hard algorithm problems</text><text x=\"650\" y=\"180\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"12\" fill=\"#fff\">Generalist coding</text><text x=\"650\" y=\"200\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"12\" fill=\"#fff\">Hiring committee review</text><text x=\"650\" y=\"220\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"12\" fill=\"#fff\">Slower process</text></svg>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "The E5/E6 Interview Loop at Meta",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>A typical Meta E5/E6 interview loop consists of 6 rounds spread across 1-2 days: 2 coding rounds, 2 architecture/design rounds, and 2 behavioral rounds (sometimes called \"Meta Leadership & Culture\"). The key distinction between E5 and E6 is scope of impact. E5 requires team-level execution ownership. E6 requires cross-team impact evidence, architectural leadership across multiple orgs, and the ability to set technical strategy that influences engineers beyond your immediate reporting line.</p><p>The \"Signal\" framework is what Meta interviewers use to evaluate candidates: Execution signal (can you ship high-quality work at speed?), Leadership signal (do you raise the bar for those around you?), and Scope signal (have you operated at the level above where you're applying?). Every interviewer is asked to score these three signals independently, and the debrief calibrates across all interviewers to find the mode signal level.</p>"
+        },
+        {
+          "type": "text",
+          "value": "<p>A sample E5 interview day schedule helps internalize the intensity: 9:00-10:00 Coding Round 1 (2 problems), 10:15-11:15 Coding Round 2 (2-3 problems), 11:30-12:30 Product Architecture, 1:30-2:30 Infrastructure Architecture, 2:45-3:45 Behavioral Round 1, 4:00-5:00 Behavioral Round 2. Each round is 45 minutes with a 15-minute buffer. SAP engineers should note that there is no take-home assignment, no system design review document, and no whiteboard — all coding is done in a shared online editor with an interviewer watching every keystroke.</p>"
+        }
+      ],
+      "codeBlock": "// E5/E6 Interview Day Schedule\n// Meta runs 6 rounds in 8 hours with 15-min transitions\n\nconst metaLoop = {\n  rounds: [\n    { time: \"09:00-10:00\", type: \"Coding\",   problems: 2, focus: \"algorithms + data structures\" },\n    { time: \"10:15-11:15\", type: \"Coding\",   problems: 2, focus: \"strings + graphs + DP\" },\n    { time: \"11:30-12:30\", type: \"Arch\",     domain: \"Product\", focus: \"design Instagram feed\" },\n    { time: \"13:30-14:30\", type: \"Arch\",     domain: \"Infra\",  focus: \"design monitoring system\" },\n    { time: \"14:45-15:45\", type: \"Behavioral\", focus: \"execution + leadership stories\" },\n    { time: \"16:00-17:00\", type: \"Behavioral\", focus: \"conflict + culture + agency\" },\n  ],\n  signals: [\"Execution\", \"Leadership\", \"Scope\"],\n  levels: {\n    E5: \"team-level impact, independent delivery\",\n    E6: \"cross-team strategy, org-wide architecture\"\n  },\n  debrief: \"mode-of-signals calibration across 6 interviewers\"\n};"
+    },
+    {
+      "title": "Coding Rounds at Meta — Speed and Fluency Matter",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Meta coding rounds are infamous for their speed requirement. Unlike Google's 45-minute single problem, Meta expects you to solve 2-3 problems in the same time. The problems are not necessarily harder than Google's — they are more straightforward — but the time pressure is significantly higher. Clean, idiomatic code written without hesitation is the expectation. Interviewers watch for: fluency in your chosen language (Python is most common), ability to iterate on solutions without panicking, clean variable naming, and test-case reasoning.</p><p>Your LeetCode strategy should focus exclusively on the top 100 Meta-tagged problems. Meta reuses problems heavily — approximately 70% of coding interview questions are from a known pool. Grind the top 100 until you can solve each one in under 20 minutes with optimal time and space complexity. For SAP engineers, the single biggest challenge is fluency: writing Python or Java at the same speed you write ABAP. This takes deliberate practice — aim for 2 LeetCode problems per day for a minimum of 6 weeks before your interview date.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Architecture Rounds — Product Design vs Infrastructure Design",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Meta's architecture rounds split into two distinct tracks: Product Design and Infrastructure Design. Product Design rounds ask you to architect consumer-facing features — design Instagram feed, WhatsApp messaging, Facebook Marketplace, or a real-time comments system. You must understand consumer-scale requirements: billions of users, global latency constraints, feed ranking, push notifications, and real-time synchronization. Infrastructure Design rounds ask about distributed systems that underpin Meta's stack — design a monitoring and alerting system, a data replication pipeline, a distributed cache, or a rate-limiting layer.</p><p>For SAP engineers, the strategic insight is critical: Product Design is harder for you because you lack consumer tech intuition, but Infrastructure Design plays directly to your strengths. SAP engineers deal with distributed systems, transaction consistency, data replication, and reliability at scale every day. You should request Infrastructure Design rounds explicitly in your interview preference form. However, you cannot avoid Product Design entirely — prepare at least 3 Product Design cases thoroughly, focusing on the framework rather than domain knowledge.</p>"
+        },
+        {
+          "type": "text",
+          "value": "<p>Use this framework for every architecture round regardless of track: Clarify the requirements and constraints first, Scope the system boundaries explicitly (what is in and out of scope), Design the high-level architecture with components and data flow, Deep Dive into your chosen area (database schema, API design, consistency model, failure modes), and finally discuss Tradeoffs — what did you optimize for, what did you sacrifice, and how would you evolve the system. This framework works for both Product and Infrastructure tracks and demonstrates the structured thinking Meta values in Staff-level candidates.</p>"
+        }
+      ],
+      "codeBlock": "// Architecture Round Framework — CLARIFY, SCOPE, DESIGN, DEEP DIVE, TRADEOFFS\n\nconst architectureFramework = {\n  clarify: [\n    \"What are the functional requirements?\",\n    \"What are the non-functional requirements (latency, durability, consistency)?\",\n    \"What is the expected scale (DAU, QPS, data volume)?\",\n    \"Are there any constraints (budget, existing infra, team size)?\"\n  ],\n  scope: [\n    \"Define explicit in-scope vs out-of-scope components\",\n    \"Prioritize the most critical path first (read vs write heavy?)\",\n    \"State assumptions clearly before proceeding\"\n  ],\n  design: {\n    highLevel: [\"Client -> Load Balancer -> API Gateway -> Services -> Data Layer\"],\n    components: [\"separate read/write paths, async queues, caching layer, CDN\"],\n    dataFlow: [\"request lifecycle, data formats, storage strategy\"]\n  },\n  deepDive: [\n    \"Database schema (relational vs NoSQL — justify)\",\n    \"API contracts (REST vs GraphQL — Meta uses GraphQL)\",\n    \"Consistency model (strong vs eventual — tradeoffs)\",\n    \"Failure modes (cascade failures, retries, circuit breakers)\"\n  ],\n  tradeoffs: [\n    \"What did you optimize for? Latency? Consistency? Cost?\",\n    \"What are you sacrificing with your design decisions?\",\n    \"How would the system evolve at 10x the current scale?\",\n    \"What would you change if requirements shifted?\"\n  ]\n};\n\n// Meta-specific tip: always mention sharding, replication, caching, and async processing"
+    },
+    {
+      "title": "Behavioral Rounds — Low-Ego Intensity",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Meta behavioral rounds evaluate four dimensions: execution track record, leadership capability, conflict resolution style, and cultural contribution. The defining Meta value is \"low-ego, high-agency\" — you are expected to take ownership of problems without waiting for permission, give and receive direct feedback without defensiveness, and prioritize impact over hierarchy. Meta's culture is famously flat: titles matter less than ideas, and engineers at any level are expected to challenge decisions respectfully.</p><p>The mindset shift for SAP engineers is significant. SAP culture tends to be hierarchical, process-driven, and consensus-oriented. Meta is the opposite — it rewards speed, individual initiative, and constructive dissent. In your behavioral answers, emphasize moments where you took ownership beyond your role, disagreed constructively with leadership, shipped something quickly despite imperfect information, or helped a peer succeed without being asked. These stories resonate far more than \"I led a 50-person team\" or \"I managed a multi-year rollout.\"</p><p>Prepare for the adversarial response to \"you've only worked in enterprise — can you thrive in consumer tech?\" Frame your SAP experience in terms of scale, reliability, and complexity. You have worked with billions of business objects, real-time transaction processing at global scale, and systems that cannot tolerate downtime. Consumer engineers rarely face that level of reliability pressure. Your answer should acknowledge the gap honestly but reframe enterprise experience as a strength in building robust, scalable systems.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "SAP → Meta Translation Guide",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Meta interviewers will not understand SAP terminology. You must translate every SAP concept into its FAANG-equivalent before the interview. SAP concepts that resonate immediately: data at scale (SAP processes billions of transactions across global deployments), transaction consistency (ACID compliance at enterprise scale is harder than eventual consistency in consumer apps), and reliability engineering (SAP systems have 99.99%+ uptime requirements with strict SLAs). Lead with these — they are your strongest signals.</p><p>SAP concepts you must rephrase: \"SAP Solution Manager\" becomes \"observability and incident management platform for a distributed system\". \"S/4HANA migration\" becomes \"legacy-to-modern architecture migration affecting millions of users with zero-downtime deployment requirements\". \"ABAP development\" becomes \"proprietary domain-specific language for business logic execution at scale\". \"SAP Fiori\"/\"UI5\" becomes \"modern frontend framework for enterprise applications with responsive design\". Every rephrasing should highlight engineering depth, not SAP product knowledge.</p>"
+        },
+        {
+          "type": "svg",
+          "value": "<svg viewBox=\"0 0 800 400\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"800\" height=\"400\" fill=\"#f8f9fa\" rx=\"8\"/><text x=\"400\" y=\"36\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"18\" font-weight=\"bold\" fill=\"#1c1e21\">SAP → Meta Concept Mapping</text><rect x=\"30\" y=\"60\" width=\"340\" height=\"36\" rx=\"6\" fill=\"#ff6600\" opacity=\"0.8\"/><text x=\"200\" y=\"83\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"12\" font-weight=\"bold\" fill=\"#fff\">SAP Term</text><rect x=\"430\" y=\"60\" width=\"340\" height=\"36\" rx=\"6\" fill=\"#1877f2\" opacity=\"0.8\"/><text x=\"600\" y=\"83\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"12\" font-weight=\"bold\" fill=\"#fff\">Meta / FAANG Translation</text><rect x=\"30\" y=\"106\" width=\"340\" height=\"30\" rx=\"4\" fill=\"#fff4e6\" stroke=\"#ff6600\"/><text x=\"200\" y=\"125\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"11\" fill=\"#333\">SAP Solution Manager</text><rect x=\"430\" y=\"106\" width=\"340\" height=\"30\" rx=\"4\" fill=\"#e7f3ff\" stroke=\"#1877f2\"/><text x=\"600\" y=\"125\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"11\" fill=\"#333\">Observability &amp; Incident Management</text><rect x=\"30\" y=\"146\" width=\"340\" height=\"30\" rx=\"4\" fill=\"#fff4e6\" stroke=\"#ff6600\"/><text x=\"200\" y=\"165\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"11\" fill=\"#333\">S/4HANA Migration</text><rect x=\"430\" y=\"146\" width=\"340\" height=\"30\" rx=\"4\" fill=\"#e7f3ff\" stroke=\"#1877f2\"/><text x=\"600\" y=\"165\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"11\" fill=\"#333\">Zero-Downtime Architecture Migration</text><rect x=\"30\" y=\"186\" width=\"340\" height=\"30\" rx=\"4\" fill=\"#fff4e6\" stroke=\"#ff6600\"/><text x=\"200\" y=\"205\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"11\" fill=\"#333\">ALE/IDoc (Async Processing)</text><rect x=\"430\" y=\"186\" width=\"340\" height=\"30\" rx=\"4\" fill=\"#e7f3ff\" stroke=\"#1877f2\"/><text x=\"600\" y=\"205\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"11\" fill=\"#333\">Event-Driven Architecture / Message Queues</text><rect x=\"30\" y=\"226\" width=\"340\" height=\"30\" rx=\"4\" fill=\"#fff4e6\" stroke=\"#ff6600\"/><text x=\"200\" y=\"245\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"11\" fill=\"#333\">SAP Fiori / UI5</text><rect x=\"430\" y=\"226\" width=\"340\" height=\"30\" rx=\"4\" fill=\"#e7f3ff\" stroke=\"#1877f2\"/><text x=\"600\" y=\"245\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"11\" fill=\"#333\">Modern Frontend Framework (React-like)</text><rect x=\"30\" y=\"266\" width=\"340\" height=\"30\" rx=\"4\" fill=\"#fff4e6\" stroke=\"#ff6600\"/><text x=\"200\" y=\"285\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"11\" fill=\"#333\">BAPI / RFC (API Layer)</text><rect x=\"430\" y=\"266\" width=\"340\" height=\"30\" rx=\"4\" fill=\"#e7f3ff\" stroke=\"#1877f2\"/><text x=\"600\" y=\"285\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"11\" fill=\"#333\">REST / GraphQL API Gateway</text><rect x=\"30\" y=\"306\" width=\"340\" height=\"30\" rx=\"4\" fill=\"#fff4e6\" stroke=\"#ff6600\"/><text x=\"200\" y=\"325\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"11\" fill=\"#333\">HANA DB (Column Store)</text><rect x=\"430\" y=\"306\" width=\"340\" height=\"30\" rx=\"4\" fill=\"#e7f3ff\" stroke=\"#1877f2\"/><text x=\"600\" y=\"325\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"11\" fill=\"#333\">Distributed Columnar Database / Real-Time Analytics</text></svg>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Move Fast — Adapting Meta's Speed for SAP Engineers",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Meta's \"move fast and fix things\" culture is frequently misunderstood by enterprise engineers. It does not mean reckless shipping or ignoring quality — it means rapid iteration with a safety net. Meta engineers ship code to production multiple times per day, using feature flags, gradual rollouts, automated testing, and real-time monitoring to catch issues before they affect all users. For SAP engineers accustomed to quarterly release trains, change advisory boards, and month-long regression testing cycles, this sounds terrifying. But the engineering discipline is different, not absent.</p><p>To show velocity without looking reckless in your interview, highlight examples of rapid prototyping and iterative delivery. Did you build a proof-of-concept in two weeks that shortened a migration timeline? Did you implement a feature flag pattern to roll out changes gradually? Did you use A/B testing methodology to validate a complex business rule change? These stories demonstrate that you understand the balance between speed and reliability. Avoid telling stories about multi-year platform initiatives or phased rollout plans that took quarters — those are anti-signals at Meta.</p><p>The decision tree for project selection: if you have a choice, highlight your fastest project for Meta interviews rather than your most thorough one. Meta values speed-to-impact over comprehensiveness. A project where you shipped something in 2 weeks that delivered measurable business value is more impressive than a project where you spent 6 months perfecting an architecture. This is the opposite of SAP culture, where thoroughness and governance are rewarded. Adapt your narrative accordingly.</p>"
+        },
+        {
+          "type": "text",
+          "value": "<p>The practical application for SAP engineers: reframe your SAP project timelines aggressively. A 3-month project becomes \"we delivered a minimum viable integration in 4 weeks and iterated based on user feedback\". An 18-month S/4HANA migration becomes \"we executed a phased migration strategy with 4 major releases, each delivering incremental business value\". Your stories must show iteration, user feedback loops, and the ability to cut scope to meet deadlines — these are the signals Meta looks for in every engineer, regardless of background.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "8-Week Meta Interview Preparation Plan",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>Weeks 1-2: Foundation — LeetCode Patterns + System Design Fundamentals.</b> Solve the top 100 Meta-tagged LeetCode problems sorted by frequency. Focus on arrays, strings, hash maps, and graphs — these cover 50%+ of Meta coding problems. Start Grokking the System Design Interview or DDIA for distributed systems fundamentals. Do not time-box yet — focus on understanding patterns. Target: 2-3 problems per day, study 1 design concept per day.</p><p><b>Weeks 3-4: Speed Focus — Time-Boxed Coding + Architecture Mocks.</b> Re-solve the same top 100 problems but with a 20-minute timer per problem. If you cannot finish, analyze where you got stuck and re-solve the next day. Schedule 2 architecture mock interviews (one Product, one Infrastructure). Record your mock to evaluate clarity, structure, and time management. Target: 2 speed-solved problems per day, 1 architecture mock per week.</p><p><b>Weeks 5-6: Behavioral + Product Design Deep Work.</b> Prepare 8-10 STAR behavioral stories mapped to Meta's signals (execution, leadership, conflict, culture). Do not use Amazon's Leadership Principles structure — Meta wants concise, direct stories. Practice Product Design cases: Instagram Feed, WhatsApp Chat, Facebook Marketplace, Newsfeed Ranking, Reels Recommendation. Target: 2 behavioral story rehearsals per day, 1 product design case every other day.</p><p><b>Weeks 7-8: Full Mock Loops with Meta-Specific Calibration.</b> Run full 2-hour mock sessions (2 coding + 1 architecture + 1 behavioral back-to-back). Use platforms like interviewing.io or hire Meta-curious SAP peers to exchange mocks. Calibrate specifically on Meta's speed expectations — you should finish coding rounds with 5-10 minutes to spare. Target: 2 full mock loops per week, review all recordings with a focus on pacing and signal clarity.</p>"
+        }
+      ],
+      "codeBlock": ""
+    }
+  ],
+  "details": "<p><b>Staff+ Insight:</b> Meta has the lowest SAP engineer pass rate in FAANG at around 12%, primarily due to coding speed expectations and the product-focused architecture rounds. However, Meta also has the highest potential compensation upside for strong candidates who clear the bar. If you have less than 6 months to prepare, focus on coding speed above all else — it's the primary filter that eliminates SAP candidates in the first round.</p>"
+}

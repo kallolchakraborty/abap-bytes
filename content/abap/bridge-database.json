@@ -1,0 +1,72 @@
+{
+  "id": "bridge-database",
+  "title": "From SAP HANA to Distributed Databases",
+  "category": "Foundations",
+  "subcategory": "Skill Bridge",
+  "language": "text",
+  "description": "<p>Bridges SAP's database experience (HANA, internal tables, Open SQL) to FAANG's distributed database world. Covers SQL vs NoSQL, indexing strategies, sharding patterns, replication models, column vs row stores, and how to explain your HANA/ABAP database expertise in FAANG system design interviews.</p>",
+  "tags": ["FAANG", "SAP", "HANA", "Database", "SQL", "NoSQL", "Sharding", "Replication"],
+  "sections": [
+    {
+      "title": "HANA's Column Store vs Row Store \u2014 The FAANG Database Mindset",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>SAP HANA is a column-oriented, in-memory database. This is actually closer to modern FAANG data architecture than traditional row-based databases. Understanding why column stores exist and when to use them is directly applicable to system design interviews.</p><p><b>Column store vs row store:</b> Row stores (PostgreSQL, MySQL, Oracle) store all columns of a row together. They excel at OLTP (online transaction processing) \u2014 many small reads/writes on single records. Column stores (HANA, Redshift, BigQuery, ClickHouse) store all values of a column together. They excel at OLAP (online analytical processing) \u2014 scanning many rows but reading few columns. HANA's hybrid architecture (both column and row tables) is the same strategy FAANG uses: row store for transactional data, column store for analytical data.</p><p><b>HANA-specific concepts that translate to FAANG:</b> (1) HANA's in-memory processing = caching layer plus main memory database. When FAANG engineers discuss Redis + PostgreSQL, the same principle applies \u2014 keep hot data in memory, persist to disk. (2) HANA's partition pruning = horizontal sharding. Partitioning by date or region is a common sharding strategy in FAANG systems. (3) HANA's delta merge = LSM-tree compaction. In-memory changes are written to a delta store and periodically merged into the main store \u2014 this is exactly how LevelDB and RocksDB work. (4) HANA's active/passive replication = primary/replica replication with failover.</p><p><b>Interview translation:</b> 'I worked extensively with SAP HANA, which is a column-oriented, in-memory database. I designed table structures optimized for columnar compression and partition pruning. This experience translates directly to understanding how FAANG data systems work \u2014 the same principles of column orientation, in-memory processing, and partition strategies apply to Redshift, BigQuery, and Snowflake.'</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "SQL vs NoSQL \u2014 When to Use What",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>SAP engineers live in a relational world \u2014 everything is a table with foreign keys, constraints, and normalized schemas. FAANG engineers live in a polyglot database world where the best tool depends on the access pattern. The bridge is understanding the tradeoffs, not memorizing the categories.</p><p><b>SQL databases (SAP's comfort zone):</b> Strong schema, ACID transactions, joins, referential integrity. Best for: financial transactions, inventory management, master data, anything where consistency and relationships matter. SAP engineers should not abandon SQL \u2014 they should recognize that SQL databases are the right choice for many FAANG workloads (payment systems, user accounts, billing). The difference is that FAANG often shards SQL databases across multiple nodes (Spanner, CockroachDB, Vitess) rather than running on a single HANA instance.</p><p><b>NoSQL databases (FAANG's expansion):</b> Document stores (MongoDB): flexible schema, nested data, good for catalogs and content management. Key-value stores (Redis, DynamoDB): simple access patterns, high throughput, good for caching and session storage. Wide-column stores (Cassandra, HBase): sparse data, time-series, good for event logs and IoT. Graph databases (Neo4j): relationship-heavy queries, good for recommendation and fraud detection.</p><p><b>The access pattern test:</b> For any data store, ask: (1) What is the read/write ratio? (2) What is the consistency requirement? (3) What is the query pattern (point lookup, range scan, full scan)? (4) What is the data volume and growth rate? (5) What is the latency requirement? The answer determines the right database technology, not the engineer's familiarity. SAP engineers who pass this test demonstrate they can design databases in any context.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Indexing \u2014 From HANA to Distributed Databases",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>SAP engineers know indexing from HANA and ABAP performance tuning \u2014 secondary indexes, covering indexes, index-aware joins (SAP's optimizer uses table statistics and index analysis). These concepts translate directly to distributed database indexing, with additional considerations for partition-level indexes and global indexes.</p><p><b>HANA indexing concepts that translate:</b> (1) HANA's primary index (implicit on HASH or RANGE distribution) = partition key. In distributed databases, the partition key determines how data is distributed across nodes. Choosing the right partition key is the most important performance decision. (2) HANA's secondary index = local index in each partition. If you query by a non-partition-key column, every partition must be scanned (fan-out query). (3) HANA's covering index = index-only scan. If all required columns are in the index, the database does not need to touch the table. In distributed systems, this saves network round-trips. (4) HANA's join index (star schema optimization) = materialized view or denormalized table. In distributed systems, joins across partitions are expensive \u2014 denormalization is often preferred.</p><p><b>The distributed indexing challenge:</b> In a sharded database, a secondary index can be: (a) local (index only covers data in the local partition) \u2014 fast for partition-key queries, slow for non-partition-key queries, (b) global (index covers all partitions) \u2014 fast for any query but requires coordination and has write amplification. The choice depends on query patterns. Bridge: 'In SAP, I optimized query performance by choosing the right indexes and table partitioning. In a distributed context, I apply the same principles but must also consider whether indexes are local or global, and whether the partition key aligns with the most common query pattern.'</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Sharding \u2014 Horizontal Scaling for SAP Engineers",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>SAP HANA scales vertically (bigger server, more memory, faster CPU). FAANG databases scale horizontally (more servers, each handling a subset of data). Sharding is the technique of distributing data across multiple servers based on a partition key. This is the single biggest mental model shift for SAP engineers.</p><p><b>Sharding strategies:</b> (1) <b>Range sharding:</b> Data is partitioned by a range of values (user ID 1-100K on server 1, 100K-200K on server 2). Simple but can cause hotspots (server 1 has 'active' users, server 2 has 'inactive' users). (2) <b>Hash sharding:</b> A hash function determines the partition. Evenly distributes data but range queries require fan-out to all partitions. (3) <b>Directory-based sharding:</b> A lookup table maps each key to a partition. Flexible (can move data between partitions manually) but the lookup table is a single point of failure and a performance bottleneck. (4) <b>Geographic sharding:</b> Data is partitioned by geographic region. Used when data sovereignty or latency requirements dictate that user data stays in specific regions. Common in FAANG systems for regulatory compliance.</p><p><b>SAP-to-FAANG sharding translation:</b> SAP's 'client' concept (client-specific tables, client-dependent data) is a form of range sharding by client ID. SAP's 'logical system' concept is directory-based sharding (each system handles a subset of data). 'In my SAP experience, I designed multi-client architectures where each client was logically isolated. This maps directly to sharding by tenant ID in a multi-tenant FAANG service \u2014 each shard handles a subset of tenants, and the partition key is the tenant ID.'</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Replication \u2014 From HANA System Replication to Global Distribution",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>SAP HANA System Replication (HSR) provides high availability and disaster recovery by replicating data from a primary to one or more secondary systems. FAANG databases use replication for both high availability and read scaling, with different consistency models.</p><p><b>Replication topologies:</b> (1) <b>Primary-replica (leader-follower):</b> All writes go to the primary. Replicas asynchronously (or synchronously) apply writes and serve read traffic. SAP HSR is primary-replica with synchronous replication. In FAANG, this is the most common topology (e.g., PostgreSQL with read replicas, Aurora, RDS). (2) <b>Multi-primary (leaderless):</b> Any node can accept writes. Writes are replicated to other nodes asynchronously. Used when write availability is critical (e.g., DynamoDB, Cassandra). Conflict resolution is required when two writes to the same key happen on different nodes. (3) <b>Quorum-based:</b> Writes require acknowledgment from a majority of nodes (W > N/2). Reads require a majority of nodes (R > N/2). Used when both availability and consistency are needed (e.g., Cassandra with quorum reads/writes).</p><p><b>Synchronous vs asynchronous replication:</b> Synchronous replication (SAP HSR) guarantees no data loss but increases write latency. Asynchronous replication (most FAANG databases) has lower latency but potential data loss on primary failure. The FAANG tradeoff: synchronous replication within a region, asynchronous replication across regions. Bridge: 'In SAP, synchronous HANA system replication ensured zero data loss within a data center. In a FAANG context, I would apply synchronous replication within a region and asynchronous replication across regions, accepting the cross-region data loss risk in exchange for lower cross-region write latency.'</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "ABAP Internal Tables vs In-Memory Data Structures",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>ABAP internal tables \u2014 particularly hashed, sorted, and standard tables \u2014 are a surprisingly good foundation for understanding FAANG in-memory data structures. The mental model of choosing the right table type based on access patterns translates directly to choosing the right in-memory data structure in FAANG systems.</p><p><b>Internal table types and their FAANG equivalents:</b> (1) <b>Hashed table:</b> O(1) key lookup, no ordering. FAANG equivalent: HashMap, Dictionary. Use when: point lookups by key are the primary access pattern. SAP example: reading material master by material number. (2) <b>Sorted table:</b> O(log n) lookup and insertion, ordered by key. FAANG equivalent: TreeMap, sorted array with binary search. Use when: range queries or ordered traversal are needed. SAP example: reading sales orders by date range. (3) <b>Standard table:</b> O(n) lookup, insertion at end. FAANG equivalent: ArrayList, List. Use when: sequential access or append-only data. SAP example: reading a list of output lines for a report.</p><p><b>Interview translation:</b> 'In ABAP, I chose between hashed, sorted, and standard tables based on access patterns \u2014 hashed for fast key lookups, sorted for range queries, standard for sequential access. In FAANG systems, I apply the same principles to choose between HashMaps, TreeMaps, and ArrayLists for in-memory data. The difference is that FAANG applications must also consider memory overhead, concurrency safety, and serialization costs \u2014 considerations that are handled by the ABAP runtime in SAP systems.'</p>"
+        }
+      ],
+      "codeBlock": ""
+    }
+  ],
+  "details": "<p><b>Staff+ Insight:</b> SAP engineers often underestimate their database knowledge. HANA is a sophisticated columnar, in-memory database that incorporates concepts FAANG engineers study separately: column orientation, partition pruning, delta merge (LSM-tree), multi-version concurrency control, and system replication. The key is translating this knowledge into FAANG-compatible language. When a FAANG interviewer asks about database design, do not say 'I used HANA.' Say 'I used a column-oriented, in-memory database with partition pruning and delta merge. Here is how I applied those concepts to design a high-performance data store for real-time analytics.' The technology changes. The principles do not.</p>"
+}

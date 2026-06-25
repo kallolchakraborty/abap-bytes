@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>ABAP Bytes — ABAP Staff+ Engineering Study Guides</title>
+  <meta name="description" content="Access structured ABAP study notes, cheat sheets, syntax references, and Staff+ interview preparation for FAANG." />
+  <meta property="og:title" content="ABAP Bytes — Staff+ Engineering Study Guides" />
+  <meta property="og:description" content="Master ABAP for FAANG Staff+ positions. CDS, AMDP, RAP, OData, SAP architecture, system design, and leadership." />
+  <meta property="og:image" content="assets/og-preview.svg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:url" content="https://kallolchakraborty.github.io/abap-bytes/docs.html" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="ABAP Bytes — Staff+ Engineering Study Guides" />
+  <meta name="twitter:description" content="Master ABAP for FAANG Staff+ positions." />
+  <meta name="twitter:image" content="assets/og-preview.svg" />
+  <meta name="keywords" content="ABAP, FAANG, Staff+, SAP, CDS, AMDP, RAP, SAP HANA, S/4HANA, BTP, clean code, system design, interview prep" />
+  <meta name="author" content="ABAP Bytes" />
+  <meta name="robots" content="index, follow" />
+  <meta name="theme-color" content="#2563EB" />
+  <link rel="canonical" href="https://kallolchakraborty.github.io/abap-bytes/docs.html" />
+  <link rel="icon" type="image/svg+xml" href="assets/logo.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <script src="js/theme.js"></script>
+  <link rel="stylesheet" href="css/tailwind.css" />
+  <link rel="stylesheet" href="css/main.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.min.css" rel="stylesheet" />
+  <style>
+    .abap-kw { color: #1a56db !important; font-weight: 600 !important; }
+    .abap-type { color: #0d9488 !important; }
+    .abap-str { color: #16a34a !important; }
+    .abap-cmt { color: #94a3b8 !important; font-style: italic !important; }
+    .abap-fn { color: #7c3aed !important; }
+    .abap-op { color: #64748b !important; }
+    .abap-cls { color: #d97706 !important; }
+    .abap-var { color: #0284c7 !important; }
+    pre[class*="language-abap"] { background: #f8fafc !important; border: 1px solid #e2e8f0; border-radius: 0.75rem; font-family: 'JetBrains Mono', monospace !important; font-size: 13px !important; }
+    html.dark pre[class*="language-abap"] { background: #0e1115 !important; border-color: rgba(255,255,255,0.05); }
+    code[class*="language-abap"] { text-shadow: none !important; }
+    .token.keyword { color: #1a56db !important; font-weight: 600 !important; }
+    .token.string { color: #16a34a !important; }
+    .token.number { color: #d97706 !important; }
+    .token.comment { color: #94a3b8 !important; font-style: italic !important; }
+    .token.function { color: #7c3aed !important; }
+    .token.class-name { color: #d97706 !important; }
+    .token.builtin { color: #0d9488 !important; }
+    .token.operator { color: #64748b !important; }
+    .token.punctuation { color: #94a3b8 !important; }
+    html.dark .token.operator { color: #cbd5e1 !important; }
+    html.dark .token.punctuation { color: #64748b !important; }
+    html.dark .token.comment { color: #475569 !important; }
+  </style>
+</head>
+<body class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-sans min-h-screen flex flex-col transition-colors duration-200 overflow-y-auto">
+  <a href="#docs-dynamic-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-white dark:focus:bg-slate-900 focus:text-brand-500 focus:border focus:border-brand-500 focus:rounded-lg focus:shadow-lg focus:text-sm focus:font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500">Skip to main content</a>
+  <div id="reading-progress-track" aria-hidden="true" style="position:fixed;top:0;left:0;right:0;height:3px;z-index:9999;background:transparent;pointer-events:none;">
+    <div id="reading-progress-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#2563EB,#60a5fa);transition:width 80ms linear;will-change:width;"></div>
+  </div>
+  <header class="glass-nav sticky top-0 z-40 transition-colors duration-200">
+    <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <button id="sidebar-toggle" class="lg:hidden text-slate-400 hover:text-brand-500 transition-all flex items-center justify-center" aria-label="Toggle navigation menu">
+          <span class="material-symbols-outlined">menu</span>
+        </button>
+        <a href="index.html" class="text-slate-700 dark:text-slate-200 hover:text-brand-500 transition-all flex items-center gap-2">
+          <span class="material-symbols-outlined text-brand-500 text-[20px] animate-pulse">data_array</span>
+          <span class="text-base font-semibold">ABAP Bytes</span>
+        </a>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2">
+          <a href="rap-flow.html" class="text-slate-400 hover:text-brand-500 transition-all flex items-center gap-1 text-xs font-medium" aria-label="RAP Transaction Flow">
+            <span class="material-symbols-outlined text-[16px]">account_tree</span>
+            <span class="hidden sm:inline">RAP Flow</span>
+          </a>
+          <a href="cds-explorer.html" class="text-slate-400 hover:text-brand-500 transition-all flex items-center gap-1 text-xs font-medium" aria-label="CDS View Explorer">
+            <span class="material-symbols-outlined text-[16px]">hub</span>
+            <span class="hidden sm:inline">CDS Explorer</span>
+          </a>
+          <a href="level-diff.html" class="text-slate-400 hover:text-brand-500 transition-all flex items-center gap-1 text-xs font-medium" aria-label="Level Differentiation Toggle">
+            <span class="material-symbols-outlined text-[16px]">tune</span>
+            <span class="hidden lg:inline">L5/L6</span>
+          </a>
+          <a href="readiness.html" class="text-slate-400 hover:text-brand-500 transition-all flex items-center gap-1 text-xs font-medium" aria-label="Readiness Diagnostic">
+            <span class="material-symbols-outlined text-[16px]">monitor_heart</span>
+            <span class="hidden lg:inline">Readiness</span>
+          </a>
+          <a href="quiz-engine.html" class="text-slate-400 hover:text-brand-500 transition-all flex items-center gap-1 text-xs font-medium" aria-label="Quiz Engine">
+            <span class="material-symbols-outlined text-[16px]">quiz</span>
+            <span class="hidden lg:inline">Quiz</span>
+          </a>
+          <a href="mock-sim.html" class="text-slate-400 hover:text-brand-500 transition-all flex items-center gap-1 text-xs font-medium" aria-label="Mock Interview Simulator">
+            <span class="material-symbols-outlined text-[16px]">record_voice_over</span>
+            <span class="hidden lg:inline">Mock</span>
+          </a>
+          <a href="study-planner.html" class="text-slate-400 hover:text-brand-500 transition-all flex items-center gap-1 text-xs font-medium" aria-label="Study Planner">
+            <span class="material-symbols-outlined text-[16px]">calendar_month</span>
+            <span class="hidden lg:inline">Planner</span>
+          </a>
+          <a href="dashboard.html" class="text-slate-400 hover:text-brand-500 transition-all flex items-center gap-1 text-xs font-medium" aria-label="Dashboard">
+            <span class="material-symbols-outlined text-[16px]">dashboard</span>
+            <span class="hidden xl:inline">Dashboard</span>
+          </a>
+          <a href="star-builder.html" class="text-slate-400 hover:text-brand-500 transition-all flex items-center gap-1 text-xs font-medium" aria-label="STAR Story Builder">
+            <span class="material-symbols-outlined text-[16px]">auto_stories</span>
+            <span class="hidden xl:inline">STAR</span>
+          </a>
+          <a href="whiteboard.html" class="text-slate-400 hover:text-brand-500 transition-all flex items-center gap-1 text-xs font-medium" aria-label="Whiteboard">
+            <span class="material-symbols-outlined text-[16px]">gesture</span>
+            <span class="hidden xl:inline">Board</span>
+          </a>
+          <a href="comp-calc.html" class="text-slate-400 hover:text-brand-500 transition-all flex items-center gap-1 text-xs font-medium" aria-label="Compensation Calculator">
+            <span class="material-symbols-outlined text-[16px]">monetization_on</span>
+            <span class="hidden xl:inline">Comp</span>
+          </a>
+          <button class="theme-toggle-btn text-slate-400 hover:text-brand-500 transition-all" aria-label="Toggle theme">
+            <span class="material-symbols-outlined text-[16px]">light_mode</span>
+          </button>
+          <button class="open-share-btn text-slate-400 hover:text-brand-500 transition-all" aria-label="Share this page">
+            <span class="material-symbols-outlined text-[16px]">share</span>
+          </button>
+          <button class="open-search-btn flex items-center gap-1.5 h-7 px-2.5 bg-slate-50 dark:bg-slate-800/40 rounded-lg text-slate-400 hover:text-brand-500 font-medium text-xs transition-all">
+            <span class="material-symbols-outlined text-[16px]">search</span>
+            <kbd class="hidden sm:inline-block font-mono bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-1 rounded text-[9px] leading-none">Ctrl+K</kbd>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+  <div class="max-w-7xl mx-auto px-6 w-full flex-grow flex flex-col lg:flex-row gap-8 py-8 relative">
+    <div id="sidebar-backdrop" class="fixed inset-0 bg-black/40 z-30 hidden lg:hidden" aria-hidden="true"></div>
+    <aside id="left-sidebar" class="lg:w-56 lg:sticky lg:top-24 lg:h-[calc(100vh-120px)] overflow-y-auto shrink-0 border-b lg:border-b-0 border-slate-200 dark:border-slate-800 pb-4 lg:pb-0 pr-0 lg:pr-5 fixed inset-y-0 left-0 z-40 w-64 transform -translate-x-full transition-transform duration-200 lg:translate-x-0 lg:static lg:inset-auto lg:z-auto lg:w-56 lg:border-b-0 bg-white dark:bg-slate-900">
+      <nav aria-label="Documentation navigation" class="sidebar-sections">
+        <div id="sidebar-progress-container" class="px-3 py-3.5 mb-2 border-b border-slate-100 dark:border-slate-800/80">
+          <div class="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+            <span>Study Progress</span>
+            <span id="sidebar-progress-text" class="text-brand-500">0%</span>
+          </div>
+          <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+            <div id="sidebar-progress-bar" class="bg-brand-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+          </div>
+          <div id="sidebar-progress-stats" class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-medium">0 of 0 topics completed</div>
+        </div>
+        <div id="sidebar-bookmarks-container" class="hidden px-2 py-3 mb-2 border-b border-slate-100 dark:border-slate-800/80">
+          <div class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1 select-none">
+            <span class="material-symbols-outlined text-[12px] text-amber-500">star</span> Pinned Guides
+          </div>
+          <div id="sidebar-bookmarks-list" class="flex flex-col gap-0.5"></div>
+        </div>
+        <div class="px-2 py-3 border-t border-slate-100 dark:border-slate-800/80">
+          <div class="text-[10px] font-bold text-brand-500 uppercase tracking-wider mb-2">Getting Started</div>
+        </div>
+        <div class="sidebar-section"><h4 class="sidebar-label">Curriculum</h4>
+          <a href="#start-here" class="sidebar-link">Start Here — Curriculum Guide</a>
+        </div>
+        <div class="px-2 py-3">
+          <div class="text-[10px] font-bold text-brand-500 uppercase tracking-wider mb-2">Phase 0: FAANG Bridge</div>
+        </div>
+        <div class="sidebar-section"><h4 class="sidebar-label">Foundation</h4>
+          <a href="#faang-mindset" class="sidebar-link">FAANG Mindset Shift</a>
+          <a href="#sysdesign-faang" class="sidebar-link">System Design Fundamentals</a>
+          <a href="#leetcode-strategy" class="sidebar-link">LeetCode Strategy</a>
+          <a href="#ml-fundamentals" class="sidebar-link">ML & AI Fundamentals</a>
+        </div>
+        <div class="px-2 py-3 border-t border-slate-100 dark:border-slate-800/80 mt-2">
+          <div class="text-[10px] font-bold text-brand-500 uppercase tracking-wider mb-2">Phase 1: ABAP Foundations</div>
+        </div>
+        <div class="sidebar-section"><h4 class="sidebar-label">Core ABAP</h4>
+          <a href="#abap-platform" class="sidebar-link">ABAP Platform Architecture</a>
+          <a href="#abap-internal-tables" class="sidebar-link">Internal Tables Deep Dive</a>
+          <a href="#abap-oop" class="sidebar-link">ABAP OOP Staff+ Design</a>
+          <a href="#abap-opensql" class="sidebar-link">Open SQL Performance</a>
+        </div>
+        <div class="sidebar-section"><h4 class="sidebar-label">Transactional</h4>
+          <a href="#abap-transaction" class="sidebar-link">Transaction Mgmt & Locking</a>
+          <a href="#abap-performance" class="sidebar-link">Performance Tuning & Pushdown</a>
+        </div>
+        <div class="px-2 py-3 border-t border-slate-100 dark:border-slate-800/80 mt-2">
+          <div class="text-[10px] font-bold text-brand-500 uppercase tracking-wider mb-2">Phase 2: Modern ABAP</div>
+        </div>
+        <div class="sidebar-section"><h4 class="sidebar-label">Staff+ Core</h4>
+          <a href="#abap-cds" class="sidebar-link">ABAP CDS Architecture</a>
+          <a href="#abap-amdp" class="sidebar-link">ABAP AMDP Design</a>
+          <a href="#abap-rap-managed" class="sidebar-link">RAP Managed Scenario</a>
+          <a href="#abap-rap-unmanaged" class="sidebar-link">RAP Unmanaged Scenario</a>
+          <a href="#abap-rap-extensions" class="sidebar-link">RAP Behavior Extensions</a>
+        </div>
+        <div class="sidebar-section"><h4 class="sidebar-label">Cloud Native</h4>
+          <a href="#abap-cap" class="sidebar-link">CAP Application Model</a>
+          <a href="#abap-hana" class="sidebar-link">HANA Architecture</a>
+          <a href="#abap-clean-core" class="sidebar-link">Clean Core & ABAP Cloud</a>
+          <a href="#abap-fiori" class="sidebar-link">Fiori & SAPUI5 Architecture</a>
+        </div>
+        <div class="px-2 py-3 border-t border-slate-100 dark:border-slate-800/80 mt-2">
+          <div class="text-[10px] font-bold text-brand-500 uppercase tracking-wider mb-2">Phase 3: Integration &amp; Enterprise</div>
+        </div>
+        <div class="sidebar-section"><h4 class="sidebar-label">API &amp; Events</h4>
+          <a href="#abap-odata" class="sidebar-link">Enterprise OData Design</a>
+          <a href="#abap-events" class="sidebar-link">Event-Driven Architecture</a>
+          <a href="#abap-extensibility" class="sidebar-link">APIs & Extensibility</a>
+        </div>
+        <div class="px-2 py-3 border-t border-slate-100 dark:border-slate-800/80 mt-2">
+          <div class="text-[10px] font-bold text-brand-500 uppercase tracking-wider mb-2">Phase 4: Enterprise Engineering</div>
+        </div>
+        <div class="sidebar-section"><h4 class="sidebar-label">Engineering at Scale</h4>
+          <a href="#abap-security" class="sidebar-link">Security Architecture</a>
+          <a href="#abap-observability" class="sidebar-link">SRE & Observability</a>
+          <a href="#abap-finops" class="sidebar-link">FinOps & Cost Engineering</a>
+          <a href="#abap-migration" class="sidebar-link">Migration & Operational Excellence</a>
+          <a href="#abap-multitenancy" class="sidebar-link">Multi-Tenancy & Isolation</a>
+          <a href="#abap-devops" class="sidebar-link">CI/CD, DevOps & Transport</a>
+          <a href="#abap-testing" class="sidebar-link">ABAP Unit Testing & TDD</a>
+        </div>
+        <div class="sidebar-section"><h4 class="sidebar-label">Platform &amp; Analytics</h4>
+          <a href="#abap-btp-platform" class="sidebar-link">BTP Platform Engineering</a>
+          <a href="#abap-datasphere" class="sidebar-link">SAP Datasphere & Data Fabric</a>
+          <a href="#abap-rise" class="sidebar-link">SAP RISE & Strategic Programs</a>
+        </div>
+        <div class="px-2 py-3 border-t border-slate-100 dark:border-slate-800/80 mt-2">
+          <div class="text-[10px] font-bold text-brand-500 uppercase tracking-wider mb-2">Phase 5: Leadership &amp; Interview</div>
+        </div>
+        <div class="sidebar-section"><h4 class="sidebar-label">Staff+ Strategy</h4>
+          <a href="#abap-design-docs" class="sidebar-link">Design Docs & RFCs</a>
+          <a href="#abap-roadmap" class="sidebar-link">Technical Roadmap Planning</a>
+          <a href="#abap-influence" class="sidebar-link">Influence Without Authority</a>
+          <a href="#abap-behavioral" class="sidebar-link">Staff+ Behavioral</a>
+        </div>
+        <div class="px-2 py-3 border-t border-slate-100 dark:border-slate-800/80 mt-2">
+          <div class="text-[10px] font-bold text-brand-500 uppercase tracking-wider mb-2">Phase 6: System Design</div>
+        </div>
+        <div class="sidebar-section"><h4 class="sidebar-label">Cross-Domain Whiteboarding</h4>
+          <a href="#design-global-erp" class="sidebar-link">Global ERP Platform</a>
+          <a href="#design-integration-hub" class="sidebar-link">Real-Time Integration Hub</a>
+          <a href="#design-master-data" class="sidebar-link">Master Data Management</a>
+          <a href="#design-dr" class="sidebar-link">DR Architecture for SAP</a>
+        </div>
+        <div class="sidebar-section"><h4 class="sidebar-label">API &amp; Events</h4>
+          <a href="#design-api" class="sidebar-link">API-First Design for SAP</a>
+          <a href="#design-integration-strategy" class="sidebar-link">Enterprise Integration Strategy</a>
+        </div>
+        <div class="px-2 py-3 border-t border-slate-100 dark:border-slate-800/80 mt-2">
+          <div class="text-[10px] font-bold text-brand-500 uppercase tracking-wider mb-2">Phase 7: Knowledge Amplifiers</div>
+        </div>
+        <div class="sidebar-section"><h4 class="sidebar-label">Force Multipliers</h4>
+          <a href="#staff-framing" class="sidebar-link">Staff+ Technical Framing</a>
+          <a href="#translation-map" class="sidebar-link">SAP → DS Translation Map</a>
+          <a href="#tradeoff-matrices" class="sidebar-link">Trade-off Matrices</a>
+          <a href="#estimation" class="sidebar-link">Estimating Unknown Work</a>
+          <a href="#interview-structure" class="sidebar-link">FAANG Interview Structure</a>
+          <a href="#interview-playbook" class="sidebar-link">FAANG Interview Playbook</a>
+          <a href="#offer-negotiation" class="sidebar-link">Offer Negotiation & Compensation</a>
+          <a href="#sap-business-ai" class="sidebar-link">SAP Business AI & Joule</a>
+          <a href="#abap-ddia" class="sidebar-link">DDIA for SAP Architects</a>
+          <a href="#elephant-in-room" class="sidebar-link">SAP Elephant in the Room</a>
+          <a href="#mock-transcripts" class="sidebar-link">Mock Interview Transcripts</a>
+        </div>
+        <div class="px-2 py-3 border-t border-slate-100 dark:border-slate-800/80 mt-2">
+          <div class="text-[10px] font-bold text-brand-500 uppercase tracking-wider mb-2">Phase 8: Distributed Systems Deep Dive</div>
+        </div>
+        <div class="sidebar-section"><h4 class="sidebar-label">Foundations</h4>
+          <a href="#ds-consensus-coordination" class="sidebar-link">Consensus & Coordination</a>
+          <a href="#ds-distributed-caching" class="sidebar-link">Distributed Caching</a>
+          <a href="#ds-db-migrations" class="sidebar-link">Database Migrations at Scale</a>
+          <a href="#ds-testing-at-scale" class="sidebar-link">Testing at FAANG Scale</a>
+          <a href="#ds-chaos-engineering" class="sidebar-link">Chaos Engineering & GameDays</a>
+          <a href="#ds-distributed-locking" class="sidebar-link">Distributed Locking</a>
+          <a href="#ds-cqrs-es-deep" class="sidebar-link">CQRS & Event Sourcing</a>
+          <a href="#ds-idempotency-exactly-once" class="sidebar-link">Idempotency & Exactly-Once</a>
+          <a href="#ds-platform-engineering" class="sidebar-link">Platform Engineering & IDPs</a>
+          <a href="#ds-distributed-scheduling" class="sidebar-link">Distributed Scheduling</a>
+        </div>
+        <div class="px-2 py-3 border-t border-slate-100 dark:border-slate-800/80 mt-2">
+          <div class="text-[10px] font-bold text-brand-500 uppercase tracking-wider mb-2">Phase 9: FAANG System Design Whiteboarding</div>
+        </div>
+        <div class="sidebar-section"><h4 class="sidebar-label">Whiteboarding</h4>
+          <a href="#sd-design-uber" class="sidebar-link">Uber — Ride-Hailing</a>
+          <a href="#sd-design-youtube" class="sidebar-link">YouTube — Video Platform</a>
+          <a href="#sd-design-google-docs" class="sidebar-link">Google Docs — Collaboration</a>
+          <a href="#sd-design-whatsapp" class="sidebar-link">WhatsApp — Chat at Scale</a>
+          <a href="#sd-design-dropbox" class="sidebar-link">Dropbox — File Storage</a>
+          <a href="#sd-design-twitter" class="sidebar-link">Twitter — Social Feed</a>
+          <a href="#sd-design-web-crawler" class="sidebar-link">Web Crawler & Search Index</a>
+          <a href="#sd-design-rate-limiter" class="sidebar-link">Rate Limiter</a>
+          <a href="#sd-design-search-autocomplete" class="sidebar-link">Search Autocomplete</a>
+          <a href="#sd-design-proximity-service" class="sidebar-link">Proximity Service</a>
+          <a href="#sd-design-newsfeed" class="sidebar-link">Newsfeed Algorithm</a>
+          <a href="#sd-design-notification-system" class="sidebar-link">Notification System</a>
+          <a href="#sd-design-url-shortener" class="sidebar-link">URL Shortener</a>
+        </div>
+        <div class="px-2 py-3 border-t border-slate-100 dark:border-slate-800/80 mt-2">
+          <div class="text-[10px] font-bold text-brand-500 uppercase tracking-wider mb-2">Phase 10: Staff+ Career &amp; Interview Mastery</div>
+        </div>
+        <div class="sidebar-section"><h4 class="sidebar-label">Career Strategy</h4>
+          <a href="#staff-project-selection" class="sidebar-link">Project Selection & Scoping</a>
+          <a href="#staff-technical-vision" class="sidebar-link">Technical Visions That Get Buy-In</a>
+          <a href="#staff-mentoring-sponsorship" class="sidebar-link">Mentoring & Sponsorship</a>
+          <a href="#staff-promotion-packets" class="sidebar-link">Promotion Packets & Growth</a>
+          <a href="#staff-tech-debt-strategy" class="sidebar-link">Tech Debt as a Portfolio</a>
+          <a href="#staff-stakeholder-management" class="sidebar-link">Stakeholder Management</a>
+          <a href="#staff-reorgs-change" class="sidebar-link">Navigating Reorgs & Change</a>
+          <a href="#staff-decision-frameworks" class="sidebar-link">Decision Frameworks</a>
+          <a href="#staff-strategic-communication" class="sidebar-link">Strategic Communication</a>
+          <a href="#staff-cross-team-execution" class="sidebar-link">Cross-Team Execution</a>
+        </div>
+        <div class="sidebar-section"><h4 class="sidebar-label">Interview Prep</h4>
+          <a href="#staff-amazon-prep" class="sidebar-link">Amazon Interview Prep</a>
+          <a href="#staff-google-prep" class="sidebar-link">Google Interview Prep</a>
+          <a href="#staff-meta-prep" class="sidebar-link">Meta Interview Prep</a>
+          <a href="#staff-behavioral-bank" class="sidebar-link">Behavioral Question Bank</a>
+          <a href="#staff-nonfaang-bigtech" class="sidebar-link">Non-FAANG Big Tech</a>
+          <a href="#staff-migration-strategy" class="sidebar-link">Migration Strategy Roadmap</a>
+          <a href="#staff-first-90-days" class="sidebar-link">First 90 Days at FAANG</a>
+          <a href="#staff-resume-linkedin" class="sidebar-link">Resume & LinkedIn</a>
+        </div>
+        <div class="px-2 py-3 border-t border-slate-100 dark:border-slate-800/80 mt-2">
+          <div class="text-[10px] font-bold text-brand-500 uppercase tracking-wider mb-2">Phase 11: FAANG Engineering Foundations</div>
+        </div>
+        <div class="sidebar-section"><h4 class="sidebar-label">Infrastructure</h4>
+          <a href="#foundations-containers" class="sidebar-link">Containers & K8s</a>
+          <a href="#foundations-observability-stack" class="sidebar-link">Modern Observability</a>
+          <a href="#foundations-iac" class="sidebar-link">Infrastructure as Code</a>
+          <a href="#foundations-kafka-deep" class="sidebar-link">Kafka Internals & Streaming</a>
+          <a href="#foundations-grpc" class="sidebar-link">gRPC & Protocol Buffers</a>
+        </div>
+        <div class="sidebar-section"><h4 class="sidebar-label">Skill Bridge</h4>
+          <a href="#bridge-cap-theorem" class="sidebar-link">CAP Theorem & Distributed Transactions</a>
+          <a href="#bridge-database" class="sidebar-link">HANA to Distributed Databases</a>
+          <a href="#bridge-api-design" class="sidebar-link">RFC/BAPI to REST, GraphQL & gRPC</a>
+          <a href="#bridge-ci-cd" class="sidebar-link">Transports to CI/CD Pipelines</a>
+          <a href="#bridge-observability" class="sidebar-link">SAP Monitoring to Observability</a>
+          <a href="#bridge-testing" class="sidebar-link">ABAP Unit to Modern Testing</a>
+          <a href="#bridge-learn-python" class="sidebar-link">Python from ABAP</a>
+          <a href="#bridge-oss-strategy" class="sidebar-link">Open Source Strategy</a>
+        </div>
+        <div class="px-2 py-3 border-t border-slate-100 dark:border-slate-800/80 mt-2">
+          <div class="text-[10px] font-bold text-brand-500 uppercase tracking-wider mb-2">Phase 12: Staff+ Engineering Culture</div>
+        </div>
+        <div class="sidebar-section"><h4 class="sidebar-label">Life at FAANG</h4>
+          <a href="#faang-layoff-survival" class="sidebar-link">Layoff Survival Guide</a>
+          <a href="#staff-day-in-life" class="sidebar-link">Staff+ Day in the Life</a>
+          <a href="#staff-oncall-incident" class="sidebar-link">On-Call & Incident Management</a>
+          <a href="#staff-ambiguity" class="sidebar-link">Handling Ambiguity</a>
+          <a href="#staff-interview-loop-deep" class="sidebar-link">Staff+ Interview Loop Deep Dive</a>
+          <a href="#staff-interviewer-guide" class="sidebar-link">Being a FAANG Interviewer</a>
+          <a href="#staff-rejection-recovery" class="sidebar-link">Rejection Recovery & Reapplication</a>
+          <a href="#staff-blind-spots" class="sidebar-link">Staff+ Blind Spots</a>
+          <a href="#staff-wellbeing" class="sidebar-link">Staff+ Wellbeing</a>
+          <a href="#staff-exit-strategy" class="sidebar-link">Leaving FAANG Gracefully</a>
+          <a href="#staff-tech-lead-faang" class="sidebar-link">Staff+ Tech Lead Role</a>
+          <a href="#staff-code-review-culture" class="sidebar-link">Code Review Culture</a>
+          <a href="#staff-time-calendar-architecture" class="sidebar-link">Time & Calendar Architecture</a>
+        </div>
+        <div class="sidebar-section"><h4 class="sidebar-label">Communication & Leadership</h4>
+          <a href="#staff-writing-culture" class="sidebar-link">Written Communication Culture</a>
+          <a href="#staff-strategic-communication" class="sidebar-link">Strategic Communication</a>
+          <a href="#staff-conflict-resolution" class="sidebar-link">Conflict Resolution & Mediation</a>
+          <a href="#staff-managing-up" class="sidebar-link">Managing Up & Executive Influence</a>
+          <a href="#staff-stakeholder-management" class="sidebar-link">Stakeholder Management</a>
+          <a href="#faang-working-with-pms" class="sidebar-link">Working with Product Managers</a>
+        </div>
+        <div class="sidebar-section"><h4 class="sidebar-label">Career Growth & Metrics</h4>
+          <a href="#staff-metrics-driven" class="sidebar-link">Metrics-Driven Engineering</a>
+          <a href="#staff-career-ladder-nuance" class="sidebar-link">Career Ladder Nuances</a>
+          <a href="#staff-promo-case-studies" class="sidebar-link">Promotion Case Studies</a>
+          <a href="#staff-building-brand" class="sidebar-link">Building Your Engineering Brand</a>
+          <a href="#staff-career-narrative" class="sidebar-link">Career Narrative & Storytelling</a>
+          <a href="#staff-compensation-mechanics" class="sidebar-link">Compensation Mechanics & Golden Handcuffs</a>
+          <a href="#staff-perf-reviews" class="sidebar-link">Performance Reviews & Calibration</a>
+        </div>
+        <div class="px-2 py-3 border-t border-slate-100 dark:border-slate-800/80 mt-2">
+          <div class="text-[10px] font-bold text-brand-500 uppercase tracking-wider mb-2">Reference</div>
+        </div>
+        <div class="sidebar-section"><h4 class="sidebar-label">Resources</h4>
+          <a href="#resources" class="sidebar-link">Resources & Recommended Reading</a>
+        </div>
+      </nav>
+    </aside>
+    <main id="docs-dynamic-content" class="flex-grow max-w-3xl flex flex-col gap-12 min-w-0 overflow-y-auto" aria-live="polite"></main>
+    <aside class="hidden xl:block w-48 sticky top-24 h-[calc(100vh-120px)] overflow-y-auto shrink-0 border-l border-slate-200 dark:border-slate-800 pl-6">
+      <h4 class="sidebar-label !text-[10px] !pt-0 !pb-0 mb-3">On this page</h4>
+      <nav id="docs-right-outline" class="space-y-3 text-xs text-slate-500 dark:text-slate-400" aria-label="Page sections"></nav>
+    </aside>
+  </div>
+  <footer class="border-t border-slate-200 dark:border-slate-800 py-8 bg-slate-100 dark:bg-slate-900/60">
+    <div class="max-w-7xl mx-auto px-6 flex justify-center items-center text-sm text-slate-500 dark:text-slate-400">
+      <span>Built for ABAP engineers targeting FAANG Staff+ roles</span>
+    </div>
+  </footer>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js" defer></script>
+  <script src="js/generated.js" defer></script>
+  <script src="js/modals.js" defer></script>
+  <script src="js/loader.js" defer></script>
+  <script>
+    (function() {
+      var sidebar = document.getElementById('left-sidebar');
+      var backdrop = document.getElementById('sidebar-backdrop');
+      var toggle = document.getElementById('sidebar-toggle');
+      if (!sidebar || !backdrop || !toggle) return;
+      function openSidebar() { sidebar.classList.remove('-translate-x-full'); backdrop.classList.remove('hidden'); document.body.style.overflow = 'hidden'; }
+      function closeSidebar() { sidebar.classList.add('-translate-x-full'); backdrop.classList.add('hidden'); document.body.style.overflow = ''; }
+      toggle.addEventListener('click', function() { if (sidebar.classList.contains('-translate-x-full')) openSidebar(); else closeSidebar(); });
+      backdrop.addEventListener('click', closeSidebar);
+      sidebar.querySelectorAll('.sidebar-link').forEach(function(link) { link.addEventListener('click', function() { if (window.innerWidth < 1024) closeSidebar(); }); });
+      window.addEventListener('resize', function() { if (window.innerWidth >= 1024) { backdrop.classList.add('hidden'); document.body.style.overflow = ''; } });
+    })();
+  </script>
+</body>
+</html>

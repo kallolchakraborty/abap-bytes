@@ -1,0 +1,73 @@
+{
+  "id": "ds-testing-at-scale",
+  "title": "Testing Strategy at FAANG Scale",
+  "category": "Distributed Systems",
+  "subcategory": "Quality",
+  "language": "text",
+  "description": "<p>Testing at FAANG scale is not about unit test coverage — it's about building confidence that a change won't break production. This file covers test pyramids adapted for microservices, hermetic testing, flaky test management, contract testing with Pact, integration testing for distributed systems, performance regression testing, canary analysis, and how SAP's ABAP Unit, ATC, and transport testing compare to FAANG practices.</p>",
+  "tags": ["FAANG", "Staff+", "Testing", "Quality", "CI/CD", "Contract Testing", "Integration"],
+  "sections": [
+    {
+      "title": "The Microservices Test Pyramid",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>The classic test pyramid (unit → integration → E2E) was designed for monolithic applications. In a microservices architecture, the pyramid must be rethought because services depend on other services, not just databases and caches.</p><p><b>FAANG's adapted pyramid (top to bottom):</b></p><p><b>1. Contract tests (~15%):</b> Verify that service A and service B agree on the API contract. Contract tests replace most E2E tests because they are faster and more reliable. Each service publishes a contract (OpenAPI spec, gRPC proto, or Pact contract). CI/CD runs contract tests between every pair of services before deployment. If service A changes its contract, service B's contract test fails before deployment — catching breaks before production.</p><p><b>2. Integration tests (~10%):</b> Test the service with real dependencies (database, cache, message queue) but with test doubles for external services. Integration tests verify that the service's persistence and messaging logic works correctly. Use testcontainers or similar for ephemeral dependency provisioning.</p><p><b>3. Unit tests (~70%):</b> Test individual functions, classes, and modules in isolation. Mock all dependencies. Unit tests should run in milliseconds and be trivially parallelizable. At FAANG, unit tests must be deterministic — no random values, no wall-clock dependencies.</p><p><b>4. E2E tests (~5%):</b> Test the full system with all real dependencies. E2E tests are slow and flaky — they are reserved for critical business flows (login, payment, order creation). E2E tests do not run on every commit; they run on demand or nightly.</p><p><b>SAP Bridge:</b> SAP's test pyramid is inverted — heavy on integration (SAP GUI testing, eCATT) and light on unit tests. ABAP Unit exists but is underutilized in most SAP projects. The FAANG pyramid is the opposite: unit tests are the foundation, not an afterthought.</p>"
+        },
+        {
+          "type": "svg",
+          "value": "<svg viewBox=\"0 0 700 280\" xmlns=\"http://www.w3.org/2000/svg\"><style>.t-box{fill:var(--bg-secondary);stroke:var(--brand-primary);stroke-width:2;rx:8}.t-lbl{fill:var(--text-primary);font-family:system-ui;font-size:12px;font-weight:700;text-anchor:middle}.t-sub{fill:var(--text-primary);font-family:system-ui;font-size:9px;text-anchor:middle}.t-py{fill:var(--brand-primary);opacity:.7}.t-int{fill:var(--svg-warning-stroke);opacity:.7}.t-ct{fill:var(--svg-info-stroke);opacity:.7}.t-ut{fill:var(--svg-success-stroke);opacity:.7}</style><rect class=\"t-box\" x=\"15\" y=\"15\" width=\"670\" height=\"250\"/><text class=\"t-lbl\" x=\"350\" y=\"38\">Microservices Test Pyramid (FAANG)</text><polygon points=\"350,245 560,60 140,60\" class=\"t-py\"/><text class=\"t-lbl\" x=\"350\" y=\"230\" fill=\"#fff\">E2E (5%)</text><text class=\"t-lbl\" x=\"350\" y=\"200\" fill=\"#fff\">Contract (15%)</text><text class=\"t-lbl\" x=\"350\" y=\"170\" fill=\"#fff\">Integration (10%)</text><text class=\"t-lbl\" x=\"350\" y=\"110\" fill=\"#fff\">Unit (70%)</text><rect class=\"t-box\" x=\"30\" y=\"240\" width=\"220\" height=\"20\"/><text class=\"t-sub\" x=\"140\" y=\"256\">Slow, flaky, high confidence</text><rect class=\"t-box\" x=\"450\" y=\"240\" width=\"220\" height=\"20\"/><text class=\"t-sub\" x=\"560\" y=\"256\">Fast, reliable, cheap</text></svg>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Contract Testing with Pact",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Contract testing is the most important testing practice in microservices that FAANG has adopted (the concept originated from ThoughtWorks but was heavily evangelized by Netflix and Spotify). Pact is the leading contract testing framework, and understanding it is a Staff+ signal in system design discussions.</p><p><b>How Pact works:</b> In a consumer-driven contract (CDC) approach, the consumer service writes a Pact test that defines its expectations of the provider's API. The Pact test generates a contract file (JSON) that is published to a Pact broker. The provider service's CI/CD reads the contract and runs its own verification tests against the contract. If the provider API satisfies all consumer contracts, it can be deployed. If not, the provider must fix the breakage or negotiate a new contract with the consumer.</p><p><b>Pact flow:</b> (1) Consumer defines interaction: 'Given a customer exists with ID 123, when GET /customers/123 is called, then return status 200 with body {id: 123, name: 'Alice'}.' (2) Pact test runs against a mock provider, generating a contract file. (3) Contract is published to Pact Broker. (4) Provider CI/CD downloads the latest contract. (5) Provider runs Pact verification: spins up real provider service, replays the consumer's expectations. (6) If verification passes, the provider can deploy. (7) Pact Broker enforces version compatibility — no deployment of incompatible provider versions.</p><p><b>Contract testing vs integration testing:</b> Integration tests verify that two services work together in a test environment. Contract tests verify that the API contract is compatible. Contract tests are faster (no test environment needed), more reliable (no network flakiness), and more targeted (test only the contract, not the behavior). The tradeoff: contract tests don't catch runtime behavior issues (timeouts, retries, error handling). Both are needed.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Flaky Test Management",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Flaky tests — tests that pass and fail without code changes — are the #1 cause of developer productivity loss in CI/CD. At FAANG, flaky tests are tracked as incidents with SLAs (P1: fix within 24 hours, P2: fix within 1 week, P3: quarantined). Unmanaged flaky tests erode trust in the test suite and lead to developers ignoring test failures.</p><p><b>Common flaky test causes:</b> (1) Time-dependent — assertions based on wall-clock time (sleep-based waits, fixed timeouts). (2) Async — no proper synchronization for async operations (no await, no barrier). (3) Order-dependent — tests assume a specific execution order (shared state, global variables). (4) Network-dependent — tests depend on external services that may be slow or unavailable. (5) Resource leaks — unclosed connections, file handles, threads. (6) Randomized input — tests that use random values without a seed (non-deterministic).</p><p><b>FAANG flaky test management practices:</b> (1) Automated flaky test detection — a test is flagged as flaky if it fails on main branch without code changes (rerun failure). (2) Quarantine — flaky tests are automatically moved to a quarantine suite. They still run but do not block CI/CD. (3) Flaky test dashboard — shows flake rate per test, per developer, per team — with trend lines. (4) SLA: a flaky test has 48 hours before automatic quarantine; the owning team must fix it within the same sprint. (5) GameDays: quarterly 'flaky test cleanup day' where teams fix all flaky tests.</p><p><b>SAP Bridge:</b> SAP's ATC (ABAP Test Cocktail) does not distinguish between deterministic and flaky failures. Each ATC run is treated as authoritative. ABAP Unit can have flaky tests (SELECT with ORDER BY but no uniqueness guarantee, or time-dependent locking tests). The flaky test management practices at FAANG would be a significant improvement to SAP development processes.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Performance Regression Testing",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Performance regression testing at FAANG scale ensures that code changes don't degrade latency or throughput. Unlike functional tests, performance tests must detect statistically significant regressions amidst normal performance variance.</p><p><b>Latency regression detection:</b> (1) Run the test multiple times (at least 50 iterations for statistical significance). (2) Compare the new distribution against the baseline using a two-sample t-test or Mann-Whitney U test (non-parametric, doesn't assume normal distribution). (3) Flag as regression if p < 0.05 AND effect size > minimum detectable effect (typically 2-5% for latency, 10% for throughput). (4) Track P50, P99, P999, and mean — a regression might affect P99 without affecting P50 (more concurrent requests in flight).</p><p><b>Throughput regression detection:</b> (1) Saturate the service with requests until it reaches its maximum sustainable throughput (point of diminishing returns). (2) Compare the throughput curves (requests/second vs. latency). A regression shifts the curve left (lower throughput at the same latency). (3) Use coordinated omission correction — otherwise you underestimate latency at high throughput.</p><p><b>FAANG tools:</b> Google uses F1 benchmark for database performance. Meta uses TAO perf tests for graph store. Netflix uses Chaos Gorilla for infrastructure testing. The common pattern: performance tests run on dedicated hardware (no noisy neighbors), with fixed resource allocation (CPU/memory limits), and are automatically triggered on every main branch commit.</p>"
+        }
+      ],
+      "codeBlock": "",
+      "quantifiedTradeoff": {
+        "title": "Testing Strategy Tradeoffs",
+        "scenarios": [
+          {
+            "choice": "A: Heavy E2E testing (Google SRE approach — more E2E, less unit)",
+            "tradeOff": "+Higher confidence in production behavior. +Catches cross-service breakage. -Slow (30 min+), flaky (10%+ flake rate), expensive (dedicated test environments).",
+            "context": "In your service's early stages (0-10 engineers), E2E tests provide confidence that the system works. But as the service grows to 50+ engineers and 20+ microservices, E2E tests become the bottleneck. Every E2E failure must be triaged — is it a code change, an environment issue, or a flaky test? The triage cost grows linearly with the number of E2E tests.",
+            "recommendation": "Use E2E tests sparingly: 5-10 critical business flows max. Invest in contract tests and integration tests instead."
+          },
+          {
+            "choice": "B: Contract testing with Pact (FAANG standard)",
+            "tradeOff": "+Fast (seconds), reliable (<1% flake), targeted. +Enforces API compatibility at CI/CD time. -Only validates contract, not behavior. -Requires Pact Broker infrastructure and team discipline to maintain contracts.",
+            "context": "Each microservice publishes its API contract. CI/CD runs contract verification in under 30 seconds. A provider cannot deploy if it breaks a consumer's contract. This prevents the 'someone changed the API and now my service is broken in production' scenario.",
+            "recommendation": "Default choice for inter-service communication. Invest in Pact Broker and teach every team to write contract tests. This is the highest-ROI testing investment for microservices."
+          }
+        ]
+      }
+    }
+  ],
+  "details": "<p><b>FAANG Interview Tip:</b> Testing strategy is a common topic in Staff+ interviews — not as a standalone question but embedded in system design discussions. When you propose a microservices architecture, the interviewer will ask: 'How do you test this?' The Staff+ answer: 'With contract tests between services, integration tests per service with testcontainers, and fewer than 10 E2E tests for critical business flows.' Show that you've experienced the pain of flaky E2E tests and have concrete strategies to avoid them.</p>"
+}

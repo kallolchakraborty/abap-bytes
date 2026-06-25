@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="120" y2="120">
+      <stop offset="0%" stop-color="#2563EB"/>
+      <stop offset="100%" stop-color="#1D4ED8"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0" y1="0" x2="120" y2="120">
+      <stop offset="0%" stop-color="#60A5FA" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#2563EB" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <circle cx="60" cy="60" r="58" fill="url(#bg)" stroke="#1D4ED8" stroke-width="2"/>
+  <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
+  <circle cx="60" cy="60" r="38" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+  <text x="60" y="67" text-anchor="middle" font-family="Ubuntu, system-ui, sans-serif" font-size="40" font-weight="700" fill="white" letter-spacing="-1">AB</text>
+  <path d="M60 20 L70 35 L50 35 Z" fill="rgba(255,255,255,0.08)"/>
+  <path d="M60 100 L50 85 L70 85 Z" fill="rgba(255,255,255,0.06)"/>
+  <path d="M20 40 L35 50 L35 30 Z" fill="rgba(255,255,255,0.05)"/>
+  <path d="M100 40 L85 50 L85 30 Z" fill="rgba(255,255,255,0.05)"/>
+</svg>

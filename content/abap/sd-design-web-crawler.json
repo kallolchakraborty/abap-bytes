@@ -1,0 +1,42 @@
+{
+  "id": "sd-design-web-crawler",
+  "title": "Design Web Crawler & Search Index",
+  "category": "System Design",
+  "subcategory": "FAANG Whiteboarding",
+  "language": "text",
+  "description": "<p>Design a web crawler that discovers, downloads, and indexes billions of web pages. Covers crawling strategy (BFS, politeness policies, URL deduplication), distributed crawling with frontier queues, HTML parsing and content extraction, inverted index construction, freshness vs coverage tradeoff, and how SAP's RFC/IDoc extraction and SLT replication provide a conceptual bridge.</p>",
+  "tags": ["FAANG", "Staff+", "System Design", "Web Crawler", "Search", "Indexing", "Distributed"],
+  "sections": [
+    {
+      "title": "Crawler Architecture & Politeness",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>A web crawler must download web pages without overwhelming target servers. Politeness policies are the first and most important constraint — a crawler that overloads servers will be blocked or cause harm.</p><p><b>Politeness policy:</b> (1) Respect robots.txt — each domain declares which paths can be crawled and the crawl delay. (2) Minimum delay between requests to the same domain: 1 second (configurable per domain). This limits the crawl rate to 1 page/second/domain. For 10M domains, the theoretical crawl rate is 10M pages/second (if you have enough workers). In practice, most crawlers limit to ~1B pages per day across all domains. (3) Exponential backoff on errors — if a server returns 429 (too many requests) or 503 (service unavailable), the crawler backs off with exponential delay (1 min, 5 min, 15 min, 1 hour).</p><p><b>URL frontier architecture:</b> The URL frontier manages which URLs to crawl next. It must support: (1) Prioritization — high-value pages (seed URLs, frequently updated pages) are crawled before low-value pages. (2) Deduplication — the same URL should not be enqueued twice. (3) Domain separation — URLs from the same domain are separated to enforce politeness per-domain. (4) Freshness scheduling — a page may need to be re-crawled after N days (Google's refresh rate: news pages every 2 minutes, blog posts every hour, static pages weekly).</p><p><b>Frontier queue design:</b> The frontier is a set of per-domain queues (Redis or Kafka topics, one per domain). A 'crawl scheduler' assigns domains to workers. Each worker maintains a minimum delay timer per assigned domain. When the timer fires, the worker dequeues the next URL for that domain, downloads it, and enqueues discovered URLs. This ensures: (1) At most one request per N seconds per domain (politeness). (2) Workers can be parallelized across thousands of machines (one crawl topology per domain).</p><p><b>SAP Bridge:</b> SAP's SLT (SAP Landscape Transformation) triggers-based replication is a form of crawling — it reads data from source tables at a controlled rate, respecting system load (politeness). The trigger-based approach is analogous to: 'use robots.txt to determine crawl rate, and back off when the system is under load.'</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "URL Deduplication & Canonicalization",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>URL deduplication ensures the same web page is not crawled multiple times. This is harder than it sounds because the same page can be accessed via multiple URLs.</p><p><b>URL canonicalization:</b> Normalize URLs to their canonical form before deduplication. Rules: (1) Remove default port (http://example.com:80 → http://example.com). (2) Add trailing slash to pathless URLs (http://example.com → http://example.com/). (3) Lowercase scheme and host (HTTP://EXAMPLE.com → http://example.com). (4) Remove fragment (#section). (5) Remove tracking parameters (utm_source, utm_medium, fbclid). (6) Sort query parameters alphabetically (?a=1&b=2 vs ?b=2&a=1 → ?a=1&b=2).</p><p><b>Deduplication data structures:</b> (1) Bloom filter — a probabilistic data structure that stores URL hashes in a compact bit array. A bloom filter with 10B entries at 1% false positive rate requires ~12 GB of memory. <b>Pros:</b> memory-efficient, fast O(1) check. <b>Cons:</b> false positives (a URL may be incorrectly marked as already crawled — acceptable because the cost is one missed page out of 100). (2) RocksDB-based URL store — disk-based key-value store for already-crawled URLs. <b>Pros:</b> no false positives, handles billions of URLs. <b>Cons:</b> slower than bloom filter (disk I/O), requires more storage. Google uses a hybrid: a bloom filter for fast checks, with a RocksDB store for authoritative deduplication (check bloom → if positive, check RocksDB for confirmation).</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Inverted Index Construction",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>The inverted index is the core data structure of a search engine. It maps words (terms) to the documents (URLs, positions) where they appear. When a user searches for 'ABAP performance tuning,' the search engine looks up 'ABAP' and 'performance' and 'tuning' in the inverted index to find matching documents.</p><p><b>Inverted index pipeline:</b> (1) HTML parsing → extract text content, metadata, links. (2) Tokenization → split text into terms (words). Handle punctuation, case folding (lowercase), Unicode normalization. (3) Stop word removal → remove common words (the, a, and, of, to, in) that don't carry semantic meaning. (4) Stemming/Lemmatization → reduce words to their root form ('running', 'runs', 'ran' → 'run'). Google uses a custom stemmer for each language. (5) Term frequency (TF) → count how many times each term appears in the document. (6) Position recording → record positions of each term in the document (for phrase search, proximity search). (7) Index writing → write the inverted index to storage (sharded by term hash).</p><p><b>Index sharding by term:</b> Terms are hashed (e.g., md5('apple') % N) to determine which shard stores the posting list for that term. This is called 'term-based sharding.' <b>Query execution:</b> For a 3-term query, the query engine contacts 3 shards (one per term), fetches the posting lists, merges them, and ranks the results. Term-based sharding is ideal for search because: (1) Each shard is independent — no cross-shard queries for a single term. (2) Hot terms ('the', 'today', 'weather') are distributed across shards by hash.</p><p><b>Index freshness:</b> Web pages change over time. New pages are discovered daily. The index must be updated without downtime. Google uses a 'delta index' approach: (1) A large 'base index' (snapshot of the web, rebuilt weekly). (2) A 'delta index' (new/changed pages from the last week, rebuilt every few minutes). (3) Queries search both indexes and merge results. When the base index is rebuilt, the delta index is emptied.</p>"
+        }
+      ],
+      "codeBlock": ""
+    }
+  ],
+  "details": "<p><b>FAANG Interview Tip:</b> The web crawler question tests: (1) Your understanding of distributed crawling at scale (frontier queues, politeness policies, domain-level parallelism). (2) Your ability to design efficient deduplication (bloom filters, RocksDB). (3) Your understanding of search infrastructure (inverted index construction, sharding, freshness). The SAP engineer can bridge from SLT replication and data extraction: 'I've built systems that extract data from databases at a controlled rate. The web crawler is the same pattern — extract, transform, index — but applied to web pages instead of database tables.'</p>"
+}

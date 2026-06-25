@@ -1,0 +1,133 @@
+{
+  "id": "design-api",
+  "title": "API Design for Enterprise",
+  "category": "System Design",
+  "subcategory": "API & Events",
+  "language": "text",
+  "description": "<p>Designing APIs that serve millions of requests at enterprise scale. Covers RESTful design, GraphQL vs REST vs gRPC, versioning strategies, pagination, rate limiting, idempotency, error handling, and API governance. Each pattern mapped to SAP API scenarios (SAP Gateway, BTP API Management, Integration Suite).</p>",
+  "tags": ["FAANG", "Staff+", "API", "REST", "GraphQL", "gRPC", "design", "enterprise"],
+  "sections": [
+    {
+      "title": "RESTful API Design Principles",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>REST (Representational State Transfer) is the dominant API paradigm in enterprise systems, including SAP. The core principle is treating everything as a <b>resource</b> identified by a URL, manipulated through standard HTTP methods (GET, POST, PUT, PATCH, DELETE), and represented in a standard format (JSON, XML). For Staff+ engineers, the key is designing APIs that are <b>consistent, predictable, and evolvable</b> — not just technically correct but operationally manageable at scale.</p><p><b>Resource Naming Conventions:</b> Use plural nouns for collections (/orders, /customers). Use nested routes for relationships (/customers/{id}/orders). Avoid verbs in URLs — the HTTP method is the verb. Use kebab-case for multi-word resources (shipping-addresses, not shippingAddresses or ShippingAddresses). Version via URL prefix (/v1/orders) or header (Accept: application/vnd.api+json;version=1).</p><p><b>HTTP Methods & Semantics:</b> GET is idempotent and safe (no side effects). PUT replaces the entire resource — use for full updates. PATCH applies partial updates — use for field-level changes. POST creates a new resource or triggers an action. DELETE removes a resource. The distinction between PUT and PATCH is critical: PUT requires the client to send the complete resource state; PATCH sends only the differences. In SAP Gateway, PUT maps to the UPDATE method of the entity set, while PATCH maps to MODIFY.</p><p><b>Idempotency:</b> Operations that can be safely retried without side effects. GET, PUT, DELETE are naturally idempotent. POST is not — creating the same order twice results in two orders. For SAP, this matters in scenarios like IDoc processing where duplicate messages must be rejected. Solution: idempotency keys — the client generates a unique key (UUID) and sends it in the Idempotency-Key header. The server deduplicates using this key, returning the original response for duplicate requests.</p>"
+        },
+        {
+          "type": "svg",
+          "value": "<svg viewBox=\"0 0 700 320\" xmlns=\"http://www.w3.org/2000/svg\"><style>.api-box{fill:var(--bg-secondary);stroke:var(--brand-primary);stroke-width:2;rx:8}.api-method{fill:var(--bg-secondary);stroke:var(--text-primary);stroke-width:2;rx:6}.api-lbl{fill:var(--text-primary);font-family:system-ui;font-size:11px;font-weight:600;text-anchor:middle}.api-sub{fill:var(--text-primary);font-family:system-ui;font-size:9px;text-anchor:middle}.api-edge{stroke:var(--border-default);stroke-width:1.5;fill:none}</style><rect class=\"api-box\" x=\"15\" y=\"15\" width=\"670\" height=\"290\"/><text class=\"api-lbl\" x=\"350\" y=\"38\">HTTP Method Semantics for Enterprise APIs</text><rect class=\"api-method\" x=\"25\" y=\"55\" width=\"200\" height=\"60\"/><text class=\"api-lbl\" x=\"125\" y=\"75\">GET /orders</text><text class=\"api-sub\" x=\"125\" y=\"95\">Read — Idempotent, Safe</text><text class=\"api-sub\" x=\"125\" y=\"110\">Returns list or single resource</text><rect class=\"api-method\" x=\"250\" y=\"55\" width=\"200\" height=\"60\" stroke=\"var(--svg-success-stroke)\"/><text class=\"api-lbl\" x=\"350\" y=\"75\">POST /orders</text><text class=\"api-sub\" x=\"350\" y=\"95\">Create — Not Idempotent</text><text class=\"api-sub\" x=\"350\" y=\"110\">Requires idempotency key</text><rect class=\"api-method\" x=\"475\" y=\"55\" width=\"200\" height=\"60\" stroke=\"var(--svg-warning-stroke)\"/><text class=\"api-lbl\" x=\"575\" y=\"75\">PUT /orders/{id}</text><text class=\"api-sub\" x=\"575\" y=\"95\">Replace — Idempotent</text><text class=\"api-sub\" x=\"575\" y=\"110\">Full resource in body</text><rect class=\"api-method\" x=\"25\" y=\"135\" width=\"200\" height=\"60\" stroke=\"var(--svg-accent-stroke)\"/><text class=\"api-lbl\" x=\"125\" y=\"155\">PATCH /orders/{id}</text><text class=\"api-sub\" x=\"125\" y=\"175\">Partial Update</text><text class=\"api-sub\" x=\"125\" y=\"190\">Only changed fields in body</text><rect class=\"api-method\" x=\"250\" y=\"135\" width=\"200\" height=\"60\" stroke=\"var(--svg-error-stroke)\"/><text class=\"api-lbl\" x=\"350\" y=\"155\">DELETE /orders/{id}</text><text class=\"api-sub\" x=\"350\" y=\"175\">Remove — Idempotent</text><text class=\"api-sub\" x=\"350\" y=\"190\">Second call returns 404</text><rect class=\"api-box\" x=\"25\" y=\"215\" width=\"640\" height=\"55\"/><text class=\"api-lbl\" x=\"345\" y=\"235\">Key Principle: Consistency > Cleverness</text><text class=\"api-sub\" x=\"345\" y=\"255\">Every endpoint must follow the same naming, pagination, error, and auth conventions</text></svg>"
+        }
+      ],
+      "codeBlock": "",
+      "adversarialResponse": {
+        "challenge": "\"Your API design uses versioned URLs (v1/v2). But many teams say versioning is an anti-pattern — you should never break backward compatibility. Why not just evolve the API without versions?\"",
+        "badResponse": "\"Versioning is standard practice. Every major API platform uses it.\" (defensive, no substance)",
+        "goodResponse": "\"URL versioning is a pragmatic choice for enterprise APIs where consumers are external or have long upgrade cycles. The ideal is backward-compatible evolution without versioning — adding fields, never removing, making optional what was required. But enterprise reality is different: (1) SAP API consumers often pin to a specific version for compliance reasons — they need the API to be stable for years. (2) Breaking changes are sometimes unavoidable — a regulatory change in tax calculation that requires new required fields, or a security fix that changes the auth model. (3) URL versioning gives consumers explicit opt-in: 'I am using v1' is an explicit contract. The alternative — header versioning or query parameter versioning — is less visible in logs and monitoring. My approach: URL versioning for major breaking changes, additive-only evolution within a version, and a deprecation policy that gives consumers 12 months to migrate. The anti-pattern is not versioning itself — it's changing behavior without incrementing the version.\"",
+        "pattern": "pragmatic-consistency — acknowledge the ideal (backward-compatible evolution), explain why enterprise needs versioning (compliance, long upgrade cycles, regulatory changes), describe the hybrid approach (additive within version, versioned at major break), and provide the operational policy (12-month deprecation window)."
+      }
+    },
+    {
+      "title": "REST vs GraphQL vs gRPC Decision",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Choosing the right API protocol for an enterprise scenario depends on client requirements, network characteristics, and operational maturity. REST is the default for most enterprise APIs due to its simplicity and broad tooling support. GraphQL addresses REST's over-fetching/under-fetching problem. gRPC offers high-performance binary communication for internal services.</p><p><b>REST</b> is resource-oriented with standardized HTTP semantics. Best for: public APIs, CRUD-heavy operations, caching-friendly workloads, and scenarios where API discoverability matters (HATEOAS). REST's main weakness is the N+1 problem: to get an order with line items, you either fetch the order + line items separately (N+1 requests) or the server returns a fixed payload that may include fields the client doesn't need (over-fetching).</p><p><b>GraphQL</b> lets the client specify exactly which fields it needs in a single request. Best for: complex UIs that need data from multiple resources, mobile apps (bandwidth constrained), and rapid iteration where frontend requirements change faster than backend APIs. GraphQL's main weakness is query complexity — a malicious or poorly written query can cause expensive joins or infinite recursion. Query depth limiting and cost analysis are essential for production use.</p><p><b>gRPC</b> uses Protocol Buffers for serialization and HTTP/2 for transport. Best for: internal service-to-service communication, real-time streaming, polyglot microservices environments. gRPC's main weakness is browser support — it requires a proxy (gRPC-Web) for browser clients.</p>"
+        }
+      ],
+      "codeBlock": "",
+      "decisionTree": {
+        "prompt": "Which API protocol should I use for this enterprise integration scenario?",
+        "firstQuestion": "\"Who are the consumers of this API?\" External customers/partners = REST (universal compatibility). Internal SPA/mobile UIs with complex data needs = GraphQL. Internal microservice-to-microservice with high throughput = gRPC.",
+        "branches": [
+          {"condition": "External/public API consumed by partners, customers, or third-party developers", "path": "RESTful API over HTTP/1.1. Universal compatibility, broad tooling, caching via HTTP semantics, easy monitoring and logging. Version via URL prefix.", "selected": true},
+          {"condition": "Internal SPA/mobile app needs data from multiple resources in a single request", "path": "GraphQL. Single endpoint, client-specified fields, solves N+1 problem. Requires query complexity analysis and depth limiting for production safety.", "selected": false},
+          {"condition": "Internal service-to-service with high throughput, streaming, or polyglot environment", "path": "gRPC. Protocol Buffers for efficient serialization, HTTP/2 multiplexing, bidirectional streaming. Best for event-driven architectures and low-latency internal APIs.", "selected": false}
+        ],
+        "staffPlusTip": "At Staff+ level, the answer is often 'all three in different bounded contexts.' External partner API = REST. Internal UI layer = GraphQL (with a REST facade for external). Service mesh = gRPC. The anti-pattern is choosing one protocol for everything — optimize per consumer type."
+      }
+    },
+    {
+      "title": "API Versioning & Lifecycle Management",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>API versioning is one of the most contentious topics in enterprise API design. The fundamental tension: consumers want stability (the API should never change), while API providers need to evolve (fix bugs, add features, change underlying systems). A good versioning strategy manages this tension with explicit contracts and deprecation policies.</p><p><b>Additive Changes (Backward-Compatible):</b> Adding new fields to a response, adding new optional query parameters, adding new endpoints, extending an enum. These changes do not require a version bump. The rule: never remove or rename a field, never change a field's type, never make an optional field required, never change the behavior of an existing endpoint without a new version. Additive changes should follow <b>tolerant reader</b> pattern — consumers must ignore unknown fields.</p><p><b>Breaking Changes (Version Bump Required):</b> Removing a field, renaming a field, changing a field's type, changing the request/response structure, changing error codes, changing authentication requirements, changing pagination behavior. Each breaking change must be introduced in a new API version with a clear migration path.</p><p><b>Deprecation Policy:</b> (1) Announce deprecation 12 months before the old version is removed. (2) Add a Sunset header to responses: <code>Sunset: Sat, 01 Nov 2026 23:59:59 GMT</code>. (3) Provide a migration guide for every breaking change. (4) Monitor old version usage — if consumers haven't migrated, extend the deadline. (5) After sunset, return 410 Gone with a link to the migration guide.</p>"
+        }
+      ],
+      "codeBlock": "// Sunset header in HTTP response\nHTTP/1.1 200 OK\nContent-Type: application/json\nSunset: Sat, 01 Nov 2026 23:59:59 GMT\nLink: <https://api.example.com/migration/v1-to-v2>; rel=\"migration\"\n\n// API deprecation in OpenAPI 3.x\n{\n  \"openapi\": \"3.0.0\",\n  \"info\": {\n    \"title\": \"Order Service\",\n    \"version\": \"1.2.0\",\n    \"description\": \"**DEPRECATED** Use v2 instead. Sunset: 2026-11-01\"\n  }\n}",
+      "organizationalDimension": {
+        "title": "Building an API Governance Culture",
+        "migrationStrategy": "The API Governance Board: a cross-team body that reviews all API changes for consistency, backward compatibility, and adherence to standards. Phase 1 establishes the API spec-first workflow (OpenAPI as source of truth). Phase 2 automates compatibility checks in CI/CD. Phase 3 extends governance to BTP API Management and SAP Integration Suite.",
+        "stakeholders": [
+          {"who": "API Developers", "concern": "Governance slows us down — we need to ship fast", "address": "Automate compatibility checks in CI/CD (semantic versioning diff). The governance board only reviews breaking changes. Additive changes are auto-approved."},
+          {"who": "Platform Team", "concern": "We need consistency across 50+ microservices", "address": "Publish an API Style Guide with OpenAPI templates, naming conventions, error format, and pagination standard. All new APIs must conform — enforced via linter in CI."},
+          {"who": "Product Managers", "concern": "Deprecating old versions breaks our partner integrations", "address": "Provide a 12-month deprecation window. Offer assisted migration for strategic partners. Maintain a compatibility matrix showing what's supported and its sunset date."}
+        ],
+        "adoptionPhases": "Phase 1 (month 1-3): Publish API Style Guide, set up OpenAPI linting in CI. Phase 2 (month 4-6): Establish API Governance Board, automate compatibility checks. Phase 3 (month 7-12): Integrate with BTP API Management portal, publish deprecation calendar.",
+        "metrics": "Month 3: 80% of new APIs conform to style guide. Month 6: 100% of API changes are compatibility-checked in CI. Month 12: no breaking changes without 12-month deprecation notice.",
+        "antiPatterns": "Versioning via 'current' alias (unpredictable). Breaking changes without deprecation warning. No migration guide for consumers. Removing a version the day the replacement ships."
+      }
+    },
+    {
+      "title": "Pagination, Filtering & Rate Limiting",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Enterprise APIs must handle large collections efficiently. Pagination prevents a single request from returning millions of records that overwhelm the client, the network, and the server. Rate limiting protects the API from abuse or accidental overload.</p><p><b>Cursor-Based Pagination:</b> Use cursor-based pagination (not offset/limit) for production APIs. The client receives a cursor (opaque string) in the response and passes it to the next request. Advantages: works correctly when new items are inserted (offset-based skips or duplicates items). Efficient for large datasets (no COUNT queries). Used by Stripe, GitHub, Twitter. The response format: <code>{ data: [...], next_cursor: \"abc123\", has_more: true }</code>. Default page size: 100. Maximum: 1000.</p><p><b>Filtering and Sorting:</b> Use query parameters for simple filters: <code>?status=active&created_after=2025-01-01</code>. For complex filters, use a structured filter language: <code>?filter=(status eq 'active' and created_at gt 2025-01-01)</code> — this is the OData $filter syntax used by SAP Gateway. Sorting: <code>?sort=created_at:desc,name:asc</code>.</p><p><b>Rate Limiting:</b> Implement rate limiting at the API gateway (not in each service). Use token bucket algorithm for burst handling and fixed window for rate measurement. Return standard headers: <code>X-RateLimit-Limit: 1000</code>, <code>X-RateLimit-Remaining: 842</code>, <code>X-RateLimit-Reset: 1620000000</code>. When exceeded, return 429 Too Many Requests with a Retry-After header.</p>"
+        }
+      ],
+      "codeBlock": "GET /v1/orders?cursor=eyJpZCI6MTAwMH0&limit=100 HTTP/1.1\nAuthorization: Bearer <token>\n\nHTTP/1.1 200 OK\nContent-Type: application/json\nX-RateLimit-Limit: 1000\nX-RateLimit-Remaining: 842\nX-RateLimit-Reset: 1620000000\n\n{\n  \"data\": [\n    {\"id\": 1001, \"status\": \"shipped\", \"total\": 250.00}\n  ],\n  \"next_cursor\": \"eyJpZCI6MTAwMX0\",\n  \"has_more\": true\n}"
+    },
+    {
+      "title": "Error Handling & Standard Responses",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Consistent error handling is what separates production-grade APIs from prototypes. Every error must return a standard envelope that the client can parse programmatically. Use <b>Problem Details for HTTP APIs</b> (RFC 9457) as the error format — adopted by Microsoft, Google, and SAP Cloud Platform.</p><p><b>Standard Error Envelope:</b> <code>{ type: string, title: string, status: number, detail: string, instance: string, errors?: [{ field: string, message: string, code: string }] }</code>. The <code>type</code> is a URL pointing to human-readable documentation. The <code>title</code> is a short description. The <code>detail</code> is a human-readable explanation. The <code>errors</code> array contains field-level validation errors.</p><p><b>HTTP Status Codes:</b> Use the correct status code for each scenario. 200 OK for success. 201 Created for resource creation. 204 No Content for deletion. 400 Bad Request for validation errors. 401 Unauthorized for missing/invalid authentication. 403 Forbidden for authenticated but not authorized. 404 Not Found for missing resources. 409 Conflict for version conflicts. 422 Unprocessable Entity for business rule violations. 429 Too Many Requests for rate limiting. 500 Internal Server Error for unexpected failures.</p>"
+        }
+      ],
+      "codeBlock": "HTTP/1.1 422 Unprocessable Entity\nContent-Type: application/problem+json\n\n{\n  \"type\": \"https://api.example.com/errors/order-validation\",\n  \"title\": \"Order Validation Failed\",\n  \"status\": 422,\n  \"detail\": \"The order could not be created due to validation errors.\",\n  \"instance\": \"/v1/orders\",\n  \"errors\": [\n    {\n      \"field\": \"customer.email\",\n      \"message\": \"Email address is already associated with a different customer.\",\n      \"code\": \"DUPLICATE_EMAIL\"\n    },\n    {\n      \"field\": \"order.items[0].quantity\",\n      \"message\": \"Requested quantity (100) exceeds available stock (42).\",\n      \"code\": \"INSUFFICIENT_STOCK\"\n    }\n  ]\n}",
+      "quantifiedTradeoff": {
+        "title": "Error Detail Granularity vs Security Tradeoff",
+        "scenarios": [
+          {
+            "choice": "A: Detailed error messages with field-level validation",
+            "tradeOff": "+Faster debugging for API consumers but -Security: reveals internal schema structure",
+            "context": "Field-level errors tell the client exactly which field failed and why. For internal APIs (microservice-to-microservice), this is a net positive. For public APIs, detailed errors can reveal database schema (field names, table names) or business logic internals",
+            "recommendation": "Use detailed errors for internal APIs. For public APIs, use generic error messages at the endpoint level and detailed errors only for authenticated partners."
+          },
+          {
+            "choice": "B: Generic error messages only (\"Invalid request\")",
+            "tradeOff": "+Maximum security (no information leakage) but -Client-side debugging cost increases by 3-5x",
+            "context": "Generic errors force the client to guess what went wrong. For mobile apps, this means users see vague error messages and cannot self-correct. Support tickets increase significantly",
+            "recommendation": "Avoid generic errors for any API consumed by a UI. The UX cost exceeds the security benefit."
+          },
+          {
+            "choice": "C: Structured error codes (DUPLICATE_EMAIL, INSUFFICIENT_STOCK) without field details",
+            "tradeOff": "+Client can programmatically handle errors without revealing schema, but -Cannot auto-focus on the invalid field in the UI",
+            "context": "Error codes are the middle ground. The client maps error codes to localized messages. The server reveals the error type without revealing the schema. Example: DUPLICATE_EMAIL tells the client the email is duplicate, but doesn't reveal that the field is stored in the 'customer.email' column",
+            "recommendation": "Best practice for public APIs: error codes + generic field references (use correlation IDs for debugging)."
+          }
+        ]
+      }
+    },
+    {
+      "title": "API Security & Authentication",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Enterprise API security follows a layered model: <b>transport security</b> (TLS 1.2+), <b>authentication</b> (who you are), <b>authorization</b> (what you can do), and <b>audit</b> (what you did). For SAP APIs, this typically maps to OAuth 2.0 with SAP's identity services or custom JWT-based auth for internal APIs.</p><p><b>OAuth 2.0 Flows:</b> Authorization Code Flow with PKCE for B2C and B2B scenarios (mobile, SPA). Client Credentials Flow for machine-to-machine (M2M) API access. Authorization Code Flow for server-side web apps. Never use the Implicit or Resource Owner Password flows — both are deprecated for security reasons.</p><p><b>API Keys vs OAuth:</b> API keys are simpler but provide weaker security — they identify the application, not the user. Use API keys for public, read-only data. Use OAuth 2.0 for any API that accesses user data or performs writes. SAP BTP API Management supports both: API keys for simple scenarios, OAuth 2.0 for production integrations.</p><p><b>Audit Logging:</b> Every API request should produce an audit log entry containing: timestamp, client ID, user ID (if applicable), resource accessed, HTTP method, HTTP status code, request ID (correlation ID), and response size. The audit log must be immutable and retained for compliance (typically 7 years for regulated industries).</p>"
+        }
+      ],
+      "codeBlock": "",
+      "adversarialResponse": {
+        "challenge": "\"Our SAP Gateway API exposes sensitive business data. We're using Basic Auth because it's simple and the SAP system is behind a VPN anyway. What's the real risk?\"",
+        "badResponse": "\"Basic Auth is insecure — you must use OAuth 2.0 immediately.\" (impractical for the current state, no migration path)",
+        "goodResponse": "\"Basic Auth behind VPN reduces the attack surface but introduces three specific risks: (1) The credentials are sent in every request header — if any internal service logs headers, credentials are leaked in log files. (2) There is no scoping — Basic Auth gives full access to whatever the user/service account can do. There is no way to restrict 'this client can only read orders, not create them.' (3) Audit trails are weak — you cannot distinguish between 'user A called the API' and 'user A's credentials were stolen and used.' The migration path: Phase 1 — add OAuth 2.0 as an alternative to Basic Auth (both supported). Phase 2 — deprecate Basic Auth for new integrations (announce 12-month sunset). Phase 3 — remove Basic Auth entirely. In parallel, add scope-based authorization: define read/write/admin scopes in the OAuth token. This gives you the immediate security benefit of credential rotation (OAuth tokens expire in 1 hour by default) without breaking existing integrations.\"",
+        "pattern": "incremental-migration — never demand an immediate rip-and-replace. Offer a phased migration: support both during transition, add the new auth flavor alongside the old one, announce the deprecation with a long window, and remove the old auth only after the window expires. The Staff+ insight: security improvements that break integrations are not improvements — they're regressions."
+      }
+    }
+  ],
+  "details": "<p><b>Staff+ Insight:</b> API design is a systems-thinking exercise, not a REST-vs-GraphQL debate. The Staff+ engineer designs APIs for consumers, not for the underlying data model. Every API decision — protocol, pagination, error format, auth strategy — should be driven by the consumer's needs and operational constraints. The best API is the one that makes the consumer's job easiest, not the one that is technically pure.</p>"
+}

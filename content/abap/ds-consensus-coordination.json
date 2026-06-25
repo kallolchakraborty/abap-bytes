@@ -1,0 +1,79 @@
+{
+  "id": "ds-consensus-coordination",
+  "title": "Consensus & Coordination in Practice",
+  "category": "Distributed Systems",
+  "subcategory": "Coordination",
+  "language": "text",
+  "description": "<p>Consensus algorithms (Paxos, Raft, Zab) and coordination services (ZooKeeper, etcd) underpin every distributed system at FAANG. This file covers when you need consensus, how Raft works step-by-step, ZooKeeper vs etcd tradeoffs, and how to translate this knowledge from an SAP background. SAP engineers familiar with enqueue locking and RFC-based coordination will find direct analogies.</p>",
+  "tags": ["FAANG", "Staff+", "Consensus", "Raft", "ZooKeeper", "etcd", "Coordination"],
+  "sections": [
+    {
+      "title": "When You Need Consensus",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Consensus is required when multiple nodes in a distributed system need to agree on a value despite network failures, node crashes, and message delays. Not every distributed system needs consensus — it adds latency and complexity. The Staff+ engineer knows where consensus is necessary and where weaker guarantees suffice.</p><p><b>You need consensus when:</b> (1) Leader election — multiple nodes must agree on a single leader to avoid split-brain. (2) Distributed locking — a lock must be held by exactly one client at a time across process boundaries. (3) Atomic broadcast — all nodes must receive the same sequence of messages. (4) Cluster membership — nodes must agree on who is in the cluster. (5) Configuration management — distributed systems need a consistent source of truth for configuration.</p><p><b>You do NOT need consensus when:</b> (1) Eventual consistency is acceptable (DNS, CDN caches). (2) Single-node solutions suffice with failover (active-passive with shared storage). (3) Client-side resolution works (last-write-wins, CRDTs). (4) A single authoritative source exists (primary-secondary replication with manual failover).</p><p><b>SAP Bridge:</b> SAP enqueue locking uses a central lock server (enqueue replication with active-passive). This avoids consensus because there is always a single source of truth. But when you need distributed locking across SAP systems, consensus-based locking (etcd/Redis Redlock) is more reliable than RFC-based coordination.</p>"
+        },
+        {
+          "type": "svg",
+          "value": "<svg viewBox=\"0 0 700 250\" xmlns=\"http://www.w3.org/2000/svg\"><style>.c-box{fill:var(--bg-secondary);stroke:var(--brand-primary);stroke-width:2;rx:8}.c-st{fill:var(--bg-secondary);stroke:var(--text-primary);stroke-width:2;rx:6}.c-lbl{fill:var(--text-primary);font-family:system-ui;font-size:11px;font-weight:600;text-anchor:middle}.c-sub{fill:var(--text-primary);font-family:system-ui;font-size:9px;text-anchor:middle}.c-edge{stroke:var(--border-default);stroke-width:1.5;fill:none}</style><rect class=\"c-box\" x=\"15\" y=\"15\" width=\"670\" height=\"220\"/><text class=\"c-lbl\" x=\"350\" y=\"38\">Consensus Decision Framework</text><rect class=\"c-st\" x=\"25\" y=\"55\" width=\"200\" height=\"80\"/><text class=\"c-lbl\" x=\"125\" y=\"75\">Need Consensus</text><text class=\"c-sub\" x=\"125\" y=\"95\">Leader election</text><text class=\"c-sub\" x=\"125\" y=\"110\">Distributed locks</text><text class=\"c-sub\" x=\"125\" y=\"125\">Atomic broadcast</text><rect class=\"c-st\" x=\"240\" y=\"55\" width=\"200\" height=\"80\" stroke=\"var(--svg-warning-stroke)\"/><text class=\"c-lbl\" x=\"340\" y=\"75\">Maybe Consensus</text><text class=\"c-sub\" x=\"340\" y=\"95\">Config management</text><text class=\"c-sub\" x=\"340\" y=\"110\">Cluster membership</text><text class=\"c-sub\" x=\"340\" y=\"125\">Service discovery</text><rect class=\"c-st\" x=\"455\" y=\"55\" width=\"230\" height=\"80\" stroke=\"var(--svg-success-stroke)\"/><text class=\"c-lbl\" x=\"570\" y=\"75\">No Consensus Needed</text><text class=\"c-sub\" x=\"570\" y=\"95\">Eventually consistent caches</text><text class=\"c-sub\" x=\"570\" y=\"110\">CRDTs / LWW</text><text class=\"c-sub\" x=\"570\" y=\"125\">Primary-secondary</text><rect class=\"c-box\" x=\"25\" y=\"150\" width=\"660\" height=\"50\"/><text class=\"c-lbl\" x=\"355\" y=\"170\">SAP Translation: enqueue server = consensus not needed (central authority); cross-SAP locking = consensus needed</text></svg>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Raft Consensus — Step by Step",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Raft is the most widely taught consensus algorithm because it prioritizes understandability over optimization. It is used in etcd, Consul, HashiCorp products, and many distributed databases. Understanding Raft step-by-step is a common Staff+ interview discussion.</p><p><b>Raft servers (nodes) operate in one of three states:</b></p><p><b>1. Follower:</b> Default state. Followers receive log entries from the leader and respond to candidate requests. Followers do not initiate communication unless they timeout waiting for a heartbeat from the leader. If a follower receives no heartbeat within an election timeout (150-300ms randomized), it transitions to candidate.</p><p><b>2. Candidate:</b> When a follower's election timeout fires, it becomes a candidate and starts a new election term: (a) Increments its current term. (b) Votes for itself. (c) Sends RequestVote RPCs to all other servers. (d) If it receives votes from a majority (N/2 + 1), it becomes leader. (e) If it receives a heartbeat from another leader with a higher term, it reverts to follower. (f) If election timeout fires again without a winner (split vote), it starts a new election.</p><p><b>3. Leader:</b> Handles all client requests. Sends AppendEntries RPCs (heartbeat + log replication) to followers on a regular interval. If a follower is behind, the leader sends missing log entries. The leader maintains a <b>nextIndex</b> for each follower (the next log entry to send) and a <b>matchIndex</b> (the highest known replicated entry). An entry is <b>committed</b> when a majority of followers acknowledge it. Leaders never overwrite entries — they only append.</p><p><b>Safety property:</b> Raft guarantees that if an entry is committed at a given term, it will never be overwritten. This is enforced by the Election Safety property: a candidate can only become leader if its log contains all committed entries (the vote request includes the candidate's last term and index; followers reject candidates with older logs).</p>"
+        }
+      ],
+      "codeBlock": "",
+      "adversarialResponse": {
+        "challenge": "\"Doesn't Raft have a split-brain problem? If a network partition isolates the leader, followers in the majority partition elect a new leader. The old leader in the minority partition can still accept writes and think it's the leader.\"",
+        "badResponse": "\"Raft prevents split-brain through the majority requirement. Writes from the old leader won't be acknowledged by a majority and therefore won't commit.\" (correct but misses the subtlety of stale reads)",
+        "goodResponse": "\"You're right to flag that. Raft prevents <b>write</b> split-brain but allows <b>read</b> split-brain. Let me explain both. <b>Write safety:</b> The old leader in the minority partition cannot commit any entries because it cannot reach a majority. Its clients' writes will fail or timeout. No committed entry is ever overwritten (Election Safety). <b>Read safety:</b> The old leader can still serve reads that return stale data. Clients reading from the old leader see data that hasn't been replicated to the new leader. <b>Solutions:</b> (1) Leader leases with clock synchronization — the leader only serves reads during its lease period. (2) Read from a quorum (Raft's ReadIndex or lease read). (3) Forward all reads through the leader with a 'read barrier' — the leader checks its term hasn't changed before responding. In practice, etcd uses ReadIndex for linearizable reads. This is why Raft-based systems advertise 'linearizable reads' as a premium feature — they are not free.\"",
+        "pattern": "always follow a correctness observation with a nuance about real-world behavior. The interviewer tests whether you understand the gap between algorithm specification and production behavior."
+      }
+    },
+    {
+      "title": "ZooKeeper vs etcd — Production Tradeoffs",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>ZooKeeper (ZAB protocol) and etcd (Raft) are the two dominant coordination services. They solve similar problems with different design philosophies. Choosing between them is a common Staff+ system design discussion.</p><p><b>ZooKeeper (ZAB):</b> Designed by Yahoo, used by Kafka, HBase, Hadoop, Solr. Offers a hierarchical namespace (znodes) with watchers. Znodes can be ephemeral (deleted when session ends) or sequential (auto-incrementing suffix). ZAB prioritizes high throughput writes over read scalability. Reads go to any node (may be stale unless sync() is called). ZooKeeper's session model means clients maintain heartbeats with the ensemble. If a session expires, all ephemeral znodes created by that client are deleted. This pattern is used by Kafka for broker liveness detection.</p><p><b>etcd (Raft):</b> Designed by CoreOS, used by Kubernetes, Consul (partially), and Cloud Foundry BOSH. Offers a flat key-value store with watch capabilities and TTL-based leases (not znodes). etcd prioritizes linearizable reads (all reads go through the leader or use ReadIndex). The API is gRPC-based with JSON over HTTP fallback. etcd's watch API supports key prefix matching and revision-based history. etcd v3 supports transactions (compare-and-swap as a multi-key atomic operation).</p><p><b>Selection criteria:</b> (1) Choose ZooKeeper if you need hierarchical namespace (Kafka topics, HDFS nodes) or ephemeral znode semantics (session-scoped locks). (2) Choose etcd if you need linearizable reads by default, gRPC API, integration with Kubernetes, or multi-key transactions. (3) For configuration management: etcd (simpler, better API). For service discovery: ZooKeeper (hierarchical, watchers) or etcd (watch, but flat namespace).</p>"
+        }
+      ],
+      "codeBlock": "",
+      "quantifiedTradeoff": {
+        "title": "ZooKeeper vs etcd — Staff+ Decision Matrix",
+        "scenarios": [
+          {
+            "choice": "ZooKeeper for Kafka cluster coordination",
+            "tradeOff": "+Ephemeral znodes enable automatic broker failure detection. +Hierarchical namespace maps to Kafka's cluster topology. -Zookeeper reads are not linearizable by default (stale reads possible). -Requires separate JVM-based cluster management (heavy ops).",
+            "context": "Kafka uses ZooKeeper for broker metadata, controller election, and consumer group offsets. The ephemeral znode pattern is ideal: each broker creates an ephemeral znode on startup; if the broker dies, the session expires and the znode disappears, signaling controller to trigger rebalance.",
+            "recommendation": "ZooKeeper is the right choice for Kafka. Don't fight Kafka's native metadata mechanism — let ZooKeeper handle broker coordination."
+          },
+          {
+            "choice": "etcd for Kubernetes cluster state",
+            "tradeOff": "+Linearizable reads (strong consistency). +gRPC API integrates with K8s API server. +Watch API with revision history enables efficient event-driven reconciliation. -Flat key-value namespace requires careful key naming conventions (no hierarchy). -etcd performance degrades if the key space grows >10GB.",
+            "context": "Kubernetes stores all cluster state (pods, services, configmaps, secrets) in etcd. The API server is the only client; it serializes/deserializes K8s objects to/from etcd. K8s uses etcd's watch mechanism for controller reconciliation loops.",
+            "recommendation": "etcd is the standard for Kubernetes. Use etcd operator for automated cluster management. Size the cluster properly: 3 nodes for production, 5 for large deployments."
+          }
+        ]
+      }
+    },
+    {
+      "title": "Distributed Consensus Patterns in System Design Interviews",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>When a system design interview question involves leader election, distributed locking, or configuration management, the Staff+ engineer immediately evaluates whether consensus is necessary. Here is the pattern to follow:</p><p><b>Step 1: Identify the coordination need.</b> Does the system need leader election, distributed locking, membership management, or atomic broadcast? If yes, you need consensus. If the system can use a single authoritative store (SQL with transactions, single-node cache), avoid consensus — it adds 2x-5x latency.</p><p><b>Step 2: Choose the coordination service.</b> (a) If the system already uses Kafka → use ZooKeeper (sidecar). (b) If the system uses Kubernetes → use etcd (native). (c) If the system is standalone → use etcd (simpler to operate). (d) If the system needs hierarchical namespace → use ZooKeeper.</p><p><b>Step 3: Design the coordination layer.</b> Consensus nodes should be in odd numbers (3 or 5). 3 nodes can tolerate 1 failure; 5 nodes can tolerate 2 failures. Do NOT co-locate consensus nodes with application nodes — a consensus partition would take down the coordination layer.</p><p><b>SAP Translation:</b> SAP's enqueue server is a single-leader consensus system with synchronous replication. The lock table is the state machine. Transaction requests are log entries. The analogy helps interviewers understand that you already think about distributed coordination — just with different terminology.</p>"
+        }
+      ],
+      "codeBlock": ""
+    }
+  ],
+  "details": "<p><b>FAANG Interview Tip:</b> When discussing consensus in system design interviews, always start with \"Do we need consensus?\" This signals that you understand the cost of consensus — you're not prescribing a solution before understanding the problem. Most candidates jump into Raft details; Staff+ candidates justify why consensus is necessary first.</p>"
+}

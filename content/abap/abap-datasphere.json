@@ -1,0 +1,99 @@
+{
+  "id": "abap-datasphere",
+  "title": "SAP Datasphere & Data Fabric",
+  "category": "Modern ABAP",
+  "subcategory": "Cloud Native",
+  "language": "text",
+  "description": "<p>SAP Datasphere is SAP's data warehouse as a service (DWaaS) offering for building a unified data fabric across SAP and non-SAP sources. Covers Datasphere architecture, data modeling, replication flows, Business Builder, data federation, and integration with SAC, BW Bridge, and hyperscaler data platforms.</p>",
+  "tags": ["Datasphere", "Data Fabric", "BW", "SAC", "Analytics", "Data Warehouse", "Staff+"],
+  "sections": [
+    {
+      "title": "Datasphere Architecture Overview",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>SAP Datasphere (formerly SAP Data Warehouse Cloud) is SAP's strategic data platform for building a <b>data fabric</b> — a unified data architecture that connects data from SAP and non-SAP sources without physically moving all data to a central warehouse. Datasphere replaces SAP BW/4HANA as the go-forward data warehousing strategy, though BW Bridge (the BW/4HANA runtime embedded in Datasphere) provides backward compatibility for existing BW investments.</p><p><b>Core Components:</b> <b>Spaces</b> — isolated work areas for data storage, modeling, and consumption. Each space has its own schema, users, and connections. Spaces can share data via <b>Data Sharing Agreements</b>. <b>Connections</b> link to source systems (S/4HANA, BW, SuccessFactors, Ariba, Concur, Google BigQuery, Snowflake, AWS S3). <b>Replication Flows</b> copy data from sources into Datasphere at scheduled intervals. <b>Data Builder</b> provides graphical and SQL-based data modeling (views, dimensions, fact tables). <b>Business Builder</b> creates analytical models (consumption models) for SAP Analytics Cloud.</p><p><b>Data Fabric Philosophy:</b> Unlike traditional ETL-based data warehouses that copy all data into a central repository, Datasphere supports a <b>federation-first</b> approach. You can create views that query source systems directly (using SAP HANA Smart Data Integration or cloud connectors) without copying data. This reduces storage costs and ensures the latest data is always available. Replication is used selectively for data that needs to be transformed, cleansed, or persisted for performance.</p>"
+        },
+        {
+          "type": "svg",
+          "value": "<svg viewBox=\"0 0 700 350\" xmlns=\"http://www.w3.org/2000/svg\"><style>.ds-box{fill:var(--bg-secondary);stroke:var(--brand-primary);stroke-width:2;rx:8}.ds-layer{fill:var(--bg-secondary);stroke:var(--text-primary);stroke-width:2;rx:6}.ds-lbl{fill:var(--text-primary);font-family:system-ui;font-size:11px;font-weight:600;text-anchor:middle}.ds-sub{fill:var(--text-primary);font-family:system-ui;font-size:9px;text-anchor:middle}.ds-edge{stroke:var(--border-default);stroke-width:1.5;fill:none;marker-end:url(#arrow)}</style><defs><marker id=\"arrow\" markerWidth=\"8\" markerHeight=\"6\" refX=\"8\" refY=\"3\" orient=\"auto\"><path d=\"M0,0 L8,3 L0,6Z\" fill=\"var(--text-primary)\"/></marker></defs><rect class=\"ds-box\" x=\"15\" y=\"15\" width=\"670\" height=\"320\"/><text class=\"ds-lbl\" x=\"350\" y=\"38\">SAP Datasphere Architecture</text><rect class=\"ds-layer\" x=\"30\" y=\"55\" width=\"300\" height=\"60\"/><text class=\"ds-lbl\" x=\"180\" y=\"73\">Source Systems</text><text class=\"ds-sub\" x=\"180\" y=\"93\">S/4HANA | BW | SuccessFactors | External</text><rect class=\"ds-layer\" x=\"370\" y=\"55\" width=\"300\" height=\"60\"/><text class=\"ds-lbl\" x=\"520\" y=\"73\">Connections</text><text class=\"ds-sub\" x=\"520\" y=\"93\">SDI / Cloud Connector / Replication Flows</text><line x1=\"330\" y1=\"85\" x2=\"370\" y2=\"85\" class=\"ds-edge\"/><rect class=\"ds-box\" x=\"30\" y=\"130\" width=\"640\" height=\"80\"/><text class=\"ds-lbl\" x=\"350\" y=\"150\">Datasphere</text><rect class=\"ds-layer\" x=\"50\" y=\"145\" width=\"140\" height=\"50\" stroke=\"var(--svg-success-stroke)\"/><text class=\"ds-lbl\" x=\"120\" y=\"163\">Data Builder</text><text class=\"ds-sub\" x=\"120\" y=\"180\">Views, SQL, Data Flows</text><rect class=\"ds-layer\" x=\"205\" y=\"145\" width=\"140\" height=\"50\" stroke=\"var(--svg-warning-stroke)\"/><text class=\"ds-lbl\" x=\"275\" y=\"163\">Business Builder</text><text class=\"ds-sub\" x=\"275\" y=\"180\">Analytical Models</text><rect class=\"ds-layer\" x=\"360\" y=\"145\" width=\"140\" height=\"50\" stroke=\"var(--svg-accent-stroke)\"/><text class=\"ds-lbl\" x=\"430\" y=\"163\">Spaces</text><text class=\"ds-sub\" x=\"430\" y=\"180\">Isolated Work Areas</text><rect class=\"ds-layer\" x=\"515\" y=\"145\" width=\"140\" height=\"50\" stroke=\"var(--svg-info-stroke)\"/><text class=\"ds-lbl\" x=\"585\" y=\"163\">BW Bridge</text><text class=\"ds-sub\" x=\"585\" y=\"180\">BW/4HANA Runtime</text><line x1=\"350\" y1=\"210\" x2=\"350\" y2=\"240\" class=\"ds-edge\"/><rect class=\"ds-box\" x=\"80\" y=\"240\" width=\"540\" height=\"70\"/><text class=\"ds-lbl\" x=\"350\" y=\"260\">Consumption Layer</text><rect class=\"ds-layer\" x=\"100\" y=\"255\" width=\"150\" height=\"40\" stroke=\"var(--brand-primary)\"/><text class=\"ds-lbl\" x=\"175\" y=\"275\">SAP Analytics Cloud</text><rect class=\"ds-layer\" x=\"270\" y=\"255\" width=\"150\" height=\"40\"/><text class=\"ds-lbl\" x=\"345\" y=\"275\">OData / SQL</text><rect class=\"ds-layer\" x=\"440\" y=\"255\" width=\"150\" height=\"40\"/><text class=\"ds-lbl\" x=\"515\" y=\"275\">Third-Party BI</text></svg>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Data Modeling in Datasphere",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Datasphere supports two modeling paradigms: <b>Data Builder</b> (graphical/SQL for technical users) and <b>Business Builder</b> (semantic modeling for business analysts). Understanding when to use each — and how they complement each other — is the key to a scalable data architecture.</p><p><b>Data Builder</b> is the technical modeling layer. You create <b>Views</b> (graphical or SQL-based) that join, filter, and transform data from one or more sources. Views can be <b>fact</b> views (measures, numeric data) or <b>dimension</b> views (attributes, master data). Views can import data (replicated to Datasphere) or query remote sources via federation. Key pattern: create <b>local tables</b> from raw sources (staging), then build <b>views</b> on top for cleaning and transforming, then create <b>analytical datasets</b> for consumption.</p><p><b>Business Builder</b> is the semantic modeling layer. Business analysts create <b>Analytical Models</b> that define measures, dimensions, hierarchies, and currencies without writing SQL. These models map to Data Builder views underneath. The separation lets technical teams manage data pipelines (Data Builder) while business teams define analytical semantics (Business Builder). This is analogous to the separation between CDS view design (technical) and query design (business) in SAP BW.</p><p><b>Decision Framework:</b> Use Data Builder for: raw data ingestion, ETL/ELT transformations, SQL-based complex calculations, data quality rules. Use Business Builder for: measure definition and aggregation, currency conversion, hierarchy management, time-based calculations, and analytical consumption in SAC.</p>"
+        }
+      ],
+      "codeBlock": "-- Datasphere SQL View: Customer Orders by Region\nCREATE VIEW V_CUSTOMER_ORDERS AS\nSELECT\n    c.REGION,\n    c.COUNTRY,\n    COUNT(DISTINCT o.ORDER_ID) AS ORDER_COUNT,\n    SUM(o.NET_AMOUNT) AS TOTAL_REVENUE,\n    AVG(o.NET_AMOUNT) AS AVG_ORDER_VALUE\nFROM\n    IMPORT(\"S4HANA_CDC\".\"ORDERS\") o\n    JOIN IMPORT(\"S4HANA_CDC\".\"CUSTOMERS\") c\n      ON o.CUSTOMER_ID = c.CUSTOMER_ID\nWHERE\n    o.CREATED_AT >= ADD_DAYS(CURRENT_DATE, -30)\nGROUP BY\n    c.REGION, c.COUNTRY;",
+      "decisionTree": {
+        "prompt": "Should I replicate data to Datasphere or query it in place via federation?",
+        "firstQuestion": "\"What is the data volume and latency requirement?\" High-volume, high-latency-tolerant (daily/hourly) = replicate. Low-volume, sub-second latency = federate. Transform-heavy workloads = replicate.",
+        "branches": [
+          {"condition": "Data changes daily, needs transformation (cleansing, aggregation), reporting can tolerate hourly latency", "path": "Replicate via Replication Flow. Data is copied to Datasphere, transformed in Data Builder views, and consumed from local tables. Best for: financial reporting, inventory analytics, sales dashboards.", "selected": true},
+          {"condition": "Data needs sub-second freshness, low volume, already clean (no transformation needed)", "path": "Federate via remote connection. View queries the source system directly. Best for: real-time operational dashboards, master data lookups, ad-hoc queries.", "selected": false},
+          {"condition": "Very high volume (terabytes), complex transformations needed, batch processing acceptable", "path": "Hybrid: replicate raw data to Datasphere for staging, then use SQL views for transformation. Optionally use BW Bridge if existing BW/4HANA investment. Best for: large-scale enterprise data warehouses replacing BW.", "selected": false}
+        ],
+        "staffPlusTip": "The replication vs federation decision is not binary. A common Staff+ pattern: replicate dimension tables (customer, product, material) for consistency, federate large fact tables for storage efficiency, and materialize aggregated fact views periodically. This gives you the best of both approaches."
+      }
+    },
+    {
+      "title": "Integration with SAP Analytics Cloud",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>SAP Analytics Cloud (SAC) is the primary consumption tool for Datasphere. SAC connects to Datasphere via <b>live data connection</b> (direct query without data copy) or <b>import connection</b> (data copied to SAC's in-memory engine). The choice between live and import is the most impactful architectural decision in a Datasphere-SAC deployment.</p><p><b>Live Connection:</b> SAC sends MDX/SQL queries directly to the Datasphere model. Data stays in Datasphere — SAC acts as a visualization layer. Pros: always fresh data, no data duplication, ability to handle large datasets (SAC's 50GB import limit doesn't apply). Cons: query performance depends on Datasphere's engine, limited SAC features (planning, augmented analytics require import mode).</p><p><b>Import Connection:</b> SAC imports data from Datasphere into its in-memory engine (HANA). Pros: fast query performance, full SAC feature set (planning, what-if, AI insights, natural language queries). Cons: data duplication, 50GB data limit per model, data freshness depends on import schedule.</p><p><b>Recommended Pattern:</b> Use live connection for operational reporting (revenue dashboards, inventory monitoring, supply chain control towers) where data freshness is critical. Use import connection for strategic analytics (financial planning, what-if scenarios, augmented analytics) where the full SAC feature set is needed. For large datasets (>50GB) that need import, pre-aggregate in Datasphere to fit within the import limit.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "BW Bridge & BW/4HANA Migration",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>BW Bridge is an optional component of Datasphere that provides a BW/4HANA runtime environment within the Datasphere platform. It allows existing BW customers to migrate their BW models to the cloud without rewriting them as Datasphere native models. The bridge runs the BW/4HANA query engine, supports BW DataSources, ODP, and BEx queries, and integrates with Datasphere Spaces via Data Sharing Agreements.</p><p><b>Migration Strategy:</b> Three paths exist for BW customers. Path 1 (Lift & Shift): Move BW/4HANA to BW Bridge with minimal changes. Models remain in BW semantics, data flows remain as BW InfoProviders. Fastest path but does not leverage Datasphere's native capabilities. Path 2 (Hybrid): Run BW Bridge for existing BW content while building new content in Datasphere native (Data Builder + Business Builder). New analytical models use Datasphere's semantic layer, while legacy BW reports continue running on the bridge. Path 3 (Full Migration): Retire BW Bridge and rebuild all models as Datasphere native models. Requires significant effort but eliminates BW runtime costs and provides the full Datasphere data fabric experience.</p><p><b>Staff+ Recommendation:</b> Path 2 (Hybrid) is the pragmatic choice for most enterprises. Run BW Bridge for 12-24 months to maintain existing reporting SLAs. Build all new analytical content in Datasphere native. Migrate the most-used BW models to Datasphere first (prove the approach), then deprecate the bridge. This avoids the risk of a big-bang migration while demonstrating progress to leadership.</p>"
+        }
+      ],
+      "codeBlock": "",
+      "quantifiedTradeoff": {
+        "title": "BW Bridge vs Native Datasphere Migration Tradeoff",
+        "scenarios": [
+          {
+            "choice": "A: Lift & Shift to BW Bridge (Path 1)",
+            "tradeOff": "3-month migration, $50K cost, 0% business disruption but +30% TCO (bridge premium) and no data fabric benefits",
+            "context": "Existing BW/4HANA system with 200 InfoCubes, 500 queries, 50 BEx reports. Migration to BW Bridge is automated (transport-based). No model redesign needed. However: no access to Datasphere Spaces, no federation, no Data Sharing Agreements",
+            "recommendation": "Use only as a temporary bridge (6-12 months). The cost premium without benefits makes this unsustainable long-term."
+          },
+          {
+            "choice": "B: Hybrid Bridge + Native Datasphere (Path 2)",
+            "tradeOff": "12-month migration, $200K cost, phased business adoption, +5% TCO during transition",
+            "context": "BW Bridge for legacy reports (no rewrite). New analytical models built natively in Datasphere. Over 12 months, migrate top 20 BW queries to Datasphere native. After proving, accelerate migration. Bridge decommissioned at month 18",
+            "recommendation": "Recommended for most enterprises. Phased approach minimizes risk while building Datasphere expertise."
+          },
+          {
+            "choice": "C: Full Native Datasphere Migration (Path 3)",
+            "tradeOff": "24-month migration, $500K cost, +15% business disruption during transition but -40% TCO after completion",
+            "context": "Rewrite all BW models as Datasphere native models. Full data fabric benefits: federation, spaces, real-time replication. Requires significant training and expertise. Highest risk but highest long-term value",
+            "recommendation": "Only for teams with strong Datasphere expertise and executive commitment to a data fabric strategy."
+          }
+        ]
+      }
+    },
+    {
+      "title": "Datasphere in the FAANG Interview",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Datasphere is increasingly appearing in FAANG system design interviews for SAP candidates. Interviewers frame it as: 'Design a data platform that unifies data from 50 different source systems (SAP and non-SAP) for BI and ML consumption.' The Datasphere architecture maps directly to this question.</p><p><b>How to Frame:</b> Start with the data fabric concept: 'I would build a data platform with three layers — a connection layer that ingests from heterogeneous sources, a modeling layer that provides a unified semantic model, and a consumption layer that serves BI tools and ML pipelines.' Explain the space isolation model: different business units get isolated spaces with their own schemas and permissions, sharing data through governed agreements. Describe the replication vs federation decision for each source type. Mention the handling of SAP-specific data types (dimensions, hierarchies, currencies) that most general-purpose data platforms don't handle well.</p><p><b>Key Talking Points:</b> (1) Data fabric vs data warehouse — emphasize that modern data platforms don't centralize all data; they federate and govern data where it lives. (2) Semantic modeling — the separation between technical data prep (ETL/views) and business semantics (measures, dimensions) is a Staff+-level architectural insight. (3) Governance — space isolation, data sharing agreements, and column-level lineage show you think about compliance and data quality at scale.</p>"
+        }
+      ],
+      "codeBlock": ""
+    }
+  ],
+  "details": "<p><b>Staff+ Insight:</b> Datasphere is SAP's answer to Snowflake, Databricks, and Google BigQuery. In a FAANG interview, you should demonstrate that you understand the data fabric paradigm — not just SAP Datasphere as a product, but the architectural principles of federated data governance that apply to any enterprise data platform. The Staff+ engineer chooses replication vs federation based on data characteristics (volume, velocity, transformation requirements), not based on product preference.</p>"
+}

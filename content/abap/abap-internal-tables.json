@@ -1,0 +1,358 @@
+{
+  "id": "abap-internal-tables",
+  "title": "Internal Tables — Staff+ Deep Dive",
+  "category": "ABAP Foundations",
+  "subcategory": "Core ABAP",
+  "language": "abap",
+  "description": "<p>Hash table collision resolution, secondary key performance profiles, table type decision framework with computational proofs. GROUP BY, FILTER operator, FOR...IN...VALUE expressions, and memory pressure behavior. This is Staff+ level understanding — not syntax but performance modeling.</p>",
+  "tags": [
+    "ABAP",
+    "internal-tables",
+    "performance",
+    "Staff+"
+  ],
+  "sections": [
+    {
+      "title": "Hash Table Collision Resolution",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>ABAP's hash tables (TYPE HASHED TABLE) use internal hashing with <b>separate chaining</b> for collision resolution, not open addressing. This has profound performance implications that Staff+ engineers must model quantitatively, not just memorize as trivia.</p><p><b>Separate chaining (ABAP's approach):</b> Each hash bucket contains a linked list of entries that hash to the same bucket index. When a collision occurs, the new entry is appended to the bucket's chain. Lookup requires computing the hash, locating the bucket, then <b>traversing the chain</b> comparing keys sequentially until a match is found. Worst-case performance is O(N) when all entries hash to the same bucket (pathological key distribution). ABAP's hash function uses the <b>SAP Hash Algorithm (SHA-1 based)</b> for string keys and direct hash for elementary types. The initial bucket count is determined by <code>INITIAL SIZE N</code> or defaults to <code>INTENTSCHLüSSEL</code> estimation based on key type.</p><p><b>Load factor and rehashing:</b> The load factor (α = number of entries / number of buckets) determines collision probability. ABAP triggers a <b>rehash operation</b> when α exceeds ~0.75. Rehashing creates a new bucket array (typically 2× the previous size), recomputes hashes for every entry, and redistributes them. This is O(N) and blocks the work process during rehashing — a critical consideration for <b>latency-sensitive transactions</b>. A 1-million-entry hash table rehash takes approximately 200–500 ms depending on key complexity. If this happens during a user-facing dialog step, it adds noticeable latency.</p><p><b>Performance modeling:</b> For a hash table with N entries and B buckets, average chain length = N/B = α. Average lookup cost = O(1 + α) for successful searches and O(1 + α/2) for unsuccessful (assuming uniform distribution). For a well-dimensioned table with α = 0.5, average chain length is 0.5 — essentially O(1). For a poorly sized table (INITIAL SIZE 10 with 10,000 entries), α = 1000, and each lookup traverses 1000 entries on average — O(N), worse than a sorted table.</p><p><b>Staff+ takeaway:</b> When FAANG asks \"Design a hash table,\" describe separate chaining, load factor management, rehashing cost, and hash function selection. Use ABAP as a concrete case study: \"In ABAP's hash tables, the rehash penalty can cause visible latency in dialog transactions. I mitigated this by pre-allocating with INITIAL SIZE: <code>DATA lt_hashed TYPE HASHED TABLE OF ... WITH UNIQUE KEY ... INITIAL SIZE 100000</code>.\"</p>"
+        },
+        {
+          "type": "svg",
+          "value": "<svg viewBox=\"0 0 700 340\" xmlns=\"http://www.w3.org/2000/svg\"><style>.hi-box{fill:var(--bg-secondary);stroke:var(--brand-primary);stroke-width:2;rx:8}.hi-edge{stroke:var(--text-primary);stroke-width:2;fill:none;marker-end:url(#arrow)}.sys-box{fill:var(--bg-secondary);stroke:var(--border-default);stroke-width:2;rx:6}.sys-lbl{fill:var(--text-primary);font-family:system-ui;font-size:12px;font-weight:600;text-anchor:middle}.hi-lbl{fill:var(--text-primary);font-family:system-ui;font-size:10px;text-anchor:middle;opacity:.85}.flow-pulse{animation:pulse 2s ease-in-out infinite}@keyframes pulse{0%,100%{opacity:.6}50%{opacity:1}}@keyframes glow{0%,100%{opacity:.3}50%{opacity:.85}}.ann-pulse{animation:glow 2s ease-in-out infinite}@keyframes flowDash{0%{stroke-dashoffset:-12}100%{stroke-dashoffset:0}}.flowDash{stroke:var(--brand-primary);stroke-width:2;fill:none;stroke-dasharray:4;animation:flowDash 1s linear infinite}</style><defs><marker id=\"arrow\" markerWidth=\"8\" markerHeight=\"6\" refX=\"8\" refY=\"3\" orient=\"auto\"><path d=\"M0,0 L8,3 L0,6 Z\" fill=\"var(--text-primary)\"/></marker></defs><text class=\"sys-lbl\" x=\"350\" y=\"22\">Hash Table Collision Resolution (Separate Chaining)</text><rect class=\"hi-box\" x=\"20\" y=\"38\" width=\"660\" height=\"280\"/><text class=\"sys-lbl\" x=\"350\" y=\"58\">Hash Table Structure</text><rect class=\"sys-box\" x=\"40\" y=\"75\" width=\"70\" height=\"30\"/><text class=\"hi-lbl\" x=\"75\" y=\"94\">Bucket 0</text><rect class=\"sys-box\" x=\"130\" y=\"75\" width=\"70\" height=\"30\" fill=\"var(--svg-accent-stroke)\" opacity=\".15\"/><text class=\"hi-lbl\" x=\"165\" y=\"94\">Bucket 1</text><rect class=\"sys-box\" x=\"220\" y=\"75\" width=\"70\" height=\"30\"/><text class=\"hi-lbl\" x=\"255\" y=\"94\">Bucket 2</text><rect class=\"sys-box\" x=\"310\" y=\"75\" width=\"70\" height=\"30\" fill=\"var(--svg-accent-stroke)\" opacity=\".15\"/><text class=\"hi-lbl\" x=\"345\" y=\"94\">Bucket 3</text><rect class=\"sys-box\" x=\"400\" y=\"75\" width=\"70\" height=\"30\"/><text class=\"hi-lbl\" x=\"435\" y=\"94\">Bucket 4</text><rect class=\"sys-box\" x=\"490\" y=\"75\" width=\"70\" height=\"30\" fill=\"var(--svg-accent-stroke)\" opacity=\".15\"/><text class=\"hi-lbl\" x=\"525\" y=\"94\">Bucket 5</text><rect class=\"sys-box\" x=\"580\" y=\"75\" width=\"70\" height=\"30\"/><text class=\"hi-lbl\" x=\"615\" y=\"94\">Bucket 6</text><rect class=\"sys-box\" x=\"40\" y=\"125\" width=\"70\" height=\"30\"/><text class=\"hi-lbl\" x=\"75\" y=\"144\">Key=A</text><path d=\"M110,140 L130,140\" class=\"hi-edge\"/><rect class=\"sys-box\" x=\"130\" y=\"125\" width=\"70\" height=\"30\"/><text class=\"hi-lbl\" x=\"165\" y=\"144\">Key=G</text><path d=\"M200,140 L220,140\" class=\"hi-edge\"/><rect class=\"sys-box\" x=\"220\" y=\"125\" width=\"70\" height=\"30\"/><text class=\"hi-lbl\" x=\"255\" y=\"144\">Key=M</text><rect class=\"sys-box\" x=\"310\" y=\"125\" width=\"70\" height=\"30\"/><text class=\"hi-lbl\" x=\"345\" y=\"144\">Key=B</text><path d=\"M380,140 L400,140\" class=\"hi-edge\"/><rect class=\"sys-box\" x=\"400\" y=\"125\" width=\"70\" height=\"30\"/><text class=\"hi-lbl\" x=\"435\" y=\"144\">Key=H</text><path d=\"M470,140 L490,140\" class=\"hi-edge\"/><rect class=\"sys-box\" x=\"490\" y=\"125\" width=\"70\" height=\"30\"/><text class=\"hi-lbl\" x=\"525\" y=\"144\">Key=C</text><rect class=\"sys-box\" x=\"580\" y=\"125\" width=\"70\" height=\"30\"/><text class=\"hi-lbl\" x=\"615\" y=\"144\">Key=I</text><text class=\"hi-lbl\" x=\"350\" y=\"185\">Collision Chain (Bucket 1): Key=B → Key=X → Key=Y</text><rect class=\"sys-box\" x=\"310\" y=\"195\" width=\"70\" height=\"26\"/><text class=\"hi-lbl\" x=\"345\" y=\"213\">Key=B</text><path d=\"M380,208 L400,208\" class=\"hi-edge\"/><rect class=\"sys-box\" x=\"400\" y=\"195\" width=\"70\" height=\"26\"/><text class=\"hi-lbl\" x=\"435\" y=\"213\">Key=X</text><path d=\"M470,208 L490,208\" class=\"hi-edge\"/><rect class=\"sys-box\" x=\"490\" y=\"195\" width=\"70\" height=\"26\"/><text class=\"hi-lbl\" x=\"525\" y=\"213\">Key=Y</text><path d=\"M560,208 L580,208\" class=\"hi-edge ann-pulse\"/><rect class=\"sys-box\" x=\"580\" y=\"195\" width=\"40\" height=\"26\" fill=\"var(--svg-error-stroke)\" opacity=\".15\"/><text class=\"hi-lbl\" x=\"600\" y=\"213\">null</text><text class=\"hi-lbl\" x=\"350\" y=\"250\">Load Factor α = N/B. Rehash triggered at α ≈ 0.75</text><text class=\"hi-lbl\" x=\"350\" y=\"268\">Lookup: O(1 + α) average. Worst-case O(N) with poor hash distribution</text><text class=\"hi-lbl\" x=\"350\" y=\"286\">ABAP uses SHA-1 based hashing for string keys, direct hash for elementary types</text><rect class=\"sys-box\" x=\"120\" y=\"278\" width=\"130\" height=\"26\" fill=\"var(--svg-success-stroke)\" opacity=\".15\"/><text class=\"hi-lbl\" x=\"185\" y=\"296\">INITIAL SIZE mitigates rehash cost</text></svg>"
+        }
+      ],
+      "codeBlock": "\" Hash table with performance tuning\nTYPES: BEGIN OF ty_material,\n         matnr TYPE matnr,\n         mtart TYPE mtart,\n         menge TYPE menge,\n       END OF ty_material.\n\n\" Initialize with sufficient size to avoid rehashing\n\" INITIAL SIZE N — set to expected row count / 0.75\n\" For 100,000 entries: INITIAL SIZE 133_333\nDATA lt_materials TYPE HASHED TABLE OF ty_material\n  WITH UNIQUE KEY matnr\n  INITIAL SIZE 133333.\n\n\" Monitor load factor via runtime\nDATA(lo_table) = CAST cl_abap_hashed_tabledescr(\n  CAST cl_abap_typedescr(\n    cl_abap_typedescr=>describe_by_data( lt_materials ) ) ).\nDATA(lv_buckets) = lo_table->initial_size.\nDATA(lv_entries) = lines( lt_materials ).\nDATA(lv_load_factor) = lv_entries / lv_buckets.\n\n\" Rehash warning\nIF lv_load_factor > 0.7.\n  \" Triggering rehash — expect latency spike\n  \" Solution: create new table with larger INITIAL SIZE\nENDIF.",
+      "comparisonTable": {
+        "headers": [
+          "Property",
+          "Standard",
+          "Sorted",
+          "Hashed"
+        ],
+        "rows": [
+          [
+            "Key Access",
+            "O(n)",
+            "O(log n)",
+            "O(1)"
+          ],
+          [
+            "Index Access",
+            "O(1)",
+            "O(1)",
+            "N/A"
+          ],
+          [
+            "Key Uniqueness",
+            "Optional",
+            "Mandatory/Mandatory",
+            "Mandatory"
+          ],
+          [
+            "Sort on Insert",
+            "Append (no sort)",
+            "Sorted (auto)",
+            "Hash calc"
+          ],
+          [
+            "Memory Overhead",
+            "Low",
+            "Low-Medium",
+            "High"
+          ],
+          [
+            "Use Case",
+            "Table operations",
+            "Key lookups",
+            "Unique key only"
+          ]
+        ]
+      },
+      "decisionTree": {
+        "prompt": "Should I use a HASHED table or a SORTED table for this lookup?",
+        "firstQuestion": "\"Do you need O(1) key-based lookups independent of table size, or do you also need ordered iteration and range queries?\" HASHED gives O(1) lookups but no ordering. SORTED gives O(log N) lookups with ordering.",
+        "branches": [
+          {
+            "condition": "Need O(1) key lookup, never iterate in order, never range search",
+            "path": "HASHED table. O(1) amortized lookup. ~100MB memory for 1M entries. Rehash at load factor >0.75 causes latency spikes. INITIAL SIZE should be (expected rows / 0.75)."
+          },
+          {
+            "condition": "Need ordered iteration or range-based key access",
+            "path": "SORTED table. O(log N) lookup, O(1) sequential iteration. ~80MB memory for 1M entries. Supports READ TABLE ... WITH KEY ... >= value for range queries."
+          },
+          {
+            "condition": "Need index-based access or sequential processing only",
+            "path": "STANDARD table. O(1) index access. Lowest memory overhead (~40MB for 1M entries). O(N) key lookup — use secondary SORTED key if key lookups are needed."
+          }
+        ],
+        "staffPlusTip": "For large tables (>100K entries), HASHED is optimal for pure key lookups. For tables <10K entries, the O(log N) vs O(1) difference is negligible — use SORTED for flexibility."
+      }
+    },
+    {
+      "title": "Secondary Key Index Construction",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Secondary keys in ABAP internal tables (since ABAP 7.02) allow multiple access paths to the same data. Staff+ engineers must understand when secondary keys <b>help</b> vs when they <b>hurt</b> performance. The decision is not binary — it depends on read/write ratio, data volume, and access patterns.</p><p><b>How secondary keys work:</b> A primary key defines the main table access type (STANDARD → linear index, SORTED → binary tree, HASHED → hash table). Secondary keys are <b>additional index structures</b> maintained alongside the primary storage. For STANDARD tables, a secondary key can be SORTED (binary search tree) or HASHED. For SORTED tables, a secondary key can be HASHED. For HASHED tables, a secondary key can be SORTED. Each secondary key adds a <b>write amplification</b> cost: every INSERT, MODIFY, or DELETE operation must update the primary storage plus every secondary key's index structure. A table with 3 secondary keys has 4× write cost.</p><p><b>Read benefits:</b> A secondary SORTED key on a STANDARD table enables O(log N) access instead of O(N) linear scan. For a table with 100,000 entries, this reduces lookup from 50,000 comparisons (average) to ~17 comparisons. The benefit is proportional to table size. For tables under 1,000 entries, the overhead of maintaining the secondary index may exceed the lookup savings.</p><p><b>Write costs:</b> Inserting into a STANDARD table with a secondary SORTED key requires: (1) appending to the primary linear storage O(1), (2) inserting into the sorted secondary index O(log N). With 3 secondary sorted keys, insertion is O(1 + 3 log N). For N=100,000, this is ~50 operations per insert. For batch inserts of 10,000 rows, that's 500,000 index operations — a measurable cost.</p><p><b>Staff+ takeaway:</b> Secondary keys are ABAP's equivalent of database indexes. Apply the same indexing discipline: profile query patterns first, add keys based on measured need, monitor write amplification. When FAANG asks about index design, discuss the read/write tradeoff with ABAP secondary keys as a concrete example: \"I used secondary SORTED keys on STANDARD tables to eliminate O(N) scans in read-heavy report loops, but removed them for batch-load programs where write throughput was the bottleneck.\"</p>"
+        },
+        {
+          "type": "svg",
+          "value": "<svg viewBox=\"0 0 700 340\" xmlns=\"http://www.w3.org/2000/svg\"><style>.hi-box{fill:var(--bg-secondary);stroke:var(--brand-primary);stroke-width:2;rx:8}.hi-edge{stroke:var(--text-primary);stroke-width:2;fill:none;marker-end:url(#arrow)}.sys-box{fill:var(--bg-secondary);stroke:var(--border-default);stroke-width:2;rx:6}.sys-lbl{fill:var(--text-primary);font-family:system-ui;font-size:12px;font-weight:600;text-anchor:middle}.hi-lbl{fill:var(--text-primary);font-family:system-ui;font-size:10px;text-anchor:middle;opacity:.85}.flow-pulse{animation:pulse 2s ease-in-out infinite}@keyframes pulse{0%,100%{opacity:.6}50%{opacity:1}}@keyframes glow{0%,100%{opacity:.3}50%{opacity:.85}}.ann-pulse{animation:glow 2s ease-in-out infinite}@keyframes flowDash{0%{stroke-dashoffset:-12}100%{stroke-dashoffset:0}}.flowDash{stroke:var(--brand-primary);stroke-width:2;fill:none;stroke-dasharray:4;animation:flowDash 1s linear infinite}</style><defs><marker id=\"arrow\" markerWidth=\"8\" markerHeight=\"6\" refX=\"8\" refY=\"3\" orient=\"auto\"><path d=\"M0,0 L8,3 L0,6 Z\" fill=\"var(--text-primary)\"/></marker></defs><text class=\"sys-lbl\" x=\"350\" y=\"22\">Secondary Key Index — Read vs Write Cost</text><rect class=\"hi-box\" x=\"20\" y=\"38\" width=\"660\" height=\"280\"/><text class=\"sys-lbl\" x=\"350\" y=\"58\">Internal Table with Secondary Keys</text><rect class=\"sys-box\" x=\"40\" y=\"75\" width=\"180\" height=\"90\"/><text class=\"sys-lbl\" x=\"130\" y=\"95\">Primary Storage</text><text class=\"hi-lbl\" x=\"130\" y=\"112\">STANDARD: array O(1) append</text><text class=\"hi-lbl\" x=\"130\" y=\"128\">SORTED: binary tree O(log N)</text><text class=\"hi-lbl\" x=\"130\" y=\"144\">HASHED: hash table O(1) avg</text><path d=\"M220,120 L260,120\" class=\"hi-edge\"/><rect class=\"sys-box\" x=\"260\" y=\"75\" width=\"180\" height=\"40\"/><text class=\"sys-lbl\" x=\"350\" y=\"95\">Secondary Key 1 (SORTED)</text><text class=\"hi-lbl\" x=\"350\" y=\"108\">READ TABLE ... WITH KEY ...</text><path d=\"M440,95 L480,95\" class=\"hi-edge\"/><rect class=\"sys-box\" x=\"480\" y=\"75\" width=\"180\" height=\"40\"/><text class=\"sys-lbl\" x=\"570\" y=\"95\">Secondary Key 2 (HASHED)</text><text class=\"hi-lbl\" x=\"570\" y=\"108\">O(1) lookup by secondary field</text><text class=\"sys-lbl\" x=\"350\" y=\"155\">Operation Cost Analysis</text><rect class=\"sys-box\" x=\"40\" y=\"170\" width=\"290\" height=\"95\" stroke=\"var(--svg-success-stroke)\"/><text class=\"hi-lbl\" x=\"185\" y=\"188\" fill=\"var(--svg-success-stroke)\">Read Operations (help)</text><text class=\"hi-lbl\" x=\"185\" y=\"205\">READ TABLE with secondary: O(log N) vs O(N)</text><text class=\"hi-lbl\" x=\"185\" y=\"220\">SORT by secondary: uses index, no extra sort</text><text class=\"hi-lbl\" x=\"185\" y=\"235\">GROUP BY secondary: clustered access benefit</text><rect class=\"sys-box\" x=\"370\" y=\"170\" width=\"290\" height=\"95\" stroke=\"var(--svg-error-stroke)\"/><text class=\"hi-lbl\" x=\"515\" y=\"188\" fill=\"var(--svg-error-stroke)\">Write Operations (hurt)</text><text class=\"hi-lbl\" x=\"515\" y=\"205\">INSERT: primary + N secondary updates</text><text class=\"hi-lbl\" x=\"515\" y=\"220\">MODIFY: index maintenance for each key</text><text class=\"hi-lbl\" x=\"515\" y=\"235\">DELETE: remove from every index structure</text><text class=\"hi-lbl\" x=\"350\" y=\"290\">Staff+ Rule: Profile access patterns first. Secondary keys for read-heavy; avoid for write-heavy bulk loads.</text></svg>"
+        }
+      ],
+      "codeBlock": "\" STANDARD table with secondary SORTED key\nTYPES: BEGIN OF ty_sales,\n         vbeln   TYPE vbeln,\n         posnr   TYPE posnr,\n         matnr   TYPE matnr,\n         netwr   TYPE netwr,\n       END OF ty_sales.\n\nDATA: lt_sales TYPE STANDARD TABLE OF ty_sales\n        WITH NON-UNIQUE KEY vbeln\n        WITH UNIQUE SORTED KEY k_matnr COMPONENTS matnr posnr.\n\n\" Primary key access: linear scan O(n)\nREAD TABLE lt_sales INTO ls_sales WITH KEY vbeln = 'X'.\n\" sy-tabix access: O(1)\nREAD TABLE lt_sales INTO ls_sales INDEX 10.\n\n\" Secondary key access: binary search O(log n)\nREAD TABLE lt_sales INTO ls_sales\n  USING KEY k_matnr\n  WITH TABLE KEY matnr = 'MAT001' posnr = '0010'.\n\n\" Write amplification: each MODIFY updates both storages\nMODIFY lt_sales FROM ls_sales INDEX sy-tabix.\n\" O(1) primary + O(log n) secondary update\n\n\" Performance comparison for 100K rows\n\" READ no key:      ~50K comparisons (avg)\n\" READ with key:     ~17 comparisons (avg)\n\" INSERT with 1 sk:  O(1 + log 100K) ≈ O(17 ops)",
+      "quantifiedTradeoff": {
+        "title": "Secondary Key — Read Performance vs Write Amplification",
+        "variables": [
+          {
+            "name": "Table size",
+            "value": "500K entries",
+            "source": "Material master export table"
+          },
+          {
+            "name": "Reads per second",
+            "value": "100/sec (key-based)",
+            "source": "Production order BOM explosion"
+          },
+          {
+            "name": "Writes per second",
+            "value": "10/sec (INSERT + MODIFY)",
+            "source": "Material master update from legacy system"
+          }
+        ],
+        "calculation": {
+          "formula": "TotalCost = ReadCost × ReadCount + WriteCost × WriteCount",
+          "no_secondary": {
+            "writeLatency": "0ms extra (no index maintenance)",
+            "monthlyPenalty": "$0 — O(N) reads take ~250K comparisons on average = 5ms. 100 reads/s × 5ms = 500ms/s CPU. No write penalty."
+          },
+          "with_secondary": {
+            "writeLatency": "1ms extra per write (O(log N) index update)",
+            "monthlyPenalty": "$1,200 — O(log N) reads take ~19 comparisons = 0.04ms. 100 reads/s × 0.04ms = 4ms/s CPU. Each write: 1ms extra × 10/s = 10ms/s."
+          },
+          "breakeven": "At 100:1 read/write ratio (your scenario), secondary key saves 496ms/s of CPU at a cost of 10ms/s — net 486ms/s savings. At 10:1 read/write ratio, the savings shrink to 46ms/s. At 1:1 ratio (equal reads/writes), there's no net benefit — use no secondary key."
+        }
+      }
+    },
+    {
+      "title": "Table Type Decision Framework",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Choosing between STANDARD, SORTED, and HASHED tables is one of the most consequential decisions in ABAP performance engineering. Staff+ engineers don't rely on intuition — they apply a <b>formal decision framework</b> based on access patterns, data volume, and maintenance cost.</p><p><b>STANDARD tables</b> use an array-based linear storage. The primary access is by <b>table index</b> — O(1) random access by position. Key-based access with <code>READ TABLE ... WITH KEY ...</code> performs a linear scan: O(N). Standard tables are optimal when: (1) you need to iterate over all entries sequentially (LOOP AT), (2) you need index-based access, (3) write operations (APPEND, INSERT, DELETE) are frequent and key-based reads are rare. <b>Use case:</b> ALV output tables, sequential processing lists, temporary work storage.</p><p><b>SORTED tables</b> maintain entries in sorted order using a binary search tree (or skip list, depending on ABAP version). Primary key access is O(log N). The table is always sorted — <code>INSERT</code> finds the correct position and inserts there (O(log N) + shift cost). Sorted tables are optimal when: (1) you need sorted output without an explicit SORT, (2) you do range-based key access (<code>READ TABLE ... WITH KEY ... >= value</code>), (3) you need to maintain ordered data for binary search. <b>Use case:</b> Configuration tables (T001, T001L), sorted intermediate results for merge operations.</p><p><b>HASHED tables</b> use a hash table with separate chaining (see Section 1). Key-based access is O(1) amortized — independent of table size. However, hashed tables have no order — you cannot access by index or do range queries. They also have higher memory overhead (hash table + buckets + chaining pointers). Hashed tables are optimal when: (1) you need O(1) key-based read access, (2) table size is large (10,000+ entries), (3) you never iterate in order and never do range searches. <b>Use case:</b> Large lookup tables, material number → material data, user ID → user info.</p><p><b>Staff+ takeaway:</b> This decision tree maps directly to FAANG data structure questions. STANDARD = ArrayList, SORTED = TreeMap, HASHED = HashMap. When FAANG asks \"Which data structure would you use for...\" frame your answer with the same tradeoff analysis: access pattern, concurrency, memory profile, and maintenance cost. ABAP's table types are not ABAP-specific — they are a concrete embodiment of fundamental computer science data structures.</p>"
+        },
+        {
+          "type": "svg",
+          "value": "<svg viewBox=\"0 0 700 400\" xmlns=\"http://www.w3.org/2000/svg\"><style>.hi-box{fill:var(--bg-secondary);stroke:var(--brand-primary);stroke-width:2;rx:8}.hi-edge{stroke:var(--text-primary);stroke-width:2;fill:none;marker-end:url(#arrow)}.sys-box{fill:var(--bg-secondary);stroke:var(--border-default);stroke-width:2;rx:6}.sys-lbl{fill:var(--text-primary);font-family:system-ui;font-size:12px;font-weight:600;text-anchor:middle}.hi-lbl{fill:var(--text-primary);font-family:system-ui;font-size:10px;text-anchor:middle;opacity:.85}.flow-pulse{animation:pulse 2s ease-in-out infinite}@keyframes pulse{0%,100%{opacity:.6}50%{opacity:1}}@keyframes glow{0%,100%{opacity:.3}50%{opacity:.85}}.ann-pulse{animation:glow 2s ease-in-out infinite}@keyframes flowDash{0%{stroke-dashoffset:-12}100%{stroke-dashoffset:0}}.flowDash{stroke:var(--brand-primary);stroke-width:2;fill:none;stroke-dasharray:4;animation:flowDash 1s linear infinite}</style><defs><marker id=\"arrow\" markerWidth=\"8\" markerHeight=\"6\" refX=\"8\" refY=\"3\" orient=\"auto\"><path d=\"M0,0 L8,3 L0,6 Z\" fill=\"var(--text-primary)\"/></marker></defs><text class=\"sys-lbl\" x=\"350\" y=\"22\">Table Type Decision Framework</text><rect class=\"hi-box\" x=\"30\" y=\"38\" width=\"640\" height=\"340\"/><text class=\"sys-lbl\" x=\"350\" y=\"58\">Formal Decision Tree</text><rect class=\"sys-box\" x=\"300\" y=\"75\" width=\"120\" height=\"36\"/><text class=\"sys-lbl\" x=\"360\" y=\"97\">What access pattern?</text><path d=\"M360,111 L360,135\" class=\"hi-edge\"/><line x1=\"220\" y1=\"135\" x2=\"500\" y2=\"135\" stroke=\"var(--border-default)\" stroke-width=\"1\"/><path d=\"M220,135 L220,155\" class=\"hi-edge\"/><text class=\"hi-lbl\" x=\"220\" y=\"150\">Key-based</text><path d=\"M500,135 L500,155\" class=\"hi-edge\"/><text class=\"hi-lbl\" x=\"500\" y=\"150\">Sequential</text><rect class=\"sys-box\" x=\"100\" y=\"155\" width=\"240\" height=\"90\"/><text class=\"sys-lbl\" x=\"220\" y=\"175\">Key-based access</text><text class=\"hi-lbl\" x=\"220\" y=\"193\">Need O(1) lookup?</text><text class=\"hi-lbl\" x=\"220\" y=\"210\">Large table (10K+)?</text><text class=\"hi-lbl\" x=\"220\" y=\"225\">No order/range needed?</text><path d=\"M220,245 L220,270\" class=\"hi-edge flowDash\"/><text class=\"hi-lbl\" x=\"220\" y=\"263\">Yes</text><rect class=\"sys-box\" x=\"100\" y=\"270\" width=\"240\" height=\"50\" stroke=\"var(--svg-accent-stroke)\"/><text class=\"sys-lbl\" x=\"220\" y=\"290\" fill=\"var(--svg-accent-stroke)\">HASHED</text><text class=\"hi-lbl\" x=\"220\" y=\"307\">HashMap equivalent, O(1) avg</text><path d=\"M340,200 L500,200\" class=\"hi-edge flowDash\"/><text class=\"hi-lbl\" x=\"420\" y=\"193\">No</text><rect class=\"sys-box\" x=\"380\" y=\"155\" width=\"240\" height=\"90\"/><text class=\"sys-lbl\" x=\"500\" y=\"175\">Sorted access needed?</text><text class=\"hi-lbl\" x=\"500\" y=\"193\">Range queries?</text><text class=\"hi-lbl\" x=\"500\" y=\"210\">Sorted output without SORT?</text><text class=\"hi-lbl\" x=\"500\" y=\"225\">Binary search?</text><path d=\"M500,245 L500,270\" class=\"hi-edge flowDash\"/><text class=\"hi-lbl\" x=\"500\" y=\"263\">Yes</text><rect class=\"sys-box\" x=\"380\" y=\"270\" width=\"240\" height=\"50\" stroke=\"var(--brand-primary)\"/><text class=\"sys-lbl\" x=\"500\" y=\"290\" fill=\"var(--brand-primary)\">SORTED</text><text class=\"hi-lbl\" x=\"500\" y=\"307\">TreeMap equivalent, O(log N)</text><rect class=\"sys-box\" x=\"520\" y=\"75\" width=\"120\" height=\"36\" fill=\"var(--svg-success-stroke)\" opacity=\".1\"/><text class=\"sys-lbl\" x=\"580\" y=\"97\" fill=\"var(--svg-success-stroke)\">Always iterate</text><path d=\"M580,111 L580,135\" class=\"hi-edge\"/><rect class=\"sys-box\" x=\"520\" y=\"135\" width=\"120\" height=\"50\" fill=\"var(--svg-success-stroke)\" opacity=\".15\"/><text class=\"sys-lbl\" x=\"580\" y=\"155\" fill=\"var(--svg-success-stroke)\">STANDARD</text><text class=\"hi-lbl\" x=\"580\" y=\"172\">ArrayList, O(N) read</text><text class=\"hi-lbl\" x=\"350\" y=\"345\">Staff+ Rule: Use the simplest table type that meets access requirements. Measure before optimizing.</text></svg>"
+        }
+      ],
+      "codeBlock": "\" Decision framework: table type by access pattern\n\" Criteria: key-based vs sequential, read vs write ratio, data volume\n\n\" Scenario 1: Key-based reads, infrequent writes, >10K rows → HASHED\nSELECT matnr, mtart, matkl, meins\n  FROM mara\n  INTO TABLE @DATA(lt_mara_hashed)\n  ORDER BY PRIMARY KEY.\n\" → already sorted by primary key → use SORTED TABLE\n\n\" Scenario 2: Sequential processing, ALV output → STANDARD\nDATA lt_alv_output TYPE STANDARD TABLE OF ty_alv WITH EMPTY KEY.\n\n\" Scenario 3: Binary search on non-key → secondary key\nDATA lt_materials TYPE STANDARD TABLE OF ty_material\n  WITH UNIQUE SORTED KEY k_matnr COMPONENTS matnr.\n\n\" Scenario 4: Union of multiple queries → SORTED\n\" for MERGE operation (O(n+m) vs O(n*m))\nDATA lt_sorted TYPE SORTED TABLE OF ty_data WITH UNIQUE KEY key_field.",
+      "decisionTree": {
+        "prompt": "How should I merge two internal tables efficiently?",
+        "firstQuestion": "\"Are both tables sorted by the join key?\" If yes, use the MERGE statement (O(N+M)). If not, you must sort first or use a LOOP + READ TABLE pattern.",
+        "branches": [
+          {
+            "condition": "Both tables sorted by the same key",
+            "path": "MERGE statement. O(N+M) — single pass over both tables. ~5 lines of code. Must have same key order and direction (ASC/DESC). Best performance for sorted data."
+          },
+          {
+            "condition": "Only one table sorted, other has unique key",
+            "path": "LOOP on sorted table + READ TABLE on hashed/secondary key. O(N log M) for sorted-secondary key or O(N) for hashed key. Convert unsorted table to HASHED or add secondary SORTED key."
+          },
+          {
+            "condition": "Neither table sorted, both large (>50K)",
+            "path": "Sort both tables by the key first (O(N log N + M log M)), then use MERGE (O(N+M)). The sort cost is worth it — the MERGE on sorted data is 10x faster than nested LOOP."
+          }
+        ],
+        "staffPlusTip": "The classic ABAP nesting LOOP ... READ TABLE is O(N × log M). MERGE on sorted tables is O(N+M). For tables >10K rows, always sort first then MERGE. The sort overhead pays off after ~1K iterations."
+      }
+    },
+    {
+      "title": "GROUP BY & FILTER Operations",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>ABAP 7.40+ introduced <code>GROUP BY</code> and <code>FILTER</code> operations on internal tables — moving data processing from procedural loops to declarative expressions. Staff+ engineers must understand the <b>execution plans</b> behind these constructs to predict performance, not just syntax.</p><p><b>GROUP BY execution:</b> When you write <code>VALUE #( FOR GROUPS group OF ... GROUP BY ... )</code>, the ABAP runtime uses either a <b>hash-based</b> or <b>sort-based</b> grouping strategy. Hash-based grouping builds a hash table on the group key columns — O(N) build, O(1) lookup per group. Sort-based grouping sorts by group key first (O(N log N)), then scans linearly accumulating groups (O(N)). The ABAP runtime chooses the strategy based on table type: SORTED tables use sort-based (since they're already sorted), STANDARD and HASHED tables use hash-based. <b>Performance tip:</b> If you GROUP BY on a SORTED table's primary key, the sort-based grouping is O(N) — no sorting needed because the data is already ordered.</p><p><b>FILTER execution:</b> <code>FILTER ALL OF</code> and <code>FILTER IN</code> create a filtered view of the source table without copying data. The filter expression is evaluated lazily (on access) for <code>FILTER ALL OF</code>. For <code>FILTER IN</code> with a hash-based filter table, the runtime builds a hash set of the filter values and probes it for each source entry — O(N + M) where N is source size and M is filter size. This is significantly faster than the equivalent <code>LOOP ... READ TABLE ... ENDLOOP</code> pattern (which is O(N log M) or O(N * M) depending on filter table type).</p><p><b>Staff+ takeaway:</b> GROUP BY and FILTER are not syntactic sugar — they change the execution model from nested-loop procedural to hash-optimized declarative. This is analogous to SQL's query optimizer choosing between hash join and nested loop join. When FAANG asks about query optimization, describe how ABAP's runtime chooses execution strategies: \"ABAP's GROUP BY on internal tables chooses between hash-based and sort-based grouping automatically, similar to how PostgreSQL chooses between HashAggregate and SortAggregate based on input ordering and cardinality.\"</p>"
+        },
+        {
+          "type": "svg",
+          "value": "<svg viewBox=\"0 0 700 340\" xmlns=\"http://www.w3.org/2000/svg\"><style>.hi-box{fill:var(--bg-secondary);stroke:var(--brand-primary);stroke-width:2;rx:8}.hi-edge{stroke:var(--text-primary);stroke-width:2;fill:none;marker-end:url(#arrow)}.sys-box{fill:var(--bg-secondary);stroke:var(--border-default);stroke-width:2;rx:6}.sys-lbl{fill:var(--text-primary);font-family:system-ui;font-size:12px;font-weight:600;text-anchor:middle}.hi-lbl{fill:var(--text-primary);font-family:system-ui;font-size:10px;text-anchor:middle;opacity:.85}.flow-pulse{animation:pulse 2s ease-in-out infinite}@keyframes pulse{0%,100%{opacity:.6}50%{opacity:1}}@keyframes glow{0%,100%{opacity:.3}50%{opacity:.85}}.ann-pulse{animation:glow 2s ease-in-out infinite}@keyframes flowDash{0%{stroke-dashoffset:-12}100%{stroke-dashoffset:0}}.flowDash{stroke:var(--brand-primary);stroke-width:2;fill:none;stroke-dasharray:4;animation:flowDash 1s linear infinite}</style><defs><marker id=\"arrow\" markerWidth=\"8\" markerHeight=\"6\" refX=\"8\" refY=\"3\" orient=\"auto\"><path d=\"M0,0 L8,3 L0,6 Z\" fill=\"var(--text-primary)\"/></marker></defs><text class=\"sys-lbl\" x=\"350\" y=\"22\">GROUP BY &amp; FILTER Execution Plans</text><rect class=\"hi-box\" x=\"20\" y=\"38\" width=\"660\" height=\"280\"/><rect class=\"sys-box\" x=\"40\" y=\"55\" width=\"290\" height=\"100\"/><text class=\"sys-lbl\" x=\"185\" y=\"75\">GROUP BY Strategy</text><text class=\"hi-lbl\" x=\"185\" y=\"93\">Source SORTED: sort-based O(N)</text><text class=\"hi-lbl\" x=\"185\" y=\"108\">Source STANDARD: hash-based O(N)</text><text class=\"hi-lbl\" x=\"185\" y=\"123\">Source HASHED: hash-based O(N)</text><rect class=\"sys-box\" x=\"40\" y=\"170\" width=\"290\" height=\"60\"/><text class=\"sys-lbl\" x=\"185\" y=\"190\">Hash-based Grouping</text><text class=\"hi-lbl\" x=\"185\" y=\"208\">Build hash on group key, aggregate values O(N)</text><rect class=\"sys-box\" x=\"370\" y=\"55\" width=\"290\" height=\"100\"/><text class=\"sys-lbl\" x=\"515\" y=\"75\">FILTER Strategy</text><text class=\"hi-lbl\" x=\"515\" y=\"93\">FILTER ALL OF: lazy evaluation</text><text class=\"hi-lbl\" x=\"515\" y=\"108\">FILTER IN: hash-set probe O(N+M)</text><text class=\"hi-lbl\" x=\"515\" y=\"123\">No data copy (view semantics)</text><rect class=\"sys-box\" x=\"370\" y=\"170\" width=\"290\" height=\"60\"/><text class=\"sys-lbl\" x=\"515\" y=\"190\">Procedural Equivalent</text><text class=\"hi-lbl\" x=\"515\" y=\"208\">LOOP + READ TABLE: O(N log M) or O(N*M)</text><text class=\"hi-lbl\" x=\"350\" y=\"250\" font-size=\"11\">See adjacent code block for ABAP GROUP BY / FILTER syntax examples</text></svg>"
+        },
+        {
+          "type": "text",
+          "value": "<pre class=\"language-abap\"><code>\" GROUP BY example\nDATA lt_sales TYPE STANDARD TABLE OF ... WITH EMPTY KEY.\n\" Group by company code with aggregation\nDATA(lt_grouped) = VALUE #(\n  FOR GROUPS group OF ls IN lt_sales\n    GROUP BY ( company_code = ls-company_code\n               fiscal_year  = ls-fiscal_year )\n    LET total = REDUCE #(\n      INIT sum TYPE int8\n      FOR ls2 IN GROUP group\n      NEXT sum = sum + ls2-amount )\n    IN ( company_code = group-company_code\n         fiscal_year  = group-fiscal_year\n         total_amount = total ) ).\n\" FILTER example\nDATA lt_filtered = FILTER #( lt_sales USING KEY matnr\n  WHERE matnr IN lt_materials ).\n\" FILTER ALL OF — lazy evaluated view\nDATA(lt_high_value) = FILTER ALL OF lt_sales\n  WHERE amount > 100000.</code></pre>"
+        }
+      ],
+      "codeBlock": "\" GROUP BY — hash-based aggregation\nDATA(lt_grouped) = VALUE #(\n  FOR GROUPS group OF ls IN lt_sales\n    GROUP BY ( company_code = ls-company_code\n               fiscal_year  = ls-fiscal_year )\n    LET total = REDUCE #(\n      INIT sum TYPE int8\n      FOR ls2 IN GROUP group\n      NEXT sum = sum + ls2-amount )\n    IN ( company_code = group-company_code\n         fiscal_year  = group-fiscal_year\n         total_amount = total ) ).\n\n\" FILTER IN — hash-based filter (O(N+M))\nDATA lt_filtered = FILTER #( lt_sales USING KEY matnr\n  WHERE matnr IN lt_materials ).\n\n\" FILTER ALL OF — lazy evaluated view (no copy)\nDATA(lt_high_value) = FILTER ALL OF lt_sales\n  WHERE amount > 100000.",
+      "diffTable": {
+        "headers": [
+          "Pattern",
+          "Before (LOOP/IF)",
+          "After (FILTER)",
+          "Lines Saved"
+        ],
+        "rows": [
+          [
+            "Simple filter",
+            "5 lines (LOOP + IF + APPEND)",
+            "1 line (FILTER)",
+            "-80%"
+          ],
+          [
+            "Multi-condition",
+            "8 lines (+ nested IF)",
+            "1 line (FILTER + COND)",
+            "-87%"
+          ],
+          [
+            "Exclusion",
+            "6 lines (+ NOT IN check)",
+            "1 line (FILTER EXCEPT)",
+            "-83%"
+          ],
+          [
+            "Two-table join",
+            "12 lines (+ nested LOOP)",
+            "2 lines (FILTER IN join)",
+            "-83%"
+          ]
+        ]
+      },
+      "decisionTree": {
+        "prompt": "Should I use GROUP BY or procedural LOOP for aggregating internal table data?",
+        "firstQuestion": "\"Is the aggregation a simple SUM/COUNT with one or two group keys, or does it require complex multi-pass logic?\" Simple aggregation = GROUP BY. Complex logic with conditionals = LOOP with inline accumulation.",
+        "branches": [
+          {
+            "condition": "Simple SUM/COUNT aggregation on sorted or unique group key",
+            "path": "GROUP BY via VALUE #( FOR GROUPS ... ). Hash-based grouping O(N). Acceptable for tables up to ~1M entries. Shorter code, fewer bugs."
+          },
+          {
+            "condition": "Complex multi-pass logic with conditionals per group",
+            "path": "LOOP + inline accumulation. More control for complex business rules. Pre-sort by group key to avoid hash table overhead."
+          },
+          {
+            "condition": "Need filtered subset without copying data",
+            "path": "FILTER ALL OF. Lazy-evaluated view — no data copy. Use with FILTER IN (hash-based) for large filter tables. O(N+M) performance."
+          }
+        ],
+        "staffPlusTip": "GROUP BY is hash-based for STANDARD/HASHED tables and sort-based for SORTED tables. Pre-sorting by group key before GROUP BY makes it O(N) instead of O(N log N)."
+      },
+      "quantifiedTradeoff": {
+        "title": "GROUP BY vs LOOP — Computational Cost Comparison",
+        "variables": [
+          {
+            "name": "Table size",
+            "value": "100K rows",
+            "source": "Monthly sales data export"
+          },
+          {
+            "name": "Group count",
+            "value": "5,000 unique groups",
+            "source": "Sales by company code + fiscal year"
+          },
+          {
+            "name": "Aggregation",
+            "value": "SUM(amount) + COUNT(items)",
+            "source": "Standard financial aggregation"
+          }
+        ],
+        "calculation": {
+          "formula": "AggregationCost = BuildCost + ProbeCost",
+          "group_by_declarative": {
+            "writeLatency": "15ms total",
+            "monthlyPenalty": "$0 — Hash-based: build hash on group key (5ms) + probe all 100K rows (10ms). ~100 lines of code replaced by 1 expression. No mutation bugs."
+          },
+          "loop_procedural": {
+            "writeLatency": "85ms total",
+            "monthlyPenalty": "$0 — LOOP + READ TABLE on unsorted table: 100K loops × ~0.85μs each = 85ms. ~25 lines of code. Higher risk of bugs (uninitialized accumulators, missing group handling)."
+          },
+          "breakeven": "GROUP BY is 5.7x faster at 100K rows. At 1K rows, both take ~1-2ms — use LOOP for readability with small tables. At 1M rows, GROUP BY is 10x+ faster and should always be preferred."
+        }
+      }
+    },
+    {
+      "title": "FOR Expressions — FOR...IN...VALUE",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>ABAP 7.40+ introduced functional programming constructs centered on <code>FOR</code> expressions. Staff+ engineers should understand these not as syntax replacements for loops, but as <b>declarative data transformation pipelines</b> that enable immutable data processing and functional composition.</p><p><b>FOR...IN...VALUE</b> is the most versatile construct. It generates a new internal table by iterating over a source and applying transformations. Unlike procedural loops with APPEND, FOR expressions are <b>side-effect free</b> — they don't modify existing variables, they produce new values. This eliminates entire categories of bugs: loop variable pollution, uninitialized table states, and accidental table modification during iteration.</p><p><b>Nested FOR expressions</b> enable cartesian product generation in a single expression: <code>VALUE #( FOR a IN lt_a FOR b IN lt_b ( ... ) )</code>. This replaces nested LOOP constructs with a single functional expression. The ABAP runtime optimizes nested FOR by using the inner table's primary key access when a <code>WHERE</code> clause is present. A nested FOR with a WHERE on the inner table's key column uses hash lookup instead of full scan.</p><p><b>FOR...THEN</b> enables arithmetic progression generation: <code>VALUE #( FOR i = 1 THEN i + 1 UNTIL i > 100 ( i ) )</code>. This replaces DO...ENDDO loops for generating numeric sequences. The THEN clause can contain any expression, including function calls and structural transformations.</p><p><b>REDUCE</b> is the aggregator companion to FOR. It reduces a table to a single value.</p><p><b>Staff+ takeaway:</b> FOR expressions represent ABAP's evolution toward functional programming. When FAANG asks about functional programming patterns, map ABAP's FOR/REDUCE to Java streams or Kotlin's sequence operations: \"FOR...IN...VALUE = map + collect, REDUCE = reduce/fold, FILTER = filter. ABAP 7.40+ enables declarative data pipelines that improve readability and eliminate mutation bugs.\"</p>"
+        },
+        {
+          "type": "svg",
+          "value": "<svg viewBox=\"0 0 700 340\" xmlns=\"http://www.w3.org/2000/svg\"><style>.hi-box{fill:var(--bg-secondary);stroke:var(--brand-primary);stroke-width:2;rx:8}.hi-edge{stroke:var(--text-primary);stroke-width:2;fill:none;marker-end:url(#arrow)}.sys-box{fill:var(--bg-secondary);stroke:var(--border-default);stroke-width:2;rx:6}.sys-lbl{fill:var(--text-primary);font-family:system-ui;font-size:12px;font-weight:600;text-anchor:middle}.hi-lbl{fill:var(--text-primary);font-family:system-ui;font-size:10px;text-anchor:middle;opacity:.85}.flow-pulse{animation:pulse 2s ease-in-out infinite}@keyframes pulse{0%,100%{opacity:.6}50%{opacity:1}}@keyframes glow{0%,100%{opacity:.3}50%{opacity:.85}}.ann-pulse{animation:glow 2s ease-in-out infinite}@keyframes flowDash{0%{stroke-dashoffset:-12}100%{stroke-dashoffset:0}}.flowDash{stroke:var(--brand-primary);stroke-width:2;fill:none;stroke-dasharray:4;animation:flowDash 1s linear infinite}</style><defs><marker id=\"arrow\" markerWidth=\"8\" markerHeight=\"6\" refX=\"8\" refY=\"3\" orient=\"auto\"><path d=\"M0,0 L8,3 L0,6 Z\" fill=\"var(--text-primary)\"/></marker></defs><text class=\"sys-lbl\" x=\"350\" y=\"22\">FOR Expression Data Flow</text><rect class=\"hi-box\" x=\"20\" y=\"38\" width=\"660\" height=\"280\"/><rect class=\"sys-box\" x=\"40\" y=\"55\" width=\"160\" height=\"50\"/><text class=\"sys-lbl\" x=\"120\" y=\"75\">Source Table A</text><text class=\"hi-lbl\" x=\"120\" y=\"92\">lt_invoices</text><path d=\"M200,80 L250,80\" class=\"hi-edge\"/><rect class=\"sys-box\" x=\"250\" y=\"55\" width=\"160\" height=\"50\" fill=\"var(--svg-accent-stroke)\" opacity=\".1\"/><text class=\"sys-lbl\" x=\"330\" y=\"75\">FOR row IN source</text><text class=\"hi-lbl\" x=\"330\" y=\"92\">Transform / Filter</text><path d=\"M410,80 L460,80\" class=\"hi-edge\"/><rect class=\"sys-box\" x=\"460\" y=\"55\" width=\"200\" height=\"50\" fill=\"var(--svg-success-stroke)\" opacity=\".1\"/><text class=\"sys-lbl\" x=\"560\" y=\"75\">VALUE #( ... )</text><text class=\"hi-lbl\" x=\"560\" y=\"92\">New target table</text><rect class=\"sys-box\" x=\"40\" y=\"130\" width=\"290\" height=\"80\"/><text class=\"sys-lbl\" x=\"185\" y=\"150\">REDUCE (Aggregation)</text><text class=\"hi-lbl\" x=\"185\" y=\"168\">INIT acc = 0</text><text class=\"hi-lbl\" x=\"185\" y=\"183\">FOR ls IN table NEXT acc = acc + ls-val</text><path d=\"M330,170 L370,170\" class=\"hi-edge\"/><rect class=\"sys-box\" x=\"370\" y=\"130\" width=\"290\" height=\"80\"/><text class=\"sys-lbl\" x=\"515\" y=\"150\">Nested FOR (Cartesian)</text><text class=\"hi-lbl\" x=\"515\" y=\"168\">FOR a IN t1 FOR b IN t2 ( a-b )</text><text class=\"hi-lbl\" x=\"515\" y=\"183\">Optimized with WHERE on primary key</text><rect class=\"sys-box\" x=\"40\" y=\"235\" width=\"620\" height=\"60\" fill=\"var(--bg-secondary)\" stroke=\"var(--border-default)\"/><text class=\"hi-lbl\" x=\"350\" y=\"255\" font-size=\"11\">Procedural vs Declarative</text><text class=\"hi-lbl\" x=\"350\" y=\"272\">LOOP-APPEND = mutable, side effects, bug-prone | FOR-VALUE = immutable, declarative, safe</text></svg>"
+        },
+        {
+          "type": "text",
+          "value": "<pre class=\"language-abap\"><code>\" FOR...IN...VALUE — map + collect pattern\nTYPES: BEGIN OF ty_invoice,\n         doc_id   TYPE c LENGTH 10,\n         amount   TYPE int8,\n         currency TYPE c LENGTH 3,\n       END OF ty_invoice.\nDATA lt_invoices TYPE STANDARD TABLE OF ty_invoice WITH EMPTY KEY.\n\" Build new table with transformed values\nDATA(lt_summaries) = VALUE #(\n  FOR inv IN lt_invoices\n  WHERE ( amount > 1000 )\n  ( doc_id   = inv-doc_id\n    amount   = inv-amount\n    currency = inv-currency ) ).\n\" REDUCE — aggregation\nDATA(total_amount) = REDUCE int8(\n  INIT sum TYPE int8\n  FOR inv IN lt_invoices\n  NEXT sum = sum + inv-amount ).\n\" Nested FOR — cartesian product\nTYPES: BEGIN OF ty_combination,\n         material TYPE matnr,\n         plant    TYPE werks,\n       END OF ty_combination.\nDATA(lt_combos) = VALUE #(\n  FOR mat IN lt_materials\n  FOR plant IN lt_plants\n  ( material = mat\n    plant    = plant ) ).</code></pre>"
+        }
+      ],
+      "codeBlock": "\" FOR...IN...VALUE — map + collect\nDATA(lt_summaries) = VALUE #(\n  FOR inv IN lt_invoices\n  WHERE ( amount > 1000 )\n  ( doc_id   = inv-doc_id\n    amount   = inv-amount\n    currency = inv-currency ) ).\n\n\" REDUCE — aggregation to single value\nDATA(total_amount) = REDUCE int8(\n  INIT sum TYPE int8\n  FOR inv IN lt_invoices\n  NEXT sum = sum + inv-amount ).\n\n\" Nested FOR — cartesian product\nDATA(lt_combos) = VALUE #(\n  FOR mat IN lt_materials\n  FOR plant IN lt_plants\n  ( material = mat\n    plant    = plant ) ).\n\n\" FOR...THEN — arithmetic progression\nDATA(lt_range) = VALUE #(\n  FOR i = 1 THEN i + 1 UNTIL i > 100\n  ( i ) ).\n\n\" REDUCE with string concatenation\nDATA(lv_csv) = REDUCE string(\n  INIT csv = ``\n  FOR ls IN lt_data\n  NEXT csv = |{ csv }{ ls-field },| ).",
+      "adversarialResponse": {
+        "challenge": "\"Your FOR expressions are too complex and hard to debug. I can't set breakpoints inside a VALUE #( FOR ... ) expression.\"",
+        "badResponse": "\"FOR expressions are best practice. You should learn to read them.\" (dismissive, no empathy)",
+        "goodResponse": "\"I understand the debugging concern — FOR expressions are single-line constructs that can't be stepped into with the debugger. This is a valid tradeoff. Let me suggest a pragmatic approach: (1) Start simple — use FOR expressions for straightforward transformations (map, filter, simple aggregation). Keep them to 5 lines or fewer. (2) For complex logic, extract the transformation into a helper method that returns the result. Call the helper from the FOR expression — you can set breakpoints in the helper. (3) Use a two-phase approach during development: write the logic as a LOOP first (debuggable), verify correctness, then refactor to FOR expression (production). Keep the LOOP version as a comment for future debugging. (4) If you have ABAP 7.55+, use the REDUCE operator with inline LET expressions — these are still functional but can be broken into smaller, testable pieces. The key insight: FOR expressions reduce bugs in production (no mutation issues) at the cost of harder debugging. For a team with junior developers, use FOR only for simple cases and keep LOOPs for complex logic.\"",
+        "pattern": "empathy-with-pragmatic-migration — acknowledge the debugging pain, provide incremental adoption strategy, and suggest testing patterns that compensate for the debugging limitation."
+      }
+    },
+    {
+      "title": "Memory Pressure Behavior",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>What happens when an internal table exceeds available memory? Most ABAP developers have seen a <b>TSV_TNEW_PAGE_ALLOC_FAILED</b> or <b>MOVE_FAILED</b> dump but don't understand the memory pressure dynamics that lead there. Staff+ engineers must model memory behavior to prevent production incidents before they happen.</p><p><b>Memory allocation chain:</b> When an internal table grows, the ABAP runtime allocates memory from the work process's <b>heap</b>. The allocation strategy depends on table type and row size. STANDARD tables allocate memory in fixed-size blocks (2 KB default, controlled by <code>rdisp/block_size</code>). As the table grows, the runtime requests additional blocks from the OS heap. SORTED and HASHED tables have more complex allocation patterns because of index structures (binary tree nodes, hash buckets, chaining pointers). A HASHED table with 1 million entries of 100 bytes each requires approximately: 100 MB for data + ~60 MB for hash table overhead (buckets + pointers) = 160 MB total.</p><p><b>The memory pressure threshold:</b> Each work process has a heap limit (<code>abap/heap_area_dia</code> or <code>abap/heap_area_nondia</code>). When a work process's total heap allocation reaches this limit, the runtime attempts to <b>roll out</b> data to extended memory (EM). If EM is also exhausted, the runtime attempts to <b>page out</b> to operating system swap. If all three levels are exhausted, the runtime terminates the process with a dump.</p><p><b>Staff+ takeaway:</b> Memory pressure modeling is essential for capacity planning. Use the formula: <code>MaxMemoryPerWP = heap_limit + roll_max</code>. Total server memory risk = <code>MaxMemoryPerWP × number_of_WPs</code>. If you have 200 DIA processes with 200 MB heap each + 100 MB EM each, worst-case memory is 60 GB. Configure <code>rdisp/max_wprun_time</code> as a safety valve. Design batch programs to use <code>PACKAGE SIZE</code> to process data in chunks. When FAANG asks about \"handling large datasets in memory,\" describe ABAP's multi-tier memory model as a case study in <b>defensive memory management</b>.</p>"
+        },
+        {
+          "type": "svg",
+          "value": "<svg viewBox=\"0 0 700 380\" xmlns=\"http://www.w3.org/2000/svg\"><style>.hi-box{fill:var(--bg-secondary);stroke:var(--brand-primary);stroke-width:2;rx:8}.hi-edge{stroke:var(--text-primary);stroke-width:2;fill:none;marker-end:url(#arrow)}.sys-box{fill:var(--bg-secondary);stroke:var(--border-default);stroke-width:2;rx:6}.sys-lbl{fill:var(--text-primary);font-family:system-ui;font-size:12px;font-weight:600;text-anchor:middle}.hi-lbl{fill:var(--text-primary);font-family:system-ui;font-size:10px;text-anchor:middle;opacity:.85}.flow-pulse{animation:pulse 2s ease-in-out infinite}@keyframes pulse{0%,100%{opacity:.6}50%{opacity:1}}@keyframes glow{0%,100%{opacity:.3}50%{opacity:.85}}.ann-pulse{animation:glow 2s ease-in-out infinite}@keyframes flowDash{0%{stroke-dashoffset:-12}100%{stroke-dashoffset:0}}.flowDash{stroke:var(--brand-primary);stroke-width:2;fill:none;stroke-dasharray:4;animation:flowDash 1s linear infinite}</style><defs><marker id=\"arrow\" markerWidth=\"8\" markerHeight=\"6\" refX=\"8\" refY=\"3\" orient=\"auto\"><path d=\"M0,0 L8,3 L0,6 Z\" fill=\"var(--text-primary)\"/></marker></defs><text class=\"sys-lbl\" x=\"350\" y=\"22\">Memory Pressure Dynamics</text><rect class=\"hi-box\" x=\"20\" y=\"38\" width=\"660\" height=\"320\"/><text class=\"sys-lbl\" x=\"350\" y=\"58\">Internal Table Memory Allocation</text><rect class=\"sys-box\" x=\"80\" y=\"75\" width=\"140\" height=\"50\" fill=\"var(--svg-success-stroke)\" opacity=\".1\"/><text class=\"sys-lbl\" x=\"150\" y=\"95\">Heap Memory</text><text class=\"hi-lbl\" x=\"150\" y=\"112\">abap/heap_area_dia</text><path d=\"M220,100 L280,100\" class=\"hi-edge flow-pulse\"/><rect class=\"sys-box\" x=\"280\" y=\"75\" width=\"140\" height=\"50\" fill=\"var(--svg-accent-stroke)\" opacity=\".1\"/><text class=\"sys-lbl\" x=\"350\" y=\"95\">Extended Memory</text><text class=\"hi-lbl\" x=\"350\" y=\"112\">rdisp/roll_max</text><path d=\"M420,100 L480,100\" class=\"hi-edge flow-pulse\"/><rect class=\"sys-box\" x=\"480\" y=\"75\" width=\"140\" height=\"50\" fill=\"var(--svg-warning-stroke)\" opacity=\".1\"/><text class=\"sys-lbl\" x=\"550\" y=\"95\">OS Swap</text><text class=\"hi-lbl\" x=\"550\" y=\"112\">Paging to disk</text><text class=\"sys-lbl\" x=\"350\" y=\"160\">Internal Table Cost Breakdown (1M rows, 100 B each)</text><rect class=\"sys-box\" x=\"40\" y=\"175\" width=\"180\" height=\"65\"/><text class=\"sys-lbl\" x=\"130\" y=\"195\">STANDARD</text><text class=\"hi-lbl\" x=\"130\" y=\"212\">100 MB data</text><text class=\"hi-lbl\" x=\"130\" y=\"228\">+ ~1 MB block overhead</text><rect class=\"sys-box\" x=\"240\" y=\"175\" width=\"180\" height=\"65\"/><text class=\"sys-lbl\" x=\"330\" y=\"195\">SORTED</text><text class=\"hi-lbl\" x=\"330\" y=\"212\">100 MB data</text><text class=\"hi-lbl\" x=\"330\" y=\"228\">+ ~10 MB tree overhead</text><rect class=\"sys-box\" x=\"440\" y=\"175\" width=\"220\" height=\"65\" stroke=\"var(--svg-warning-stroke)\"/><text class=\"sys-lbl\" x=\"550\" y=\"195\">HASHED</text><text class=\"hi-lbl\" x=\"550\" y=\"212\">100 MB data + ~60 MB hash ovh</text><text class=\"hi-lbl\" x=\"550\" y=\"228\">= 160 MB total</text><text class=\"hi-lbl\" x=\"350\" y=\"268\">Worst-case memory: MaxMemoryPerWP × NumberOfWorkProcesses</text><rect class=\"sys-box\" x=\"80\" y=\"280\" width=\"200\" height=\"36\" stroke=\"var(--svg-error-stroke)\"/><text class=\"hi-lbl\" x=\"180\" y=\"303\" fill=\"var(--svg-error-stroke)\">TSV_TNEW_PAGE_ALLOC_FAILED</text><rect class=\"sys-box\" x=\"340\" y=\"280\" width=\"200\" height=\"36\" stroke=\"var(--svg-error-stroke)\"/><text class=\"hi-lbl\" x=\"440\" y=\"303\" fill=\"var(--svg-error-stroke)\">MOVE_FAILED dump</text><text class=\"hi-lbl\" x=\"350\" y=\"340\">Mitigation: PACKAGE SIZE, rdisp/max_wprun_time, bounded table design</text></svg>"
+        }
+      ],
+      "codeBlock": "\" Memory pressure monitoring for internal tables\n\" WARNING: execution terminated if limits exceeded\n\nDATA(lo_runtime) = NEW cl_abap_runtime( ).\nDATA(lv_heap_used)  = lo_runtime->get_used_heap_size( ).\nDATA(lv_em_used)    = lo_runtime->get_extended_memory_size( ).\nDATA(lv_total_used) = lv_heap_used + lv_em_used.\n\n\" Get profile limits\nCALL FUNCTION 'TH_GET_PROFILE_PARAMETER'\n  EXPORTING iv_param = 'abap/heap_area_dia'\n  IMPORTING ev_value = DATA(lv_heap_limit).\n\n\" Check pressure level\nIF lv_total_used > lv_heap_limit * 0.8.\n  \" Critical: roll-out to extended memory\n  \" or risk TSV_TNEW_PAGE_ALLOC_FAILED dump\n  \" Solution: FREE memory, use PACKAGE SIZE\nENDIF.\n\n\" Estimate internal table memory\n\" For STANDARD table with N rows of R bytes:\n\" Memory = N × R + overhead (2KB per block)\n\" For HASHED: add ~60% overhead for bucket array + chaining\n\" 1M entries × 100 bytes ≈ 160MB total\n\n\" Safe processing pattern\nSELECT * FROM mara INTO TABLE @DATA(lt_mara)\n  UP TO 100000 ROWS.\n\" Instead:\nSELECT * FROM mara INTO TABLE @DATA(lt_mara)\n  PACKAGE SIZE 10000.\n\" Processes in 10K-row chunks, freeing memory between packages",
+      "quantifiedTradeoff": {
+        "title": "Memory Pressure — Heap vs Extended Memory Cost of Large Internal Tables",
+        "variables": [
+          {
+            "name": "Table size",
+            "value": "2M entries",
+            "source": "Year-end material document extract"
+          },
+          {
+            "name": "Row width",
+            "value": "150 bytes",
+            "source": "Standard document structure"
+          },
+          {
+            "name": "Work process heap limit",
+            "value": "200MB",
+            "source": "abap/heap_area_dia default"
+          }
+        ],
+        "calculation": {
+          "formula": "MemoryUsed = (RowCount × RowWidth) + InternalOverhead × StructureFactor",
+          "standard_table": {
+            "writeLatency": "~310MB total",
+            "monthlyPenalty": "$0 — 2M × 150B = 300MB data + ~10MB block overhead = 310MB. Exceeds 200MB heap limit → rolls out to extended memory. Roll-out adds ~50ms latency per dialog step."
+          },
+          "sorted_table": {
+            "writeLatency": "~350MB total",
+            "monthlyPenalty": "$0 — 300MB data + ~50MB B-tree index overhead. Higher memory but supports binary search without secondary index."
+          },
+          "hashed_table": {
+            "writeLatency": "~480MB total",
+            "monthlyPenalty": "$0 — 300MB data + ~180MB hash table overhead (buckets + chaining pointers). Exceeds heap + extended memory → TSV_TNEW_PAGE_ALLOC_FAILED dump."
+          },
+          "breakeven": "Below 500K entries (75MB data), all table types fit in heap. Between 500K-1.5M entries, STANDARD is most memory-efficient. Above 1.5M entries, use STANDARD with PACKAGE SIZE processing — never load the full table into memory."
+        }
+      },
+      "adversarialResponse": {
+        "challenge": "\"Our production system crashed with TSV_TNEW_PAGE_ALLOC_FAILED because a background job loaded too much data into an internal table. We lost 2 hours of processing.\"",
+        "badResponse": "\"We should increase abap/heap_area_dia.\" (band-aid, no systemic fix)",
+        "goodResponse": "\"TSV_TNEW_PAGE_ALLOC_FAILED means the work process heap is exhausted. Increasing the limit just delays the problem — data volumes grow, and the crash returns. Let me implement a three-layer defense: (1) Immediate fix — add a row count check before loading: IF expected_rows > 100000 THEN RAISE EXCEPTION TYPE cx_capacity_exceeded. This fails fast with a meaningful error instead of crashing the work process. (2) Architectural fix — rewrite the job to use PACKAGE SIZE processing: SELECT ... PACKAGE SIZE 10000 INTO TABLE @lt_chunk. Process each chunk, free memory with FREE lt_chunk, then fetch the next chunk. This limits peak memory to 10K rows regardless of total data volume. (3) Monitoring — add memory usage tracking at the start of each batch step using cl_abap_runtime=>get_used_heap_size( ). If usage exceeds 80% of the heap limit, log a warning and activate data throttling. The systemic lesson: never write SELECT * INTO TABLE without a UP TO or PACKAGE SIZE guard in production jobs.\"",
+        "pattern": "defense-in-depth — implement immediate fail-fast protection, architectural redesign for bounded memory, and proactive monitoring. The Staff+ signal is preventing the same class of failure across all batch jobs, not fixing one instance."
+      }
+    }
+  ],
+  "details": "<p><b>Staff+ Insight:</b> FAANG interviews don't test ABAP syntax, but they test data structure reasoning. The ability to analyze O(1) vs O(log N) vs O(N) performance, memory tradeoffs, and hash collision behavior demonstrates the systems thinking that Staff+ roles require. Frame internal table discussions in Big O terms — this is the language FAANG understands.</p>"
+}

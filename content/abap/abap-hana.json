@@ -1,0 +1,443 @@
+{
+  "id": "abap-hana",
+  "title": "SAP HANA Architecture & Internals",
+  "category": "Modern ABAP",
+  "subcategory": "Cloud Native",
+  "language": "abap",
+  "description": "<p>SAP HANA is not just a database — it is a column-oriented, memory-optimized, multi-engine data platform that redefines how enterprise applications handle data. Unlike traditional disk-based row-stores (Oracle, DB2, SQL Server), HANA keeps data in main memory and uses columnar compression, vector processing, and parallel query execution. This section covers HANA internals from a Staff+ perspective: column vs row store internals, memory management, query execution engine, indexing, partitioning, ABAP integration, and cloud vs on-premise deployment considerations.</p>",
+  "tags": [
+    "HANA",
+    "database",
+    "column-store",
+    "row-store",
+    "internals",
+    "memory",
+    "optimization",
+    "Staff+"
+  ],
+  "sections": [
+    {
+      "title": "HANA Column Store vs Row Store",
+      "description": [
+        {
+          "type": "svg",
+          "value": "<div style=\"margin:20px 0;display:flex;justify-content:center\"><svg viewBox=\"0 0 700 300\" xmlns=\"http://www.w3.org/2000/svg\"><style>.cs-box{fill:var(--bg-secondary);stroke:var(--brand-primary);stroke-width:2;rx:8}.rs-box{fill:var(--bg-secondary);stroke:var(--text-primary);stroke-width:2;rx:8}.cs-cell{fill:var(--bg-secondary);stroke:var(--border-default);stroke-width:1;rx:2}.cs-lbl{fill:var(--text-primary);font-family:system-ui;font-size:11px;font-weight:600;text-anchor:middle}.cs-sub{fill:var(--text-primary);font-family:system-ui;font-size:9px;text-anchor:middle}.cs-flow{stroke:var(--brand-primary);stroke-width:2;fill:none;marker-end:url(#arrow)}</style><defs><marker id=\"arrow\" markerWidth=\"8\" markerHeight=\"6\" refX=\"8\" refY=\"3\" orient=\"auto\"><path d=\"M0,0 L8,3 L0,6Z\" fill=\"var(--brand-primary)\"/></marker></defs><text class=\"cs-lbl\" x=\"350\" y=\"20\">Column Store vs Row Store</text><rect class=\"cs-box\" x=\"30\" y=\"35\" width=\"300\" height=\"240\"/><text class=\"cs-lbl\" x=\"180\" y=\"55\">Column Store</text><text class=\"cs-sub\" x=\"180\" y=\"72\">Data stored column-wise in main memory</text><rect class=\"cs-cell\" x=\"50\" y=\"85\" width=\"60\" height=\"30\"/><text class=\"cs-sub\" x=\"80\" y=\"105\">ID:1</text><rect class=\"cs-cell\" x=\"50\" y=\"120\" width=\"60\" height=\"30\"/><text class=\"cs-sub\" x=\"80\" y=\"140\">ID:2</text><rect class=\"cs-cell\" x=\"50\" y=\"155\" width=\"60\" height=\"30\"/><text class=\"cs-sub\" x=\"80\" y=\"175\">ID:3</text><rect class=\"cs-cell\" x=\"120\" y=\"85\" width=\"80\" height=\"30\"/><text class=\"cs-sub\" x=\"160\" y=\"105\">Name:Alice</text><rect class=\"cs-cell\" x=\"120\" y=\"120\" width=\"80\" height=\"30\"/><text class=\"cs-sub\" x=\"160\" y=\"140\">Name:Bob</text><rect class=\"cs-cell\" x=\"120\" y=\"155\" width=\"80\" height=\"30\"/><text class=\"cs-sub\" x=\"160\" y=\"175\">Name:Carol</text><rect class=\"cs-cell\" x=\"210\" y=\"85\" width=\"80\" height=\"30\"/><text class=\"cs-sub\" x=\"250\" y=\"105\">Amount:100</text><rect class=\"cs-cell\" x=\"210\" y=\"120\" width=\"80\" height=\"30\"/><text class=\"cs-sub\" x=\"250\" y=\"140\">Amount:200</text><rect class=\"cs-cell\" x=\"210\" y=\"155\" width=\"80\" height=\"30\"/><text class=\"cs-sub\" x=\"250\" y=\"175\">Amount:300</text><text class=\"cs-sub\" x=\"180\" y=\"215\">Dictionary compression per column</text><text class=\"cs-sub\" x=\"180\" y=\"235\">Vectorized SIMD execution</text><text class=\"cs-sub\" x=\"180\" y=\"255\">Best for: analytical, aggregation-heavy</text><rect class=\"rs-box\" x=\"370\" y=\"35\" width=\"300\" height=\"240\"/><text class=\"cs-lbl\" x=\"520\" y=\"55\">Row Store</text><text class=\"cs-sub\" x=\"520\" y=\"72\">Data stored row-wise (traditional)</text><rect class=\"cs-cell\" x=\"390\" y=\"85\" width=\"260\" height=\"30\"/><text class=\"cs-sub\" x=\"520\" y=\"105\">Row1: 1, Alice, 100</text><rect class=\"cs-cell\" x=\"390\" y=\"120\" width=\"260\" height=\"30\"/><text class=\"cs-sub\" x=\"520\" y=\"140\">Row2: 2, Bob, 200</text><rect class=\"cs-cell\" x=\"390\" y=\"155\" width=\"260\" height=\"30\"/><text class=\"cs-sub\" x=\"520\" y=\"175\">Row3: 3, Carol, 300</text><text class=\"cs-sub\" x=\"520\" y=\"215\">No compression (full row read/write)</text><text class=\"cs-sub\" x=\"520\" y=\"235\">Row-level locking, single-row ops</text><text class=\"cs-sub\" x=\"520\" y=\"255\">Best for: transactional, single-record</text></svg></div>"
+        },
+        {
+          "type": "text",
+          "value": "<p>The fundamental architectural decision in HANA is whether to store data in a <b>column store</b> or <b>row store</b>. All modern HANA tables default to column store, but row store remains relevant for specific workloads. Understanding the internals of each storage engine is critical for performance optimization at Staff+ level.</p><p><b>Column Store:</b> Data is stored column by column in main memory. Each column is a contiguous array of values, enabling dictionary compression, run-length encoding, and vectorized (SIMD) processing. Column store excels at analytical queries that scan many rows but few columns (e.g., SUM(amount) WHERE region = ’EMEA’). The columnar layout means the query engine reads only the columns needed — it never touches irrelevant columns. Dictionary compression maps values to integer IDs, reducing memory footprint by 2-10x depending on cardinality.</p><p><b>Row Store:</b> Data is stored row by row, as in traditional databases. Row store is optimized for point queries (SELECT * WHERE id = 42) and transactional workloads (single-row INSERT/UPDATE/DELETE). Row store does not use columnar compression — it reads entire rows even if only one column is needed. The advantage is lower latency for single-row operations and no decompression overhead.</p><p><b>Staff+ Decision Framework:</b> Use column store for (1) tables with many columns but analytical access patterns, (2) tables that are scanned for reporting or aggregation, (3) tables that benefit from compression (high cardinality columns). Use row store for (1) small configuration tables (<10K rows), (2) tables with frequent single-row updates (hotspot tables), (3) tables that need SELECT ... FOR UPDATE with row-level locking. HANA allows mixing both in the same database — the query engine decides which store to access based on the query and the table’s storage type.</p>"
+        }
+      ],
+      "codeBlock": "@EndUserText.label: 'Column Store Table'\ndefine table z_column_store_example {\n  key client   : mandt;\n  key doc_id   : vbeln;\n      item_num : posnr;\n      material : matnr;\n      quantity : menge_d;\n      amount   : netwr;\n      currency : waerk;\n}\n\n@EndUserText.label: 'Row Store Table'\n@AbapCatalog.sqlViewAppend: ''\ndefine table z_row_store_example {\n  key client      : mandt;\n  key config_id   : char10;\n      config_value: char100;\n      description : char200;\n}",
+      "decisionTree": {
+        "prompt": "Should this ABAP table be column store or row store?",
+        "firstQuestion": "\"What is the primary access pattern?\" Analytical (many rows, few columns, aggregation) = column store. Transactional (single row, frequent updates, locking) = row store. Configuration (small, infrequent changes) = either, but row store simpler.",
+        "branches": [
+          {
+            "condition": "Analytical - reporting, aggregation, many rows scanned, few columns projected",
+            "path": "Column store (default). Enables dictionary compression, vectorized execution, partition pruning. Best for tables with >1M rows where queries access 20-30% of columns."
+          },
+          {
+            "condition": "Transactional - single-record CRUD, SELECT FOR UPDATE, frequent small writes",
+            "path": "Row store. Lower per-row overhead for single-row operations. No compression/decompression penalty. Use for configuration tables, counters, sequence tables, session data."
+          },
+          {
+            "condition": "Mixed - both analytical and transactional on same table",
+            "path": "Column store with deltas. HANA column store has a write-optimized delta store (in-memory) that merges into the main column store periodically. Use for tables with moderate write volume and frequent reads."
+          }
+        ],
+        "staffPlusTip": "Column store is HANA's superpower. Default to column store unless you have a proven performance problem with single-row transactional access. The delta-merge mechanism handles moderate write workloads efficiently - the real performance trap is UPDATE-heavy patterns on column store tables with no delta merge tuning."
+      }
+    },
+    {
+      "title": "HANA Memory Management",
+      "description": [
+        {
+          "type": "svg",
+          "value": "<div style=\"margin:20px 0;display:flex;justify-content:center\"><svg viewBox=\"0 0 700 300\" xmlns=\"http://www.w3.org/2000/svg\"><style>.m-box{fill:var(--bg-secondary);stroke:var(--brand-primary);stroke-width:2;rx:8}.m-pool{fill:var(--bg-secondary);stroke:var(--text-primary);stroke-width:2;rx:6}.m-sess{fill:var(--bg-secondary);stroke:var(--border-default);stroke-width:2;rx:6}.m-lbl{fill:var(--text-primary);font-family:system-ui;font-size:11px;font-weight:600;text-anchor:middle}.m-sub{fill:var(--text-primary);font-family:system-ui;font-size:9px;text-anchor:middle}.m-flow{stroke:var(--brand-primary);stroke-width:2;fill:none;marker-end:url(#arrow)}.m-pulse{animation:pulse 2s ease-in-out infinite}@keyframes pulse{0%,100%{opacity:.6}50%{opacity:1}}</style><defs><marker id=\"arrow\" markerWidth=\"8\" markerHeight=\"6\" refX=\"8\" refY=\"3\" orient=\"auto\"><path d=\"M0,0 L8,3 L0,6Z\" fill=\"var(--brand-primary)\"/></marker></defs><text class=\"m-lbl\" x=\"350\" y=\"20\">HANA Memory Architecture</text><rect class=\"m-box\" x=\"150\" y=\"35\" width=\"400\" height=\"40\"/><text class=\"m-lbl\" x=\"350\" y=\"58\">Total Physical Memory (Sizing)</text><text class=\"m-sub\" x=\"350\" y=\"73\">global_allocation_limit (default 90% of host RAM)</text><line x1=\"250\" y1=\"75\" x2=\"250\" y2=\"110\" class=\"m-flow\"/><line x1=\"450\" y1=\"75\" x2=\"450\" y2=\"110\" class=\"m-flow\"/><rect class=\"m-pool\" x=\"50\" y=\"110\" width=\"280\" height=\"60\"/><text class=\"m-lbl\" x=\"190\" y=\"135\">Column Store Main Memory</text><text class=\"m-sub\" x=\"190\" y=\"155\">Compressed column data (LZ4, dictionary, run-length)</text><text class=\"m-sub\" x=\"190\" y=\"170\">Read-optimized, periodically merged from delta</text><rect class=\"m-pool\" x=\"370\" y=\"110\" width=\"280\" height=\"60\"/><text class=\"m-lbl\" x=\"510\" y=\"135\">Column Store Delta</text><text class=\"m-sub\" x=\"510\" y=\"155\">Write-optimized, in-memory L1/L2 delta</text><text class=\"m-sub\" x=\"510\" y=\"170\">Uncompressed, supports rollback</text><line x1=\"190\" y1=\"170\" x2=\"190\" y2=\"210\" class=\"m-flow\"/><line x1=\"510\" y1=\"170\" x2=\"510\" y2=\"210\" class=\"m-flow\"/><rect class=\"m-sess\" x=\"50\" y=\"210\" width=\"280\" height=\"40\"/><text class=\"m-lbl\" x=\"190\" y=\"234\">Session / Query Memory</text><text class=\"m-sub\" x=\"190\" y=\"248\">statement_memory_limit per connection</text><rect class=\"m-sess\" x=\"370\" y=\"210\" width=\"280\" height=\"40\"/><text class=\"m-lbl\" x=\"510\" y=\"234\">Extended / Columnar Storage</text><text class=\"m-sub\" x=\"510\" y=\"248\">Warm data (SSD-resident, paged on access)</text></svg></div>"
+        },
+        {
+          "type": "text",
+          "value": "<p>HANA is a memory-first database — all data resides in main memory (RAM). This is the fundamental reason for HANA’s speed: disk I/O is eliminated as a bottleneck for data access. However, memory is expensive and finite, which makes memory management the single most important operational concern for HANA administrators and architects.</p><p><b>Memory Pools:</b> HANA allocates memory from the OS into several pools: (1) <b>Column Store Main</b> — compressed column data, the largest pool, read-optimized, periodically rebuilt from the delta store via delta merge. (2) <b>Column Store Delta</b> — write-optimized storage for inserts/updates. Delta is uncompressed and structured as L1 delta (in-memory pending) and L2 delta (sorted, partially compressed). (3) <b>Row Store</b> — heap memory for row-store tables, each row stored as a contiguous block. (4) <b>Session / Query Memory</b> — per-connection memory for query execution, result sets, and temporary data. (5) <b>Extended Storage</b> — warm data that is lazily loaded from SSD to memory on access.</p><p><b>Compression Techniques:</b> HANA uses multiple compression techniques depending on data characteristics. <b>Dictionary compression</b> assigns an integer ID to each distinct value in a column and stores the ID, not the value. This is highly effective for low-cardinality columns (e.g., status, region, currency). <b>Run-length encoding (RLE)</b> compresses consecutive identical values into a single (value, count) pair — effective for sorted columns. <b>Indirect encoding</b> and <b>cluster compression</b> handle high-cardinality columns (e.g., amounts, quantities). LZ4 compression is applied to the final compressed block for additional space savings.</p><p><b>Global Allocation Limit:</b> The parameter <code>global_allocation_limit</code> controls the total memory HANA can allocate. Default is 90% of host RAM. When this limit is reached, HANA either rejects new queries or starts unloading warm data to extended storage. Monitoring the ratio of allocated to total memory is critical: if the ratio exceeds 85%, the system is at risk of out-of-memory errors.</p>"
+        },
+        {
+          "type": "code",
+          "language": "abap",
+          "value": "-- Monitor HANA memory consumption\nSELECT HOST, PORT,\n  ROUND(ALLOCATION_LIMIT / 1024 / 1024 / 1024, 2) AS ALLOCATED_GB,\n  ROUND(TOTAL_MEMORY_USED / 1024 / 1024 / 1024, 2) AS USED_GB,\n  ROUND((TOTAL_MEMORY_USED / ALLOCATION_LIMIT) * 100, 2) AS USAGE_PCT\nFROM M_HOST_INFORMATION;\n\n-- Per-table memory consumption\nSELECT SCHEMA_NAME, TABLE_NAME,\n  ROUND(MEMORY_SIZE_IN_TOTAL / 1024 / 1024 / 1024, 2) AS SIZE_GB,\n  RECORD_COUNT, COMPRESSION_RATIO, LAST_MERGE_TIME\nFROM M_CS_TABLES\nORDER BY MEMORY_SIZE_IN_TOTAL DESC;"
+        }
+      ],
+      "codeBlock": "-- HANA Memory Consumption Monitor\nSELECT HOST, PORT,\n  ROUND(ALLOCATION_LIMIT / 1024/1024/1024, 2) AS ALLOCATED_GB,\n  ROUND(TOTAL_MEMORY_USED / 1024/1024/1024, 2) AS USED_GB,\n  ROUND((TOTAL_MEMORY_USED / ALLOCATION_LIMIT) * 100, 2) AS USAGE_PCT\nFROM M_HOST_INFORMATION;\n\nSELECT SCHEMA_NAME, TABLE_NAME,\n  ROUND(MEMORY_SIZE_IN_TOTAL / 1024/1024/1024, 2) AS SIZE_GB,\n  RECORD_COUNT, COMPRESSION_RATIO, LAST_MERGE_TIME\nFROM M_CS_TABLES\nORDER BY MEMORY_SIZE_IN_TOTAL DESC;",
+      "quantifiedTradeoff": {
+        "title": "HANA Column Store Compression - Dictionary vs RLE vs LZ4",
+        "variables": [
+          {
+            "name": "Column cardinality",
+            "value": "Status column: 10 distinct values over 50M rows",
+            "source": "Low-cardinality typical example"
+          },
+          {
+            "name": "Column data type",
+            "value": "Amount column: DECIMAL(23,2), 95% unique values",
+            "source": "High-cardinality typical example"
+          },
+          {
+            "name": "Row count",
+            "value": "50M rows in table",
+            "source": "Medium-large HANA table"
+          }
+        ],
+        "calculation": {
+          "formula": "MemoryFootprint = DictionarySize + (RowCount * BitsPerID / 8)",
+          "dictionary": {
+            "writeLatency": "10 bits/row for status (2^10=1024 > 10 distinct)",
+            "monthlyPenalty": "Status: 50M * 10 bits = 62.5 MB. Dictionary overhead: 10 vals * 20 bytes = 200 bytes. Total: ~62.5 MB. Compression ratio: 20:1 vs raw string."
+          },
+          "rle": {
+            "writeLatency": "RLE pairs = number of value changes in sorted column",
+            "monthlyPenalty": "If status column is clustered (e.g., 1M 'Open' followed by 500K 'Closed'), RLE stores 2 pairs instead of 1.5M values. ~16 bytes vs 30 MB. Best when column sorted by compressed value."
+          },
+          "breakeven": "Dictionary compression is beneficial for strings with <10K distinct values. RLE only wins when column is sorted by compressed value. For high-cardinality columns, use indirect encoding or LZ4."
+        }
+      }
+    },
+    {
+      "title": "HANA Query Execution Engine",
+      "description": [
+        {
+          "type": "svg",
+          "value": "<div style=\"margin:20px 0;display:flex;justify-content:center\"><svg viewBox=\"0 0 700 340\" xmlns=\"http://www.w3.org/2000/svg\"><style>.q-box{fill:var(--bg-secondary);stroke:var(--brand-primary);stroke-width:2;rx:8}.q-stage{fill:var(--bg-secondary);stroke:var(--text-primary);stroke-width:2;rx:6}.q-plan{fill:var(--bg-secondary);stroke:var(--border-default);stroke-width:2;rx:6}.q-lbl{fill:var(--text-primary);font-family:system-ui;font-size:11px;font-weight:600;text-anchor:middle}.q-sub{fill:var(--text-primary);font-family:system-ui;font-size:9px;text-anchor:middle}.q-flow{stroke:var(--brand-primary);stroke-width:2;fill:none;marker-end:url(#arrow)}.q-dash{stroke:var(--border-default);stroke-width:1.5;fill:none;stroke-dasharray:4;animation:flowDash 1.5s linear infinite}.q-dot{animation:data-flow-particle 2s ease-in-out infinite}@keyframes data-flow-particle{0%,100%{opacity:0;transform:translateY(0)}50%{opacity:1;transform:translateY(-5px)}}@keyframes flowDash{0%{stroke-dashoffset:-8}100%{stroke-dashoffset:0}}</style><defs><marker id=\"arrow\" markerWidth=\"8\" markerHeight=\"6\" refX=\"8\" refY=\"3\" orient=\"auto\"><path d=\"M0,0 L8,3 L0,6Z\" fill=\"var(--brand-primary)\"/></marker></defs><text class=\"q-lbl\" x=\"350\" y=\"20\">HANA Query Execution Pipeline</text><rect class=\"q-stage\" x=\"250\" y=\"35\" width=\"200\" height=\"40\"/><text class=\"q-lbl\" x=\"350\" y=\"58\">SQL Parser</text><text class=\"q-sub\" x=\"350\" y=\"73\">Parsing, validation, name resolution</text><line x1=\"350\" y1=\"75\" x2=\"350\" y2=\"95\" class=\"q-flow\"/><rect class=\"q-plan\" x=\"200\" y=\"95\" width=\"300\" height=\"40\"/><text class=\"q-lbl\" x=\"350\" y=\"118\">Optimizer - Plan Generation</text><text class=\"q-sub\" x=\"350\" y=\"133\">Logical plan -> physical plan (join order, index)</text><line x1=\"220\" y1=\"135\" x2=\"220\" y2=\"170\" class=\"q-flow\"/><line x1=\"480\" y1=\"135\" x2=\"480\" y2=\"170\" class=\"q-flow\"/><rect class=\"q-stage\" x=\"30\" y=\"170\" width=\"290\" height=\"50\"/><text class=\"q-lbl\" x=\"175\" y=\"192\">L Optimizer (Logical)</text><text class=\"q-sub\" x=\"175\" y=\"210\">Predicate pushdown, projection pruning, view unfolding</text><rect class=\"q-stage\" x=\"380\" y=\"170\" width=\"290\" height=\"50\"/><text class=\"q-lbl\" x=\"525\" y=\"192\">P Optimizer (Physical)</text><text class=\"q-sub\" x=\"525\" y=\"210\">Join strategies, index selection, parallelization</text><line x1=\"175\" y1=\"220\" x2=\"175\" y2=\"255\" class=\"q-flow\"/><line x1=\"525\" y1=\"220\" x2=\"525\" y2=\"255\" class=\"q-flow\"/><rect class=\"q-box\" x=\"80\" y=\"255\" width=\"540\" height=\"50\"/><text class=\"q-lbl\" x=\"350\" y=\"278\">Operator Graph Execution (SIMD Vectorized)</text><text class=\"q-sub\" x=\"350\" y=\"295\">Column scan / Decode / Aggregate / Join / Sort</text></svg></div>"
+        },
+        {
+          "type": "text",
+          "value": "<p>HANA’s query execution engine is a <b>multi-stage pipeline</b> that transforms SQL into an optimized operator graph running on the column store. Understanding the optimizer’s choices is essential for writing HANA-efficient queries — especially for ABAP developers used to databases where the optimizer is less sophisticated.</p><p><b>Logical Optimizer (L Optimizer):</b> The first stage transforms the parsed SQL into a relational algebra tree. It applies logical transformations: predicate pushdown (filters as close to the table scan as possible), projection pruning (eliminate columns not needed by the outer query), view unfolding (inline CDS views), and subquery decorrelation (convert correlated subqueries to joins). The L optimizer is cost-based — it estimates cardinality for each operator and chooses the cheapest logical plan.</p><p><b>Physical Optimizer (P Optimizer):</b> The second stage chooses execution strategies: hash join (large unsorted data), merge join (pre-sorted data), nested-loop join (small driving table). For aggregations: hash aggregation (group-by with many groups) vs sort aggregation (input already sorted). The P optimizer considers index availability, partition pruning, and parallelization.</p><p><b>Operator Graph Execution:</b> The final physical plan is an operator DAG. Each operator is a C++ compiled function operating on columnar data with SIMD vectorization. Key operators: COLUMN SCAN (decompress and scan segments), DICTIONARY DECODE (map IDs to values), AGGREGATION (hash or sort-based), JOIN (hash/merge/nested-loop).</p>"
+        },
+        {
+          "type": "code",
+          "language": "abap",
+          "value": "-- HANA EXPLAIN PLAN\nEXPLAIN PLAN SET STATEMENT_NAME = 'explain_sales' FOR\nSELECT so.sales_org, so.customer_id,\n       SUM(soi.amount) AS total_amount\nFROM sales_order AS so\n  INNER JOIN sales_order_item AS soi ON so.doc_id = soi.doc_id\nWHERE so.created_at BETWEEN '2025-01-01' AND '2025-12-31'\n  AND so.sales_org IN ('1000', '2000', '3000')\nGROUP BY so.sales_org, so.customer_id\nHAVING SUM(soi.amount) > 10000;\n\n-- View the plan\nSELECT OPERATOR_NAME, OPERATOR_DETAILS, EXECUTION_ENGINE,\n       OUTPUT_SIZE, CPU_COST, MEMORY_SIZE\nFROM EXPLAIN_PLAN_TABLE\nWHERE STATEMENT_NAME = 'explain_sales'\nORDER BY OPERATOR_POS;\n\n/*\n  Staff+ Tips:\n  - Predicate pushdown: filters on created_at AND sales_org both pushed\n  - If sales_org is high-selectivity (<5%), HANA uses index-based access\n  - If created_at range covers >20% of table, HANA chooses full column scan\n  - For >10M rows, consider partition pruning on created_at (monthly)\n*/"
+        }
+      ],
+      "codeBlock": "-- HANA EXPLAIN PLAN\nEXPLAIN PLAN SET STATEMENT_NAME = 'explain_sales' FOR\nSELECT so.sales_org, so.customer_id,\n       SUM(soi.amount) AS total_amount\nFROM sales_order AS so\n  INNER JOIN sales_order_item AS soi ON so.doc_id = soi.doc_id\nWHERE so.created_at BETWEEN '2025-01-01' AND '2025-12-31'\n  AND so.sales_org IN ('1000', '2000', '3000')\nGROUP BY so.sales_org, so.customer_id\nHAVING SUM(soi.amount) > 10000;\n\nSELECT OPERATOR_NAME, OPERATOR_DETAILS, EXECUTION_ENGINE,\n       OUTPUT_SIZE, CPU_COST, MEMORY_SIZE\nFROM EXPLAIN_PLAN_TABLE\nWHERE STATEMENT_NAME = 'explain_sales'\nORDER BY OPERATOR_POS;",
+      "comparisonTable": {
+        "title": "HANA OLAP vs OLTP Query Optimization",
+        "headers": [
+          "Dimension",
+          "OLAP (Analytical)",
+          "OLTP (Transactional)"
+        ],
+        "rows": [
+          [
+            "Query pattern",
+            "Full table scans, aggregations, GROUP BY, star joins",
+            "Point lookups, index seeks, single-row DML"
+          ],
+          [
+            "Join strategy",
+            "Hash join (build hash on smaller, probe larger)",
+            "Nested-loop join (index-driven, small driver)"
+          ],
+          [
+            "Index strategy",
+            "Covering indexes for star queries, bitmap for low-cardinality",
+            "B-Tree indexes for equality lookups"
+          ],
+          [
+            "Partitioning",
+            "Range/hash on time dimension, partition pruning",
+            "No partitioning (single-row, no scan benefit)"
+          ],
+          [
+            "Store type",
+            "Column store (compressed, vectorized)",
+            "Row store or column delta (single-row updates)"
+          ],
+          [
+            "Bottleneck",
+            "CPU-bound (decompression, aggregation, vector ops)",
+            "Memory-bound (cache misses on random access)"
+          ],
+          [
+            "Parallelism",
+            "High (scan 16+ partitions in parallel)",
+            "Low (single-threaded, locking prevents parallelism)"
+          ]
+        ],
+        "staffPlusInsight": "HANA is optimized for OLAP. OLTP workloads can suffer in column store due to delta merge overhead. For high-throughput OLTP, consider row store tables or leverage the column store delta (uncompressed, write-optimized) with frequent delta merges scheduled during low-load."
+      }
+    },
+    {
+      "title": "HANA Indexing Strategy",
+      "description": [
+        {
+          "type": "svg",
+          "value": "<div style=\"margin:20px 0;display:flex;justify-content:center\"><svg viewBox=\"0 0 700 300\" xmlns=\"http://www.w3.org/2000/svg\"><style>.i-box{fill:var(--bg-secondary);stroke:var(--brand-primary);stroke-width:2;rx:8}.i-idx{fill:var(--bg-secondary);stroke:var(--text-primary);stroke-width:2;rx:6}.i-leaf{fill:var(--bg-secondary);stroke:var(--border-default);stroke-width:1.5;rx:3}.i-lbl{fill:var(--text-primary);font-family:system-ui;font-size:11px;font-weight:600;text-anchor:middle}.i-sub{fill:var(--text-primary);font-family:system-ui;font-size:9px;text-anchor:middle}.i-flow{stroke:var(--brand-primary);stroke-width:2;fill:none;marker-end:url(#arrow)}</style><defs><marker id=\"arrow\" markerWidth=\"8\" markerHeight=\"6\" refX=\"8\" refY=\"3\" orient=\"auto\"><path d=\"M0,0 L8,3 L0,6Z\" fill=\"var(--brand-primary)\"/></marker></defs><text class=\"i-lbl\" x=\"350\" y=\"20\">HANA Index Structures</text><rect class=\"i-idx\" x=\"30\" y=\"35\" width=\"180\" height=\"80\"/><text class=\"i-lbl\" x=\"120\" y=\"58\">BTREE Index</text><text class=\"i-sub\" x=\"120\" y=\"78\">Default for row store</text><text class=\"i-sub\" x=\"120\" y=\"95\">B+ tree leaf = rowid</text><text class=\"i-sub\" x=\"120\" y=\"110\">Best: equality, range scans</text><rect class=\"i-idx\" x=\"260\" y=\"35\" width=\"180\" height=\"80\"/><text class=\"i-lbl\" x=\"350\" y=\"58\">CSK (Column Store Key)</text><text class=\"i-sub\" x=\"350\" y=\"78\">Default PK for column store</text><text class=\"i-sub\" x=\"350\" y=\"95\">Sorted column segments</text><text class=\"i-sub\" x=\"350\" y=\"110\">Best: sorted access, prefix</text><rect class=\"i-idx\" x=\"490\" y=\"35\" width=\"180\" height=\"80\"/><text class=\"i-lbl\" x=\"580\" y=\"58\">Secondary Index</text><text class=\"i-sub\" x=\"580\" y=\"78\">On column store columns</text><text class=\"i-sub\" x=\"580\" y=\"95\">Inverted index + rowid</text><text class=\"i-sub\" x=\"580\" y=\"110\">Best: high-selectivity</text><line x1=\"120\" y1=\"115\" x2=\"120\" y2=\"150\" class=\"i-flow\"/><line x1=\"350\" y1=\"115\" x2=\"350\" y2=\"150\" class=\"i-flow\"/><line x1=\"580\" y1=\"115\" x2=\"580\" y2=\"150\" class=\"i-flow\"/><rect class=\"i-box\" x=\"80\" y=\"150\" width=\"540\" height=\"45\"/><text class=\"i-lbl\" x=\"350\" y=\"170\">Plan Selection Logic</text><text class=\"i-sub\" x=\"350\" y=\"188\">Equality + high selectivity -> Index Scan. Range / low selectivity -> Full Column Scan (faster due to vectorized)</text><rect class=\"i-leaf\" x=\"80\" y=\"210\" width=\"160\" height=\"40\"/><text class=\"i-sub\" x=\"160\" y=\"232\">Index-Only Scan</text><text class=\"i-sub\" x=\"160\" y=\"248\">All columns in index</text><rect class=\"i-leaf\" x=\"270\" y=\"210\" width=\"160\" height=\"40\"/><text class=\"i-sub\" x=\"350\" y=\"232\">Full Column Scan</text><text class=\"i-sub\" x=\"350\" y=\"248\">Faster for >20% selectivity</text><rect class=\"i-leaf\" x=\"460\" y=\"210\" width=\"160\" height=\"40\"/><text class=\"i-sub\" x=\"540\" y=\"232\">Partition Pruning</text><text class=\"i-sub\" x=\"540\" y=\"248\">Eliminate partitions</text></svg></div>"
+        },
+        {
+          "type": "text",
+          "value": "<p>HANA indexing is different from traditional databases because the <b>column store is already indexed</b> — each column is stored as a sorted, compressed array that can be binary-searched directly. This means many queries that would need a secondary index in a row-store database can be answered with a full column scan in HANA. The key insight: <b>indexing in HANA is not always necessary</b> — the column store itself provides efficient scan capabilities.</p><p><b>BTREE Index (Row Store):</b> The classic B+ tree index for row-store tables. Each leaf node contains (key, rowid) pairs. BTREE is the default index type for row store, auto-created for primary key and unique constraints. Use for equality lookups and range scans on row-store tables.</p><p><b>CSK (Column Store Key):</b> HANA automatically creates a CSK index for the primary key of column-store tables. The CSK is a sorted vector of PK columns with pointers to the column segment. This enables fast key-based access without a full scan — the column-store equivalent of a clustered index.</p><p><b>Secondary Indexes on Column Store:</b> For non-PK columns frequently filtered with high selectivity (<5% of rows), a secondary index can improve performance. HANA secondary indexes on column store are <b>inverted indexes</b> — they map distinct values to a list of row IDs. Creating too many secondary indexes hurts write performance because each INSERT/UPDATE must update all indexes.</p>"
+        },
+        {
+          "type": "code",
+          "language": "abap",
+          "value": "-- Create secondary index on column store\nCREATE INDEX z_sales_order_created\n  ON sales_order (created_at) INDEX TYPE BTREE;\n\n-- Create composite index for common query\nCREATE INDEX z_sales_order_org_status\n  ON sales_order (sales_org, status, created_at) INDEX TYPE BTREE;\n\n-- Create local index on partitioned table\nCREATE INDEX z_sales_item_product\n  ON sales_order_item (product_id) INDEX TYPE BTREE LOCAL;\n\n-- Analyze index usage\nSELECT SCHEMA_NAME, TABLE_NAME, INDEX_NAME, INDEX_TYPE,\n       RECORD_COUNT, INDEX_USAGE_COUNT, NO_INDEX_USAGE_COUNT\nFROM INDEXES\nWHERE SCHEMA_NAME = 'SAPERP'\nORDER BY INDEX_USAGE_COUNT DESC;\n\n/*\n  Staff+ Notes:\n  - Column store: focus on partition pruning, not indexes\n  - Secondary indexes on column store: 3-5 max per table\n  - Each secondary index adds ~0.5ms write overhead per INSERT\n  - For point lookups, ensure CSK index is optimal\n*/"
+        }
+      ],
+      "codeBlock": "-- Create secondary index on column store\nCREATE INDEX z_sales_order_created\n  ON sales_order (created_at) INDEX TYPE BTREE;\n\nCREATE INDEX z_sales_order_org_status\n  ON sales_order (sales_org, status, created_at) INDEX TYPE BTREE;\n\nSELECT SCHEMA_NAME, TABLE_NAME, INDEX_NAME, INDEX_TYPE,\n       RECORD_COUNT, INDEX_USAGE_COUNT\nFROM INDEXES WHERE SCHEMA_NAME = 'SAPERP'\nORDER BY INDEX_USAGE_COUNT DESC;",
+      "comparisonTable": {
+        "title": "HANA Index Types - When to Use Each",
+        "headers": [
+          "Index Type",
+          "Store",
+          "Use Case",
+          "Write Overhead",
+          "Notes"
+        ],
+        "rows": [
+          [
+            "BTREE",
+            "Row store",
+            "Equality / range lookups, PK",
+            "Low",
+            "Default for row store. Auto-created on PK."
+          ],
+          [
+            "CSK",
+            "Column store",
+            "PK access, sorted prefix queries",
+            "Minimal",
+            "Auto-created for column store PK. Clustered index equivalent."
+          ],
+          [
+            "Secondary (Inverted)",
+            "Column store",
+            "High-selectivity filters on non-PK",
+            "Medium",
+            "Inverted index maps value->rowids. 3-5 max per table."
+          ],
+          [
+            "Full-text",
+            "Both",
+            "Text search, fuzzy matching",
+            "High",
+            "Inverted term index. Search-enabled columns only."
+          ],
+          [
+            "Spatial",
+            "Both",
+            "Geospatial queries",
+            "High",
+            "R-tree index. Specialized use case."
+          ]
+        ],
+        "staffPlusInsight": "The most common indexing mistake is over-indexing column-store tables. The column store vectorized scan is often faster than an index scan for selectivity >5%. Before adding an index, measure with EXPLAIN PLAN."
+      }
+    },
+    {
+      "title": "HANA Partitioning & Scale-Out",
+      "description": [
+        {
+          "type": "svg",
+          "value": "<div style=\"margin:20px 0;display:flex;justify-content:center\"><svg viewBox=\"0 0 700 300\" xmlns=\"http://www.w3.org/2000/svg\"><style>.p-box{fill:var(--bg-secondary);stroke:var(--brand-primary);stroke-width:2;rx:8}.p-node{fill:var(--bg-secondary);stroke:var(--text-primary);stroke-width:2;rx:6}.p-part{fill:var(--bg-secondary);stroke:var(--border-default);stroke-width:1.5;rx:3}.p-lbl{fill:var(--text-primary);font-family:system-ui;font-size:11px;font-weight:600;text-anchor:middle}.p-sub{fill:var(--text-primary);font-family:system-ui;font-size:9px;text-anchor:middle}.p-flow{stroke:var(--brand-primary);stroke-width:2;fill:none;marker-end:url(#arrow)}.p-dash{stroke:var(--border-default);stroke-width:1.5;fill:none;stroke-dasharray:4;animation:flowDash 1.5s linear infinite}.p-pulse{animation:pulse 2s ease-in-out infinite}@keyframes pulse{0%,100%{opacity:.6}50%{opacity:1}}@keyframes flowDash{0%{stroke-dashoffset:-8}100%{stroke-dashoffset:0}}</style><defs><marker id=\"arrow\" markerWidth=\"8\" markerHeight=\"6\" refX=\"8\" refY=\"3\" orient=\"auto\"><path d=\"M0,0 L8,3 L0,6Z\" fill=\"var(--brand-primary)\"/></marker></defs><text class=\"p-lbl\" x=\"350\" y=\"20\">HANA Partitioning - Hash vs Range</text><rect class=\"p-box\" x=\"180\" y=\"35\" width=\"340\" height=\"40\"/><text class=\"p-lbl\" x=\"350\" y=\"58\">sales_order (500M rows) - Partitioned by month + hash</text><line x1=\"230\" y1=\"75\" x2=\"230\" y2=\"110\" class=\"p-flow\"/><line x1=\"350\" y1=\"75\" x2=\"350\" y2=\"110\" class=\"p-flow\"/><line x1=\"470\" y1=\"75\" x2=\"470\" y2=\"110\" class=\"p-flow\"/><rect class=\"p-node\" x=\"40\" y=\"110\" width=\"180\" height=\"55\"/><text class=\"p-lbl\" x=\"130\" y=\"130\">Node 1 (Worker)</text><text class=\"p-sub\" x=\"130\" y=\"148\">Partitions: 2025-Q1, Q2</text><rect class=\"p-node\" x=\"260\" y=\"110\" width=\"180\" height=\"55\"/><text class=\"p-lbl\" x=\"350\" y=\"130\">Node 2 (Worker)</text><text class=\"p-sub\" x=\"350\" y=\"148\">Partitions: 2025-Q3, Q4</text><rect class=\"p-node\" x=\"480\" y=\"110\" width=\"180\" height=\"55\"/><text class=\"p-lbl\" x=\"570\" y=\"130\">Node 3 (Worker)</text><text class=\"p-sub\" x=\"570\" y=\"148\">Partitions: 2026-Q1</text><line x1=\"130\" y1=\"165\" x2=\"130\" y2=\"195\" class=\"p-flow\"/><line x1=\"350\" y1=\"165\" x2=\"350\" y2=\"195\" class=\"p-flow\"/><line x1=\"570\" y1=\"165\" x2=\"570\" y2=\"195\" class=\"p-flow\"/><rect class=\"p-box\" x=\"80\" y=\"195\" width=\"540\" height=\"40\"/><text class=\"p-lbl\" x=\"350\" y=\"218\">Distributed Query - Subqueries run in parallel across nodes</text><rect class=\"p-part\" x=\"130\" y=\"245\" width=\"140\" height=\"30\"/><text class=\"p-sub\" x=\"200\" y=\"265\">Scan Q1 (Node 1)</text><rect class=\"p-part\" x=\"280\" y=\"245\" width=\"140\" height=\"30\"/><text class=\"p-sub\" x=\"350\" y=\"265\">Scan Q3 (Node 2)</text><rect class=\"p-part\" x=\"430\" y=\"245\" width=\"140\" height=\"30\"/><text class=\"p-sub\" x=\"500\" y=\"265\">Scan Q1 2026 (Node 3)</text></svg></div>"
+        },
+        {
+          "type": "text",
+          "value": "<p>HANA supports two scaling models: <b>scale-up</b> (more RAM/CPU on a single node) and <b>scale-out</b> (multiple nodes in a cluster). Partitioning is the key to effective scale-out — it splits large tables across multiple nodes so queries execute in parallel. Without partitioning, scale-out is ineffective because all data must be exchanged between nodes.</p><p><b>Range Partitioning:</b> Data split by a range of values, typically a time dimension. Range partitioning enables <b>partition pruning</b> — if your query filters on the partition key (e.g., WHERE created_at BETWEEN two dates), HANA skips irrelevant partitions. This is the most common strategy for OLAP workloads. Also enables <b>partition sliding</b> — dropping old partitions and adding new ones without downtime.</p><p><b>Hash Partitioning:</b> Data split by a hash function (e.g., HASH(doc_id) % 16). Distributes data evenly regardless of value distribution. Ideal for OLTP workloads where access is evenly distributed. Downsides: no partition pruning — queries without the partition key scan all partitions.</p><p><b>Composite Partitioning:</b> Range + hash subpartition. For example: range by month, hash by doc_id within each month. Combines pruning (month-level) with even distribution (hash within month).</p>"
+        },
+        {
+          "type": "code",
+          "language": "abap",
+          "value": "-- Range partition by month\nCREATE COLUMN TABLE sales_order (\n    doc_id NVARCHAR(20), created_at DATE,\n    sales_org NVARCHAR(10), customer_id NVARCHAR(20),\n    total_amount DECIMAL(23,2),\n    PRIMARY KEY (doc_id, created_at)\n) PARTITION BY RANGE (created_at) (\n    PARTITION '2025-01-01' <= VALUES < '2025-04-01',\n    PARTITION '2025-04-01' <= VALUES < '2025-07-01',\n    PARTITION '2025-07-01' <= VALUES < '2025-10-01',\n    PARTITION '2025-10-01' <= VALUES < '2026-01-01',\n    PARTITION OTHERS\n);\n\n-- Hash partition\nCREATE COLUMN TABLE sales_order_item (\n    doc_id NVARCHAR(20), item_num INTEGER,\n    product_id NVARCHAR(20), quantity INTEGER,\n    PRIMARY KEY (doc_id, item_num)\n) PARTITION BY HASH (doc_id) PARTITIONS 16;\n\n-- Composite: range + hash\nCREATE COLUMN TABLE sales_order_wide (\n    doc_id NVARCHAR(20), created_at DATE,\n    total_amount DECIMAL(23,2),\n    PRIMARY KEY (doc_id, created_at)\n) PARTITION BY RANGE (created_at)\n  SUBPARTITION BY HASH (doc_id) SUBPARTITIONS 4 (\n    PARTITION '2025-01-01' <= VALUES < '2025-07-01',\n    PARTITION '2025-07-01' <= VALUES < '2026-01-01',\n    PARTITION OTHERS\n  );"
+        }
+      ],
+      "codeBlock": "-- Range partition by month\nCREATE COLUMN TABLE sales_order (\n    doc_id NVARCHAR(20), created_at DATE,\n    sales_org NVARCHAR(10), customer_id NVARCHAR(20),\n    total_amount DECIMAL(23,2),\n    PRIMARY KEY (doc_id, created_at)\n) PARTITION BY RANGE (created_at) (\n    PARTITION '2025-01-01' <= VALUES < '2025-04-01',\n    PARTITION '2025-04-01' <= VALUES < '2025-07-01',\n    PARTITION '2025-07-01' <= VALUES < '2025-10-01',\n    PARTITION OTHERS\n);\n\n-- Hash partition\nCREATE COLUMN TABLE sales_order_item (\n    doc_id NVARCHAR(20), item_num INTEGER,\n    PRIMARY KEY (doc_id, item_num)\n) PARTITION BY HASH (doc_id) PARTITIONS 16;",
+      "quantifiedTradeoff": {
+        "title": "Scale-Up vs Scale-Out - Cost vs Performance",
+        "variables": [
+          {
+            "name": "Data volume",
+            "value": "5 TB compressed (50 TB raw)",
+            "source": "Large enterprise HANA system"
+          },
+          {
+            "name": "Concurrent queries",
+            "value": "200 concurrent analytical queries",
+            "source": "Peak BI workload"
+          },
+          {
+            "name": "Growth rate",
+            "value": "500 GB/month",
+            "source": "Typical S/4HANA growth"
+          }
+        ],
+        "calculation": {
+          "formula": "TotalCost = HardwareCost + SoftwareLicensing + Operations over 3 years",
+          "scale_up": {
+            "writeLatency": "2 TB RAM x 64 cores. Single node, no network overhead.",
+            "monthlyPenalty": "$47K/mo - Simpler ops (1 node). 200 queries at 500ms avg. Single point of failure. Max 6 TB RAM."
+          },
+          "scale_out": {
+            "writeLatency": "4 x 512 GB nodes. Network overhead for cross-node joins (10-30% slower for distributed queries).",
+            "monthlyPenalty": "$58K/mo - 4 nodes to monitor. Better fault tolerance. N-1 redundancy. Scales to 24 TB."
+          },
+          "breakeven": "At <4 TB compressed data, scale-up is cheaper and simpler. At >4 TB, scale-out distributes memory pressure. OLTP prefers scale-up (cross-node joins hurt). OLAP benefits from parallel partition scans in scale-out."
+        }
+      }
+    },
+    {
+      "title": "HANA & ABAP Integration",
+      "description": [
+        {
+          "type": "svg",
+          "value": "<div style=\"margin:20px 0;display:flex;justify-content:center\"><svg viewBox=\"0 0 700 320\" xmlns=\"http://www.w3.org/2000/svg\"><style>.int-box{fill:var(--bg-secondary);stroke:var(--brand-primary);stroke-width:2;rx:8}.int-abap{fill:var(--bg-secondary);stroke:var(--text-primary);stroke-width:2;rx:6}.int-hana{fill:var(--bg-secondary);stroke:var(--border-default);stroke-width:2;rx:6}.int-lbl{fill:var(--text-primary);font-family:system-ui;font-size:11px;font-weight:600;text-anchor:middle}.int-sub{fill:var(--text-primary);font-family:system-ui;font-size:9px;text-anchor:middle}.int-flow{stroke:var(--brand-primary);stroke-width:2;fill:none;marker-end:url(#arrow)}.int-dash{stroke:var(--border-default);stroke-width:1.5;fill:none;stroke-dasharray:4;animation:flowDash 1.5s linear infinite}.int-dot{animation:data-flow-particle 2s ease-in-out infinite}@keyframes data-flow-particle{0%,100%{opacity:0;transform:translateY(0)}50%{opacity:1;transform:translateY(-5px)}}@keyframes flowDash{0%{stroke-dashoffset:-8}100%{stroke-dashoffset:0}}</style><defs><marker id=\"arrow\" markerWidth=\"8\" markerHeight=\"6\" refX=\"8\" refY=\"3\" orient=\"auto\"><path d=\"M0,0 L8,3 L0,6Z\" fill=\"var(--brand-primary)\"/></marker></defs><text class=\"int-lbl\" x=\"350\" y=\"20\">ABAP <-> HANA Communication Path</text><rect class=\"int-abap\" x=\"30\" y=\"35\" width=\"290\" height=\"80\"/><text class=\"int-lbl\" x=\"175\" y=\"58\">ABAP Application Server</text><text class=\"int-sub\" x=\"175\" y=\"78\">Open SQL / CDS Views / AMDP</text><text class=\"int-sub\" x=\"175\" y=\"95\">SQLDBS Database Shared Library</text><line x1=\"320\" y1=\"55\" x2=\"370\" y2=\"55\" class=\"int-flow\"/><rect class=\"int-hana\" x=\"370\" y=\"35\" width=\"290\" height=\"80\"/><text class=\"int-lbl\" x=\"515\" y=\"58\">HANA Database Layer</text><text class=\"int-sub\" x=\"515\" y=\"78\">Column store / Row store / SQLScript</text><text class=\"int-sub\" x=\"515\" y=\"95\">Execution Engine / Plan Cache</text><line x1=\"175\" y1=\"115\" x2=\"175\" y2=\"150\" class=\"int-flow\"/><line x1=\"515\" y1=\"115\" x2=\"515\" y2=\"150\" class=\"int-flow\"/><rect class=\"int-abap\" x=\"30\" y=\"150\" width=\"290\" height=\"50\"/><text class=\"int-lbl\" x=\"175\" y=\"172\">ABAP Code Pushdown</text><text class=\"int-sub\" x=\"175\" y=\"190\">SELECT -> WHERE pushdown -> JOIN pushdown</text><rect class=\"int-hana\" x=\"370\" y=\"150\" width=\"290\" height=\"50\"/><text class=\"int-lbl\" x=\"515\" y=\"172\">SQLScript / AMDP Execution</text><text class=\"int-sub\" x=\"515\" y=\"190\">HANA plan cache / Parallel operators</text><line x1=\"175\" y1=\"200\" x2=\"175\" y2=\"235\" class=\"int-dash\"/><line x1=\"515\" y1=\"200\" x2=\"515\" y2=\"235\" class=\"int-dash\"/><rect class=\"int-box\" x=\"100\" y=\"235\" width=\"500\" height=\"50\"/><text class=\"int-lbl\" x=\"350\" y=\"258\">Database Procedure Proxy (DBProc) / ADBC / EXEC SQL</text><text class=\"int-sub\" x=\"350\" y=\"275\">Bypass ABAP SQL layer for HANA-native features</text></svg></div>"
+        },
+        {
+          "type": "text",
+          "value": "<p>The integration between ABAP and HANA is SAP’s most critical architectural layer. ABAP communicates with HANA via <b>SQLDBS</b> (Database Shared Library) — a C++ library providing a high-performance, columnar-aware SQL interface. Unlike traditional databases where ABAP used ODBC/JDBC, SQLDBS is tuned for HANA’s column store and understands CDS view metadata, AMDP procedures, and ABAP Dictionary types.</p><p><b>Code Pushdown:</b> The key architectural principle is <b>code pushdown</b> — instead of bringing data to the application server for processing, push computation to the database. ABAP SQL pushdown means the database receives the complete query (WHERE, JOIN, GROUP BY) and returns only the minimal result set. AMDP (ABAP Managed Database Procedures) takes this further by allowing SQLScript execution directly in HANA’s engine.</p><p><b>Database Procedure Proxy (DBProc):</b> For scenarios where ABAP needs HANA-native features not exposed via CDS or AMDP, DBProc provides a bridge. It allows calling HANA procedures, functions, and native SQL (via ADBC or EXEC SQL) directly from ABAP. This is the escape hatch for HANA-specific features like spatial, graph, or predictive libraries.</p><p><b>Session Management:</b> Each ABAP work process maintains a dedicated database connection via SQLDBS. The ABAP LUW maps to HANA transactions: SAP LUW BEGIN -> HANA BEGIN, COMMIT WORK -> HANA COMMIT. Understanding this mapping is critical for debugging lock contention and transaction isolation.</p>"
+        },
+        {
+          "type": "code",
+          "language": "abap",
+          "value": "@EndUserText.label: 'AMDP Code Pushdown Example'\nclass ZCL_AMDP_SALES_CALC definition\n  public final create public.\n  public section.\n    interfaces IF_AMDP_MARKER_HDB.\n    types:\n      begin of ty_sales_summary,\n        sales_org   type vkorg,\n        customer_id type kunnr,\n        total_qty   type menge_d,\n        total_amt   type netwr,\n        order_count type i,\n      end of ty_sales_summary,\n      tt_sales_summary type standard table of ty_sales_summary.\n    methods GET_SALES_SUMMARY\n      importing\n        value(it_sales_org) type string_table\n        value(iv_from_date) type d\n        value(iv_to_date)   type d\n      exporting\n        value(et_result)    type tt_sales_summary.\nendclass.\n\nclass ZCL_AMDP_SALES_CALC implementation.\n  method GET_SALES_SUMMARY by database procedure\n    for hdb language sqlscript options read-only.\n    et_result =\n      select so.vkorg, so.kunnr,\n             sum(soi.fkimg) as total_qty,\n             sum(soi.netwr) as total_amt,\n             count(distinct so.vbeln) as order_count\n      from vbak as so\n        inner join vbap as soi on so.vbeln = soi.vbeln\n      where so.erdat between :iv_from_date and :iv_to_date\n        and so.vkorg in ( :it_sales_org )\n      group by so.vkorg, so.kunnr\n      having sum(soi.netwr) > 10000;\n  endmethod.\nendclass.\n\n/*\n  Staff+ Notes:\n  - AMDP runs entirely in HANA's SQLScript engine\n  - No data transferred to ABAP until result returned\n  - For 1M+ rows aggregated to 200: ~500ms SQLScript vs 5s ABAP\n  - Options READ-ONLY: enables parallel execution\n*/"
+        }
+      ],
+      "codeBlock": "@EndUserText.label: 'AMDP Code Pushdown'\nclass ZCL_AMDP_SALES_CALC definition public final create public.\n  public section.\n    interfaces IF_AMDP_MARKER_HDB.\n    types:\n      begin of ty_sales_summary,\n        sales_org type vkorg, customer_id type kunnr,\n        total_qty type menge_d, total_amt type netwr,\n        order_count type i,\n      end of ty_sales_summary,\n      tt_sales_summary type standard table of ty_sales_summary.\n    methods GET_SALES_SUMMARY\n      importing it_sales_org type string_table\n                iv_from_date type d\n                iv_to_date   type d\n      exporting et_result    type tt_sales_summary.\nendclass.\n\nclass ZCL_AMDP_SALES_CALC implementation.\n  method GET_SALES_SUMMARY by database procedure\n    for hdb language sqlscript options read-only.\n    et_result = select so.vkorg, so.kunnr,\n      sum(soi.fkimg) as total_qty, sum(soi.netwr) as total_amt,\n      count(distinct so.vbeln) as order_count\n    from vbak as so inner join vbap as soi on so.vbeln = soi.vbeln\n    where so.erdat between :iv_from_date and :iv_to_date\n      and so.vkorg in ( :it_sales_org )\n    group by so.vkorg, so.kunnr\n    having sum(soi.netwr) > 10000;\n  endmethod.\nendclass.",
+      "adversarialResponse": {
+        "challenge": "\"Our ABAP code is already fast enough. Moving logic to HANA via AMDP adds complexity and makes debugging harder. Why push code down?\"",
+        "badResponse": "\"Because HANA is faster. Just convert SELECT/LOOP patterns to AMDP.\" (dismissive of debugging concerns)",
+        "goodResponse": "\"You’re right that code pushdown adds complexity — AMDP procedures are harder to trace in ST05 and can’t be debugged in SE38. However, the performance math justifies it at scale. Your current pattern loads 100K items into ABAP, loops with business logic, and updates 50K rows individually. That’s 50K roundtrips at 2ms each = 100 seconds of network latency alone. Moving the same logic to a single AMDP executes in ~200ms — a 500x improvement. For debugging: (1) add SQLScript logging via APPLOG, (2) use HANA PlanViz for AMDP tracing, (3) keep AMDPs small and focused — each procedure does exactly one transformation. The right pattern is surgical: identify the specific loop that moves data across the network, convert that single loop to an AMDP, and keep the rest unchanged.\"",
+        "pattern": "quantified-tradeoff-with-mitigation - acknowledge the operational pain, quantify the performance delta, then offer concrete mitigation strategies."
+      }
+    },
+    {
+      "title": "HANA Cloud vs On-Premise",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>The decision between HANA Cloud (managed by SAP) and HANA on-premise (self-managed) is one of the most consequential choices for SAP customers. HANA Cloud is SAP’s fully managed database-as-a-service on BTP, AWS, Azure, and GCP. On-premise gives full control over hardware and configuration — but requires your own infrastructure and DB admin team.</p><p><b>HANA Cloud advantages:</b> No infrastructure management, automated backups and patching, built-in HA/DR, consumption-based pricing, automatic scaling with stop/start for dev/test, built-in ML integration (PAL/APL). The service handles all OS-level and HANA-level maintenance.</p><p><b>On-premise advantages:</b> Full control over hardware (dedicated NUMA, persistent memory), no data residency concerns, predictable licensing (per-terabyte perpetual), ability to customize kernel parameters beyond Cloud limits, no network latency to S/4HANA in same DC.</p><p><b>Staff+ Decision Framework:</b> Three factors determine the choice: (1) <b>Data volume</b> — below 4 TB compressed, Cloud is cost-competitive; above 8 TB, on-prem licensing is cheaper. (2) <b>Operations maturity</b> — no HANA DBAs? Cloud eliminates the need for specialized HANA admin skills. (3) <b>Latency requirements</b> — if S/4HANA and HANA must be co-located with sub-millisecond latency, on-prem is the only option.</p>"
+        },
+        {
+          "type": "code",
+          "language": "abap",
+          "value": "-- Check HANA version and deployment type\nSELECT HOST, START_TIME, VERSION, USAGE\nFROM M_DATABASE;\n\n-- HANA Cloud specific views\nSELECT SERVICE_NAME, PHYSICAL_MEMORY_SIZE,\n       LOGICAL_MEMORY_SIZE, ALLOCATION_LIMIT\nFROM M_SERVICE_MEMORY;\n\n-- On-premise specific: check configuration parameters\n-- (Cloud restricts access to these)\nSELECT * FROM M_INIFILE_CONTENTS\nWHERE FILE_NAME = 'global.ini'\n  AND SECTION = 'memorymanager'\n  AND KEY = 'global_allocation_limit';"
+        }
+      ],
+      "codeBlock": "-- Check HANA version and deployment type\nSELECT HOST, START_TIME, VERSION, USAGE FROM M_DATABASE;\n\n-- Memory per service\nSELECT SERVICE_NAME, PHYSICAL_MEMORY_SIZE,\n       LOGICAL_MEMORY_SIZE, ALLOCATION_LIMIT\nFROM M_SERVICE_MEMORY;",
+      "comparisonTable": {
+        "title": "HANA Cloud vs On-Premise - Decision Matrix",
+        "headers": [
+          "Dimension",
+          "HANA Cloud",
+          "HANA On-Premise"
+        ],
+        "rows": [
+          [
+            "Infrastructure",
+            "Managed by SAP (AWS/Azure/GCP)",
+            "Self-managed in customer DC"
+          ],
+          [
+            "Pricing",
+            "Consumption-based (per GB/hr)",
+            "Perpetual license + HW + maintenance"
+          ],
+          [
+            "Data residency",
+            "Region-bound (check SAP BTP regions)",
+            "Customer-controlled"
+          ],
+          [
+            "Latency to S/4HANA",
+            "Network latency (variable)",
+            "Sub-millisecond (same DC)"
+          ],
+          [
+            "HA/DR",
+            "Built-in, multi-AZ replication",
+            "Must configure (HSR, replication)"
+          ],
+          [
+            "Patching",
+            "Automatic by SAP",
+            "Manual (downtime planning required)"
+          ],
+          [
+            "ML integration",
+            "Built-in (PAL/APL via SQL)",
+            "Available (requires license)"
+          ],
+          [
+            "Config flexibility",
+            "Limited (SAP controls kernel params)",
+            "Full control (global.ini)"
+          ],
+          [
+            "Max memory",
+            "Up to 6 TB (cloud instance)",
+            "Up to 24 TB (scale-out)"
+          ]
+        ],
+        "staffPlusInsight": "HANA Cloud removes operational overhead at a premium. At scale, on-premise total cost is 30-40% lower. The decision often comes down to: does your organization have HANA DBAs? If not, Cloud is the pragmatic choice despite higher per-GB cost."
+      },
+      "organizationalDimension": {
+        "title": "HANA Cloud vs On-Premise - Organizational Impact",
+        "aspects": [
+          {
+            "name": "DBA Team",
+            "responsibility": "Cloud: minimal HANA-specific DBA skills needed. On-prem: requires dedicated HANA DBAs (2-3 FTE for production)",
+            "challenge": "HANA DBAs are expensive and scarce ($180K+ annual). Cloud eliminates this hiring need."
+          },
+          {
+            "name": "Finance / Procurement",
+            "responsibility": "Cloud: OPEX budget, predictable monthly cost. On-prem: CAPEX for hardware + license, 3-year depreciation cycle",
+            "challenge": "Cloud consumption can spike. On-prem requires large upfront investment ($500K+) but lower TCO over 5 years."
+          },
+          {
+            "name": "Compliance / Audit",
+            "responsibility": "Cloud: data must stay in approved regions. On-prem: data stays in customer-controlled data center",
+            "challenge": "Financial services and government often require on-premise for data sovereignty. Cloud requires BTP region mapping and contractual data handling agreements."
+          }
+        ],
+        "staffPlusInsight": "The Cloud vs on-premise decision is 30% technical and 70% organizational. Most enterprises end up with hybrid: Cloud for dev/test/DR and on-premise for production. The Staff+ architect plans for both and designs data synchronization (HANA replication) between them."
+      }
+    },
+    {
+      "title": "Staff+ HANA Performance Patterns",
+      "description": [
+        {
+          "type": "svg",
+          "value": "<div style=\"margin:20px 0;display:flex;justify-content:center\"><svg viewBox=\"0 0 700 300\" xmlns=\"http://www.w3.org/2000/svg\"><style>.sp-box{fill:var(--bg-secondary);stroke:var(--brand-primary);stroke-width:2;rx:8}.sp-ok{fill:var(--bg-secondary);stroke:var(--text-primary);stroke-width:2;rx:6}.sp-bad{fill:var(--bg-secondary);stroke:var(--border-default);stroke-width:2;rx:6}.sp-lbl{fill:var(--text-primary);font-family:system-ui;font-size:11px;font-weight:600;text-anchor:middle}.sp-sub{fill:var(--text-primary);font-family:system-ui;font-size:9px;text-anchor:middle}.sp-flow{stroke:var(--brand-primary);stroke-width:2;fill:none;marker-end:url(#arrow)}.sp-pulse{animation:pulse 2s ease-in-out infinite}@keyframes pulse{0%,100%{opacity:.6}50%{opacity:1}}</style><defs><marker id=\"arrow\" markerWidth=\"8\" markerHeight=\"6\" refX=\"8\" refY=\"3\" orient=\"auto\"><path d=\"M0,0 L8,3 L0,6Z\" fill=\"var(--brand-primary)\"/></marker></defs><text class=\"sp-lbl\" x=\"350\" y=\"20\">Performance Anti-Pattern Decision Tree</text><text class=\"sp-lbl\" x=\"350\" y=\"45\">Query slow? Check execution plan</text><line x1=\"350\" y1=\"55\" x2=\"180\" y2=\"85\" class=\"sp-flow\"/><line x1=\"350\" y1=\"55\" x2=\"520\" y2=\"85\" class=\"sp-flow\"/><rect class=\"sp-ok\" x=\"50\" y=\"85\" width=\"260\" height=\"50\"/><text class=\"sp-lbl\" x=\"180\" y=\"105\">Full table scan on large table</text><text class=\"sp-sub\" x=\"180\" y=\"122\">Add partition pruning or secondary index</text><rect class=\"sp-bad\" x=\"390\" y=\"85\" width=\"260\" height=\"50\"/><text class=\"sp-lbl\" x=\"520\" y=\"105\">Nested-loop join with large driver</text><text class=\"sp-sub\" x=\"520\" y=\"122\">Rewrite as hash join or add index</text><line x1=\"180\" y1=\"135\" x2=\"180\" y2=\"165\" class=\"sp-flow\"/><line x1=\"520\" y1=\"135\" x2=\"520\" y2=\"165\" class=\"sp-flow\"/><rect class=\"sp-ok\" x=\"50\" y=\"165\" width=\"260\" height=\"50\"/><text class=\"sp-lbl\" x=\"180\" y=\"185\">Delta merge overdue</text><text class=\"sp-sub\" x=\"180\" y=\"202\">Schedule merge during low-load</text><rect class=\"sp-bad\" x=\"390\" y=\"165\" width=\"260\" height=\"50\"/><text class=\"sp-lbl\" x=\"520\" y=\"185\">Missing filter predicate</text><text class=\"sp-sub\" x=\"520\" y=\"202\">Add WHERE clause on partition key</text></svg></div>"
+        },
+        {
+          "type": "text",
+          "value": "<p>At Staff+ level, HANA performance optimization is not about writing faster SQL — it’s about identifying systemic anti-patterns, building monitoring dashboards, and creating proactive alerting. The most expensive performance problems are the ones you don’t know about until users complain.</p><p><b>Common Anti-Patterns:</b> (1) <b>N+1 SELECT in ABAP loops</b> — reading the database in a LOOP with SELECT SINGLE. Each iteration creates a separate DB roundtrip. Fix: use FOR ALL ENTRIES or CDS association. (2) <b>Missing WHERE clauses</b> — SELECT without WHERE scans the entire table. Fix: always specify filters even if it’s just a dummy condition. (3) <b>Over-indexing</b> — creating too many secondary indexes on column store tables hurts write performance. Fix: analyze index usage with INDEX_USAGE_COUNT and drop unused indexes. (4) <b>Delta merge neglect</b> — column store delta grows unbounded, causing read performance degradation. Fix: schedule MERGE DELTA during low-load periods.</p><p><b>Query Tuning Checklist:</b> (1) Run EXPLAIN PLAN and check for full table scans on large tables. (2) Verify predicates are pushed to the table scan level. (3) Check join order — the driver table should be the most selective. (4) Monitor memory consumption per query — if a query exceeds 1 GB of session memory, it needs optimization. (5) Check partition pruning — the WHERE clause should filter on the partition key.</p>"
+        },
+        {
+          "type": "code",
+          "language": "abap",
+          "value": "-- Performance analysis queries\n\n-- 1. Top memory-consuming queries (last hour)\nSELECT TOP 20\n  START_TIME, USER_NAME, STATEMENT_STRING,\n  ROUND(MEMORY_SIZE / 1024 / 1024, 2) AS MEM_MB,\n  EXECUTION_TIME / 1000 AS EXEC_SEC,\n  CPU_TIME / 1000 AS CPU_SEC,\n  PLAN_ID\nFROM M_ACTIVE_STATEMENTS\nORDER BY MEMORY_SIZE DESC;\n\n-- 2. Index usage analysis\nSELECT SCHEMA_NAME, TABLE_NAME, INDEX_NAME,\n       INDEX_TYPE, INDEX_USAGE_COUNT,\n       NO_INDEX_USAGE_COUNT\nFROM INDEXES\nWHERE NO_INDEX_USAGE_COUNT > INDEX_USAGE_COUNT\nORDER BY NO_INDEX_USAGE_COUNT DESC;\n\n-- 3. Delta merge status\nSELECT SCHEMA_NAME, TABLE_NAME,\n       SUM(DELTA_RECORD_COUNT) AS TOTAL_DELTA,\n       SUM(MERGED_RECORD_COUNT) AS TOTAL_MERGED,\n       MAX(LAST_MERGE_TIME) AS LAST_MERGE\nFROM M_CS_TABLES\nWHERE DELTA_RECORD_COUNT > 0\nGROUP BY SCHEMA_NAME, TABLE_NAME\nHAVING SUM(DELTA_RECORD_COUNT) > 100000\nORDER BY TOTAL_DELTA DESC;\n\n-- 4. Lock contention\nSELECT HOST, PORT, CONNECTION_ID, USER_NAME,\n       TRANSACTION_ID, LOCK_WAIT_TIME,\n       OBJECT_TYPE, OBJECT_NAME\nFROM M_LOCKS\nWHERE LOCK_WAIT_TIME > 10000\nORDER BY LOCK_WAIT_TIME DESC;"
+        }
+      ],
+      "codeBlock": "-- Top memory-consuming queries\nSELECT TOP 20\n  START_TIME, USER_NAME, STATEMENT_STRING,\n  ROUND(MEMORY_SIZE / 1024/1024, 2) AS MEM_MB,\n  EXECUTION_TIME / 1000 AS EXEC_SEC\nFROM M_ACTIVE_STATEMENTS\nORDER BY MEMORY_SIZE DESC;\n\n-- Index usage\nSELECT SCHEMA_NAME, TABLE_NAME, INDEX_NAME,\n       INDEX_TYPE, INDEX_USAGE_COUNT, NO_INDEX_USAGE_COUNT\nFROM INDEXES\nWHERE NO_INDEX_USAGE_COUNT > INDEX_USAGE_COUNT\nORDER BY NO_INDEX_USAGE_COUNT DESC;\n\n-- Delta merge status\nSELECT SCHEMA_NAME, TABLE_NAME,\n       SUM(DELTA_RECORD_COUNT) AS TOTAL_DELTA\nFROM M_CS_TABLES\nWHERE DELTA_RECORD_COUNT > 0\nGROUP BY SCHEMA_NAME, TABLE_NAME\nHAVING SUM(DELTA_RECORD_COUNT) > 100000\nORDER BY TOTAL_DELTA DESC;\n\n-- Lock contention\nSELECT USER_NAME, CONNECTION_ID, LOCK_WAIT_TIME,\n       OBJECT_TYPE, OBJECT_NAME\nFROM M_LOCKS\nWHERE LOCK_WAIT_TIME > 10000\nORDER BY LOCK_WAIT_TIME DESC;",
+      "decisionTree": {
+        "prompt": "My query is slow — what should I check first?",
+        "firstQuestion": "\"Is the query CPU-bound or memory-bound?\" High CPU = decompression/aggregation. High memory = joins/group-by blow up. Check via M_ACTIVE_STATEMENTS (CPU_TIME vs MEMORY_SIZE).",
+        "branches": [
+          {
+            "condition": "CPU-bound (CPU_TIME >> EXECUTION_TIME suggests parallelism) - column scan dominates",
+            "path": "Check partition pruning: is the WHERE clause filtering on partition key? If not, add partition range. Check column compression ratio in M_CS_TABLES. Consider adding secondary index on high-selectivity filter column (<5% selectivity)."
+          },
+          {
+            "condition": "Memory-bound (MEMORY_SIZE > 500 MB) - hash join or aggregation blowing up",
+            "path": "Check join order: is the smaller table the driver? Use HINT (HASH_JOIN) or rewrite as nested-loop if one table is small. For GROUP BY, ensure aggregation column has low cardinality. Add LIMIT to prevent full result set materialization."
+          },
+          {
+            "condition": "I/O-bound (waiting on disk) - extended storage or delta merge",
+            "path": "Check delta record count in M_CS_TABLES. If delta > 10% of total, schedule delta merge. Check extended storage usage: if warm data is paged in, consider increasing global_allocation_limit or moving data to in-memory."
+          }
+        ],
+        "staffPlusTip": "Most slow queries are caused by three things: (1) no partition pruning, (2) over-indexing that slows writes and confuses the optimizer, (3) delta merge neglect. Check these before diving into query-level tuning. Build a daily monitoring job that alerts when delta records exceed 5% of total records."
+      }
+    }
+  ],
+  "details": "<p><b>Staff+ Insight:</b> HANA is not just a database — it is a data platform that redefines the relationship between application logic and data storage. At FAANG interviews, frame HANA discussions around the columnar paradigm shift, code pushdown, and memory-first architecture. The key insight is that columnar storage changes the performance equation: what was expensive in row-store (full table scans, aggregation) becomes cheap, while what was cheap (single-row lookups) becomes relatively more expensive. The Staff+ architect optimizes at the data architecture level, not the query level.</p>"
+}

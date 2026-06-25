@@ -1,0 +1,63 @@
+{
+  "id": "ds-distributed-scheduling",
+  "title": "Distributed Scheduling & Workflow Orchestration",
+  "category": "Distributed Systems",
+  "subcategory": "Orchestration",
+  "language": "text",
+  "description": "<p>Distributed scheduling coordinates the execution of tasks across multiple machines, time zones, and failure domains. This file covers cron-at-scale, distributed job queues, workflow orchestration (Temporal, Airflow, Dagster), leader election for singleton schedulers, rate limiting for job dispatch, idempotent job execution, and how SAP's background job management (SM36, SM37) and update task processing compare to modern orchestration frameworks.</p>",
+  "tags": ["FAANG", "Staff+", "Scheduling", "Orchestration", "Workflow", "Cron", "Distributed"],
+  "sections": [
+    {
+      "title": "Cron-at-Scale — Why Classic Cron Fails",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Classic cron (Unix cron, SAP SM36/SM37) assumes a single machine, constant time zone, and no failure. At FAANG scale, these assumptions fail: machines crash, time zones must be configurable, and jobs must be idempotent and retryable.</p><p><b>Why cron fails at scale:</b> (1) Single point of failure — if the cron node crashes, scheduled jobs do not run. (2) No retry on failure — cron runs a command and reports exit code. If the job fails (network blip, downstream unavailable), cron does not retry. (3) No distributed coordination — two cron nodes will both execute the job (double execution). (4) No backfill — if the cron node is down for 2 hours, missed runs are lost. (5) Timezone handling — cron uses the system timezone; multi-region deployments require timezone-aware scheduling.</p><p><b>Distributed cron solutions:</b> (1) Distributed cron with leader election — a scheduler ensemble (3 nodes) uses ZooKeeper/etcd to elect a leader. Only the leader schedules jobs. If the leader fails, another node takes over. (2) Cron on serverless — AWS EventBridge / CloudWatch Events / Google Cloud Scheduler as managed cron services. The scheduling is delegated to a cloud service with built-in HA. (3) Cron on Kubernetes — CronJob resource. K8s controller ensures exactly one pod per scheduled run. It handles retry (backoffLimit) and history (successfulJobsHistoryLimit, failedJobsHistoryLimit).</p><p><b>SAP Bridge:</b> SAP's background job management (SM36/SM37) is a centralized cron system. The job scheduler runs on a single application server (or a group of servers with 'job server' profiles). If all job servers are down, scheduled jobs do not run. SAP's solution: configure at least two job servers, and use 'job scheduling with release after job' for critical jobs (the next job instance delays if the previous hasn't completed). This is a form of distributed scheduling, but it lacks the HA guarantees of a consensus-based scheduler.</p>"
+        },
+        {
+          "type": "svg",
+          "value": "<svg viewBox=\"0 0 700 200\" xmlns=\"http://www.w3.org/2000/svg\"><style>.sc-box{fill:var(--bg-secondary);stroke:var(--brand-primary);stroke-width:2;rx:8}.sc-n{fill:var(--bg-secondary);stroke:var(--text-primary);stroke-width:2;rx:6}.sc-lbl{fill:var(--text-primary);font-family:system-ui;font-size:11px;font-weight:600;text-anchor:middle}.sc-sub{fill:var(--text-primary);font-family:system-ui;font-size:9px;text-anchor:middle}.sc-ed{stroke:var(--brand-primary);stroke-width:2;fill:none;marker-end:url(#sca)}</style><defs><marker id=\"sca\" markerWidth=\"8\" markerHeight=\"6\" refX=\"8\" refY=\"3\" orient=\"auto\"><path d=\"M0,0 L8,3 L0,6Z\" fill=\"var(--brand-primary)\"/></marker></defs><rect class=\"sc-box\" x=\"15\" y=\"15\" width=\"670\" height=\"170\"/><text class=\"sc-lbl\" x=\"350\" y=\"38\">Distributed Scheduling Architecture</text><rect class=\"sc-n\" x=\"25\" y=\"55\" width=\"180\" height=\"50\"/><text class=\"sc-lbl\" x=\"115\" y=\"78\">Scheduler Ensemble</text><text class=\"sc-sub\" x=\"115\" y=\"96\">etcd/ZK leader election</text><path d=\"M205,80 L240,80\" class=\"sc-ed\"/><rect class=\"sc-n\" x=\"240\" y=\"55\" width=\"220\" height=\"50\" stroke=\"var(--svg-warning-stroke)\"/><text class=\"sc-lbl\" x=\"350\" y=\"78\">Job Queue (Redis/Kafka)</text><text class=\"sc-sub\" x=\"350\" y=\"96\">Rate-limited dispatch</text><path d=\"M460,80 L495,80\" class=\"sc-ed\"/><rect class=\"sc-n\" x=\"495\" y=\"55\" width=\"180\" height=\"50\" stroke=\"var(--svg-success-stroke)\"/><text class=\"sc-lbl\" x=\"585\" y=\"78\">Worker Pool</text><text class=\"sc-sub\" x=\"585\" y=\"96\">Idempotent execution</text><rect class=\"sc-box\" x=\"25\" y=\"120\" width=\"650\" height=\"40\"/><text class=\"sc-lbl\" x=\"350\" y=\"145\">SAP Analog: SM36/SM37 = centralized scheduler; multiple job servers = worker pool</text></svg>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Workflow Orchestration — Temporal vs Airflow vs Dagster",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Workflow orchestration coordinates multi-step processes (distributed transactions, ETL pipelines, order fulfillment flows). Three major frameworks dominate, each with different design philosophies.</p><p><b>Temporal (by Temporal Technologies, used by Netflix, Airbnb, Snap):</b> A durable execution framework. Your workflow logic is written as regular code (Java, Go, Python, TypeScript). Temporal guarantees that the workflow function will execute to completion, even if the worker crashes mid-execution. It achieves this by recording events (decisions, activities) in a persistent event store. On crash recovery, Temporal replays the events to reconstruct the workflow state. <b>Key concept:</b> workflow code is deterministic; Temporal pauses execution at each activity call and waits for the activity result. <b>Best for:</b> complex business processes with human-in-the-loop steps, long-running workflows (days to months), sagas for distributed transactions. <b>Tradeoff:</b> requires learning Temporal's framework; debugging replay-based workflows is different from debugging regular code.</p><p><b>Apache Airflow (by Airbnb, used by 3,000+ companies):</b> DAG-based workflow scheduler. Workflows are defined as DAGs (directed acyclic graphs) in Python. Each DAG node is a task; tasks can be Bash operators, Python operators, SQL operators, or custom operators. Airflow schedules DAGs on a cron-like schedule. <b>Key concept:</b> DAGs are static (defined in code); tasks run on workers via executor (Celery, Kubernetes). <b>Best for:</b> data pipelines, ETL, analytics workflows. <b>Tradeoff:</b> not suitable for real-time or sub-minute scheduling; DAGs cannot have cycles (no retry loops). <b>SAP analog:</b> SAP Process Integration (PI) flow steps — each step is a task; the overall flow is a directed graph.</p><p><b>Dagster (used by 500+ companies):</b> A newer orchestrator focused on data platform development. Unlike Airflow's DAG-centric model, Dagster is asset-centric — it tracks data assets (tables, files, ML models) and the computations that produce them. <b>Key concept:</b> software-defined assets — the asset's schema, quality checks, and dependencies are defined in code. <b>Best for:</b> data platform teams, ML pipeline orchestration, data quality management. <b>Tradeoff:</b> smaller ecosystem than Airflow; steeper learning curve for the asset-centric model.</p>"
+        }
+      ],
+      "codeBlock": "",
+      "quantifiedTradeoff": {
+        "title": "Workflow Orchestrator Decision",
+        "scenarios": [
+          {
+            "choice": "A: Temporal for complex business workflows (multi-step, long-running, human-in-loop)",
+            "tradeOff": "+Durable execution — workflow survives worker crashes. +Long-running workflows (days to years). +Saga pattern for distributed transactions. -Requires Temporal server (adds operational complexity). -Workflow code must be deterministic (limited language features).",
+            "context": "Order fulfillment: create order → validate payment → reserve inventory → schedule shipping → send confirmation. Each step may take hours (payment approval) or days (custom manufacturing). If the system crashes during step 3, Temporal resumes from step 3, not from the beginning.",
+            "recommendation": "Temporal for any workflow that: (a) runs for hours or days, (b) requires recovery from mid-workflow crashes, (c) has human-in-the-loop steps."
+          },
+          {
+            "choice": "B: Airflow for scheduled ETL/data pipelines",
+            "tradeOff": "+Proven at scale (3,000+ companies). +Large plugin ecosystem (250+ operators). +Familiar DAG model for data engineers. -Not for real-time (min 1-minute intervals). -No built-in crash recovery within a DAG (task retries, but no workflow replay).",
+            "context": "Nightly ETL: extract data from API → transform (Spark/DBT) → load to warehouse → run data quality checks → send completion notification. Airflow runs this DAG every 24 hours at 2 AM.",
+            "recommendation": "Airflow for batch data pipelines with scheduled execution. Use Kubernetes executor for dynamic scaling."
+          }
+        ]
+      }
+    },
+    {
+      "title": "Rate-Limited Job Dispatch",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>A distributed scheduler must dispatch jobs without overwhelming downstream systems. Rate-limited job dispatch prevents thundering-herd scenarios where all scheduled jobs fire simultaneously at the start of a minute (the 'top-of-the-minute problem').</p><p><b>The top-of-the-minute problem:</b> Cron jobs are typically scheduled at minute boundaries (:00, :05, :30, etc.). At 2:00 PM, 1000 cron jobs all fire simultaneously. Each job queries the database, calls APIs, or processes data — causing a 10x spike in resource utilization. This is a common cause of production incidents at scale.</p><p><b>Mitigation strategies:</b> (1) Cron with jitter — add a random delay to each job's start time (e.g., cron runs at :00 but job P1 delays by random(0, 60) seconds). Simple but effective. (2) Rate-limited queue — jobs are submitted to a queue, and the queue dispatches at a fixed rate (e.g., 50 jobs/second). The queue absorbs the spike. (3) Sharded scheduling — partition cron jobs by their primary resource: DB-intensive jobs run at :00, API-intensive jobs at :05, CPU-intensive jobs at :10. (4) Distributed token bucket — each downstream resource has a token bucket. The scheduler acquires a token before dispatching a job that uses that resource.</p>"
+        }
+      ],
+      "codeBlock": ""
+    }
+  ],
+  "details": "<p><b>FAANG Interview Tip:</b> Distributed scheduling questions appear in system design interviews for: Uber (dispatch), YouTube (transcoding queue), and platform design (internal workflow engine). The Staff+ signal is: (1) You differentiate between cron (schedule-based) and workflow (state machine) patterns. (2) You discuss leader election for the scheduler (etcd/ZK) and rate limiting for dispatch (token bucket). (3) You reference Temporal for long-running workflows and Airflow for batch pipelines — showcasing awareness of the landscape. (4) You discuss job idempotency: 'Every scheduled job must be safe to run twice — because at some point, it will be.'</p>"
+}

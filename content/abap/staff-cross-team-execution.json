@@ -1,0 +1,91 @@
+{
+  "id": "staff-cross-team-execution",
+  "title": "Leading Cross-Team Initiatives",
+  "category": "Leadership",
+  "subcategory": "Career Mastery",
+  "language": "text",
+  "description": "<p>How Staff+ engineers lead initiatives that span multiple teams, influence without authority, align stakeholders, and drive org-wide technical projects to completion. Covers initiative design, cross-team communication, dependency management, and measuring success with OKRs. This is the skill that separates Staff+ from Senior engineers.</p>",
+  "tags": ["FAANG", "Staff+", "Cross-Team", "Execution", "Leadership", "Program Management"],
+  "sections": [
+    {
+      "title": "What Makes Cross-Team Execution a Staff+ Skill",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>At SAP, engineers typically manage within their project team. They interact with adjacent teams but own a bounded scope. At the Staff+ level in FAANG, the game changes entirely. You lead initiatives that span 3-5 autonomous teams — and you have no direct authority over any of them. No one reports to you. You cannot mandate. You must influence.</p><p>This is the defining challenge of the Staff+ role. Your success depends on four pillars:</p><ul><li><b>Clear initiative design:</b> Define what you are building, why, and how before involving other teams.</li><li><b>Stakeholder alignment:</b> Get every team lead to buy into the vision and commit resources.</li><li><b>Dependency management:</b> Map what each team needs from every other team and track delivery.</li><li><b>Relentless communication:</b> Over-communicate status, changes, and blockers. Surprise is the enemy.</li></ul><p>Cross-team execution is not project management. It is technical leadership with organizational scope. The Staff+ engineer owns the outcome, not the task list.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Initiative Design — Scope, Timeline, Dependencies",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Before you involve a single engineer outside your team, you must design the initiative. A well-designed initiative answers five questions:</p><ul><li><b>Scope:</b> What is explicitly in scope? What is out of scope? Write this down. Ambiguity is the #1 cause of cross-team failure.</li><li><b>Timeline:</b> Define milestones, not deadlines. A milestone is a verifiable outcome (\"API v2 deployed to staging\"). A deadline is a date. Milestones create alignment; deadlines create anxiety.</li><li><b>Dependencies:</b> List every dependency between teams. For each one, identify: what is needed, who provides it, when it is needed, and what happens if it is late.</li><li><b>Success criteria:</b> How will you know the initiative is complete? Define measurable outcomes. Examples: \"P95 latency under 200ms for 99% of requests\" or \"Migration of 100% of services from Service A to Service B.\"</li><li><b>Risks:</b> What could go wrong? Rank risks by impact and likelihood. Create a mitigation plan for the top 3.</li></ul><p>Create a <b>one-page initiative charter</b> that captures all five elements. Share it with every stakeholder before the kickoff meeting. This single document will save you weeks of misalignment.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Cross-Team Communication — Sync Points and Escalation",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Communication is the operating system of cross-team execution. Without a deliberate communication structure, teams operate in silos, dependencies slip, and blame replaces collaboration. Build a communication architecture with three layers:</p><p><b>1. Regular Sync Cadence</b><br>Weekly sync during active execution phases. Bi-weekly during planning and wind-down. Each sync has a written agenda distributed 24 hours in advance and a decision log published within 2 hours of the meeting. No meeting without an agenda.</p><p><b>2. Shared Decision Log</b><br>Maintain a single source of truth for every decision made during the initiative. What was decided, who decided it, when, and why. When someone asks \"why are we doing X?\" the answer lives in the decision log. This prevents repetitive debates and preserves context across team changes.</p><p><b>3. Escalation Path</b><br>Define the escalation path before you need it. Each team designates a single point of contact (SPoC) for the initiative. When a blocker surfaces, the SPoC escalates to their team's lead. If unresolved within 48 hours, it escalates to the initiative lead (you). If it threatens the milestone, it escalates to the director sponsor. Document this path in the initiative charter.</p><p>Pro tip: Create a dedicated Slack channel for the initiative. All async communication goes there. No DMs for status updates — transparency is a force multiplier.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Managing Dependencies Across Autonomous Teams",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Dependencies are the single biggest risk in cross-team initiatives. Every unmanaged dependency is a time bomb. The solution is systematic dependency management: map, track, and resolve.</p><p><b>Dependency Mapping</b><br>Create a dependency matrix listing every team and what they need from each other. For each dependency, record: the deliverable, the providing team, the consuming team, the due date (milestone-relative), and the current status (not started, in progress, blocked, delivered).</p><p><b>Critical Path Analysis</b><br>Identify the longest chain of dependencies that determines the initiative timeline. This is your critical path. Any slip on the critical path directly delays the initiative. Protect it ruthlessly. The SVG below visualizes a typical cross-team dependency graph with the critical path highlighted in red.</p>"
+        },
+        {
+          "type": "svg",
+          "value": "<svg width=\"100%\" height=\"280\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 800 280\" style=\"background:#f8f9fa;border-radius:8px;\"><text x=\"400\" y=\"30\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"#333\">Cross-Team Dependency Graph</text><text x=\"400\" y=\"50\" text-anchor=\"middle\" font-size=\"11\" fill=\"#666\">Critical path highlighted in red. Dotted lines indicate cross-team dependencies.</text><rect x=\"30\" y=\"70\" width=\"140\" height=\"50\" rx=\"6\" fill=\"#e3f2fd\" stroke=\"#1a73e8\" stroke-width=\"2\"/><text x=\"100\" y=\"92\" text-anchor=\"middle\" font-size=\"11\" font-weight=\"bold\" fill=\"#1a73e8\">Team Alpha</text><text x=\"100\" y=\"108\" text-anchor=\"middle\" font-size=\"10\" fill=\"#555\">Auth Service</text><rect x=\"230\" y=\"70\" width=\"140\" height=\"50\" rx=\"6\" fill=\"#e3f2fd\" stroke=\"#1a73e8\" stroke-width=\"2\"/><text x=\"300\" y=\"92\" text-anchor=\"middle\" font-size=\"11\" font-weight=\"bold\" fill=\"#1a73e8\">Team Beta</text><text x=\"300\" y=\"108\" text-anchor=\"middle\" font-size=\"10\" fill=\"#555\">Data Pipeline</text><rect x=\"430\" y=\"70\" width=\"140\" height=\"50\" rx=\"6\" fill=\"#fce4ec\" stroke=\"#d32f2f\" stroke-width=\"2.5\"/><text x=\"500\" y=\"92\" text-anchor=\"middle\" font-size=\"11\" font-weight=\"bold\" fill=\"#d32f2f\">Team Gamma</text><text x=\"500\" y=\"108\" text-anchor=\"middle\" font-size=\"10\" fill=\"#555\">API Gateway</text><rect x=\"630\" y=\"70\" width=\"140\" height=\"50\" rx=\"6\" fill=\"#e3f2fd\" stroke=\"#1a73e8\" stroke-width=\"2\"/><text x=\"700\" y=\"92\" text-anchor=\"middle\" font-size=\"11\" font-weight=\"bold\" fill=\"#1a73e8\">Team Delta</text><text x=\"700\" y=\"108\" text-anchor=\"middle\" font-size=\"10\" fill=\"#555\">Frontend</text><rect x=\"230\" y=\"170\" width=\"140\" height=\"50\" rx=\"6\" fill=\"#fff3e0\" stroke=\"#e65100\" stroke-width=\"2\"/><text x=\"300\" y=\"192\" text-anchor=\"middle\" font-size=\"11\" font-weight=\"bold\" fill=\"#e65100\">Team Epsilon</text><text x=\"300\" y=\"208\" text-anchor=\"middle\" font-size=\"10\" fill=\"#555\">ML Service</text><rect x=\"430\" y=\"170\" width=\"140\" height=\"50\" rx=\"6\" fill=\"#fce4ec\" stroke=\"#d32f2f\" stroke-width=\"2.5\"/><text x=\"500\" y=\"192\" text-anchor=\"middle\" font-size=\"11\" font-weight=\"bold\" fill=\"#d32f2f\">Team Zeta</text><text x=\"500\" y=\"208\" text-anchor=\"middle\" font-size=\"10\" fill=\"#555\">Analytics</text><line x1=\"170\" y1=\"85\" x2=\"228\" y2=\"85\" stroke=\"#999\" stroke-width=\"2\" marker-end=\"url(#arrow)\"/><text x=\"199\" y=\"78\" text-anchor=\"middle\" font-size=\"9\" fill=\"#999\">token</text><line x1=\"370\" y1=\"95\" x2=\"428\" y2=\"95\" stroke=\"#d32f2f\" stroke-width=\"2.5\" marker-end=\"url(#arrowRed)\"/><text x=\"399\" y=\"88\" text-anchor=\"middle\" font-size=\"9\" fill=\"#d32f2f\">data</text><line x1=\"570\" y1=\"95\" x2=\"628\" y2=\"95\" stroke=\"#d32f2f\" stroke-width=\"2.5\" marker-end=\"url(#arrowRed)\"/><text x=\"599\" y=\"88\" text-anchor=\"middle\" font-size=\"9\" fill=\"#d32f2f\">api</text><line x1=\"370\" y1=\"195\" x2=\"428\" y2=\"195\" stroke=\"#999\" stroke-width=\"2\" marker-end=\"url(#arrow)\"/><text x=\"399\" y=\"188\" text-anchor=\"middle\" font-size=\"9\" fill=\"#999\">model</text><line x1=\"500\" y1=\"120\" x2=\"500\" y2=\"168\" stroke=\"#999\" stroke-width=\"2\" stroke-dasharray=\"6,3\" marker-end=\"url(#arrow)\"/><text x=\"512\" y=\"148\" text-anchor=\"middle\" font-size=\"9\" fill=\"#999\">webhook</text><defs><marker id=\"arrow\" viewBox=\"0 0 10 10\" refX=\"8\" refY=\"5\" markerWidth=\"6\" markerHeight=\"6\" orient=\"auto\"><path d=\"M0,0 L10,5 L0,10\" fill=\"#999\"/></marker><marker id=\"arrowRed\" viewBox=\"0 0 10 10\" refX=\"8\" refY=\"5\" markerWidth=\"6\" markerHeight=\"6\" orient=\"auto\"><path d=\"M0,0 L10,5 L0,10\" fill=\"#d32f2f\"/></marker></defs></svg>"
+        },
+        {
+          "type": "text",
+          "value": "<p><b>Dependency Resolution</b><br>When a dependency is blocked, you have three options: escalate to unblock it, wait (with a documented risk), or find a workaround. The decision tree below helps you choose the right path.</p>"
+        }
+      ],
+      "codeBlock": "",
+      "decisionTree": {
+        "id": "dependency-blocked-decision",
+        "title": "Dependency Blocked — What Do You Do?",
+        "prompt": "A dependency from Team Beta to Team Gamma is blocked. Team Beta's data pipeline is not ready and it will delay Team Gamma's API Gateway. You have three options: Escalate to the director, Wait and accept the delay, or Find a workaround.",
+        "firstQuestion": "\"What is the impact on the critical path?\" If the blocked dependency is on the critical path and any delay directly pushes the initiative timeline, escalation is the default answer. If it is off the critical path and teams can work around it, waiting or finding a workaround may be better. Always assess critical path impact first before choosing a resolution strategy.",
+        "branches": [
+          {"condition": "Escalate to Director", "path": "Escalation gets executive attention. The director reprioritizes Team Beta's work, and the dependency is delivered in 3 days. However, you have burned political capital. Use escalation sparingly — only when the milestone is at risk and you have exhausted other options. Always escalate with a recommendation, never with just a problem.", "selected": true},
+          {"condition": "Wait and Accept Delay", "path": "Waiting pushes the initiative timeline by 2 weeks. The critical path is affected. Other teams now have idle time. If the delay is acceptable to stakeholders and doesn't affect business commitments, waiting can be the pragmatic choice — but always document the decision and communicate the new timeline immediately. Set a firm deadline for reevaluation.", "selected": false},
+          {"condition": "Find a Workaround", "path": "You discover Team Gamma can use a cached snapshot of Team Beta's data instead of the live pipeline. This unblocks API Gateway development with a 12-hour data lag — acceptable for the MVP. Workarounds are creative solutions, but they introduce technical debt. Document the workaround and plan to remediate post-launch. A workaround that buys 2 weeks is worth the debt.", "selected": false}
+        ],
+        "staffPlusTip": "The best Staff+ engineers rarely escalate. They build relationships with team leads so that when a blocker arises, a quick conversation resolves it. Escalation should be your last tool, not your first. If you find yourself escalating more than once per quarter, invest more in cross-team relationships and stakeholder alignment before the next initiative."
+      }
+    },
+    {
+      "title": "Measuring Success — OKRs and Milestones",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Cross-team initiatives fail when success is measured by output rather than outcomes. Output is easy to measure (\"we shipped 15 APIs\") but meaningless if those APIs don't drive business impact. Outcomes are harder to measure but are what matter.</p><p><b>Define OKRs for the Initiative</b><br>Each initiative should have 1-2 Objectives with 3-4 Key Results per objective. The Objective is qualitative and inspirational. The Key Results are quantitative and measurable.</p>"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "value": "Objective: Deliver a unified search experience across all product surfaces\n\nKey Results:\nKR1: Merge 4 independent search backends into 1 unified service (Team Alpha + Beta)\nKR2: Achieve P95 search latency < 200ms across all surfaces (Team Gamma)\nKR3: 100% of frontend surfaces migrated to unified search API (Team Delta)\nKR4: Internal developer survey satisfaction > 4.0 / 5.0 on search API documentation"
+        },
+        {
+          "type": "text",
+          "value": "<p><b>Track Milestones, Not Output</b><br>A milestone is a verifiable, meaningful checkpoint. Examples: \"Auth service integration tests passing against staging API Gateway\" rather than \"Auth team completed 50% of their tasks.\" Track milestones in a shared dashboard that every team can see. Update it weekly. If a milestone slips, the dashboard shows it before anyone needs to ask.</p><p><b>Accountability Without Authority</b><br>You cannot fire anyone. You cannot reassign people. Your only tool is transparency. When a team is falling behind, the dashboard makes it visible. When dependencies are blocked, the decision log shows who committed to what. Your power comes from making the invisible visible. In cross-team execution, sunlight is the best disinfectant.</p>"
+        }
+      ],
+      "codeBlock": ""
+    }
+  ],
+  "details": "<p><b>Staff+ Insight:</b> Cross-team execution is where Staff+ engineers earn their keep. Your ability to drive alignment across 5 autonomous teams is worth more than your ability to write the best code on one team. The hardest part is not the technical work — it's keeping all stakeholders informed, managing competing priorities, and unblocking dependencies when teams have different timelines. Treat cross-team execution as a product: your stakeholders are your users, your initiative charter is your spec, and your milestone updates are your releases.</p>"
+}

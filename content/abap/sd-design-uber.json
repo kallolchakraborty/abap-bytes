@@ -1,0 +1,52 @@
+{
+  "id": "sd-design-uber",
+  "title": "Design Uber — Ride-Hailing System",
+  "category": "System Design",
+  "subcategory": "FAANG Whiteboarding",
+  "language": "text",
+  "description": "<p>Design a ride-hailing platform connecting riders and drivers in real-time. Covers geospatial indexing (quadtree, geohash, S2), real-time matching, ETA calculation, surge pricing, distributed dispatch, fault tolerance, and how SAP's logistics modules (LE, TM, GTS) provide a conceptual bridge to ride-hailing architecture.</p>",
+  "tags": ["FAANG", "Staff+", "System Design", "Uber", "Geospatial", "Real-Time", "Matching"],
+  "sections": [
+    {
+      "title": "Functional & Non-Functional Requirements",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>Functional requirements:</b> (1) Rider requests a ride with pickup/dropoff location. (2) System finds nearby available drivers. (3) Driver receives ride request, can accept or decline. (4) Rider sees driver ETA and real-time location. (5) Trip tracking: fare calculation, route optimization, ETA updates. (6) Payment processing after trip completion. (7) Rating system for riders and drivers.</p><p><b>Non-functional requirements:</b> (1) Availability: 99.99% (ride requests must never fail). (2) Latency: ride request → driver notification < 100ms P99. (3) Scalability: 10M+ riders, 1M+ drivers, 100M+ requests/day. (4) Consistency: ride assignment must be consistent (one driver assigned to one ride). (5) Fault tolerance: if a dispatch server fails, in-flight requests must be recovered within seconds. (6) Geospatial accuracy: driver location updates at < 5 second intervals with < 10m accuracy.</p><p><b>SAP Bridge:</b> SAP Transportation Management (TM) handles similar concepts: shipment tendering (matching carriers to loads), real-time tracking (GPS integration), route optimization, and rate calculation. The difference: SAP TM is planned (shipments are scheduled ahead of time); Uber is real-time (demand and supply are matched in milliseconds). The Staff+ engineer with SAP TM experience can discuss: 'In SAP TM, load tendering uses a carrier selection profile. The real-time analog is the dispatch algorithm — instead of carrier selection rules, we use geospatial proximity + driver rating + vehicle type matching.'</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "High-Level Architecture",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>Four-layer architecture:</b></p><p><b>1. Mobile/Web Client Layer:</b> Rider app (request ride, track, pay), Driver app (accept rides, navigate, earnings). Uses WebSocket for real-time updates, REST for CRUD operations, and gRPC for internal communication.</p><p><b>2. API Gateway Layer:</b> Routes requests to appropriate services. Handles authentication, rate limiting (100 req/s per rider, 1000 req/s per driver), request validation, and routing. The gateway is stateless and horizontally scalable behind a load balancer.</p><p><b>3. Service Layer (microservices):</b> <b>Dispatch Service</b> — the core matching algorithm. Receives ride requests, queries the geospatial index for nearby drivers, evaluates driver eligibility, and sends ride offers to eligible drivers. <b>Location Service</b> — ingests GPS location updates from drivers (WebSocket), updates the geospatial index, and broadcasts driver locations to nearby riders. <b>ETA Service</b> — calculates estimated time of arrival using real-time traffic data and historical route patterns. <b>Pricing Service</b> — calculates fare based on distance, time, surge multiplier (dynamic pricing based on supply/demand ratio). <b>Payment Service</b> — handles payment processing, invoicing, driver payouts. <b>Rating Service</b> — manages rider/driver ratings and feedback.</p><p><b>4. Data Layer:</b> <b>Geospatial Index</b> — in-memory quadtree or Google S2 for fast nearest-neighbor queries. Sharded by geographic region. <b>Ride Store</b> — Cassandra or DynamoDB for ride history (write-heavy, time-series). <b>Driver Store</b> — PostgreSQL for driver profiles and vehicle information (relational, moderate throughput). <b>Real-Time State</b> — Redis for active ride state, driver status, and pending ride requests (in-memory, TTL-based). <b>Message Queue</b> — Kafka for async processing (trip completion events, payment processing, analytics).</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Geospatial Indexing — Finding Nearby Drivers",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Finding nearby drivers is the core technical challenge. The system must find all drivers within a 2-5 km radius of the rider within 50ms. Brute-force distance calculations on all 1M+ drivers is not feasible. Three approaches exist.</p><p><b>1. Geohash:</b> Divide the earth into a grid of rectangles. Each rectangle is assigned a geohash string (base32). String prefix length determines grid size. A 5-character geohash is ~4.9 km × 4.9 km. To find nearby drivers, calculate the rider's geohash, query all drivers with the same geohash prefix. <b>Pros:</b> simple to implement, uses standard string indexing, works with any key-value store. <b>Cons:</b> edge cases — drivers at geohash boundaries may be 1 meter away but in a different geohash (must query neighbor geohashes).</p><p><b>2. Quadtree:</b> Recursively divide the map into quadrants. Each quadrant contains a count of drivers in that region. To find nearby drivers, traverse the quadtree to the level that matches the search radius. <b>Pros:</b> adaptive precision (dense areas have smaller quadrants, sparse areas have larger ones). <b>Cons:</b> must be in-memory (tree structure doesn't map well to disk-based storage).</p><p><b>3. Google S2 Geometry:</b> A library that maps spherical geometry to a Hilbert curve (space-filling curve). S2 cells have a defined level (analogous to geohash precision) and can cover the earth's surface with up to 31 levels of precision. Uber uses S2 for its dispatch system. <b>Pros:</b> very fast (O(1) cell containment checks), used in production by Uber, efficient neighbor cell computation.</p><p><b>Staff+ architecture decisions:</b> (1) The geospatial index must be sharded by geographic region (e.g., by city or metropolitan area). Querying all 1M drivers globally is unnecessary. (2) Driver locations are written to the index every 3-5 seconds. The write throughput is 1M drivers / 5 seconds = 200K writes/second. This is too high for a single node. Shard by region AND use a write-behind cache (Redis) with async persistence to Cassandra. (3) The dispatch service must exclude drivers who: are on a trip, are offline, have declined too many rides recently, or have a low rating. These filters are applied before the matching score is computed.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Ride Dispatch Algorithm",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>The dispatch algorithm assigns a ride request to the best driver. The simplest approach is 'nearest driver wins,' but this creates a poor experience: the nearest driver might be heading in the wrong direction, about to finish a shift, or have a low rating.</p><p><b>Uber's dispatch algorithm (simplified):</b> (1) Find all eligible drivers within the geofence (adjustable radius, starting at 2 km, expanding in 500m increments if no driver accepts). (2) Score each driver based on: distance to pickup (weight: 0.4), estimated time en route (ETA including traffic), driver rating (weight: 0.2), driver direction (is the driver heading toward the rider?), driver's acceptance rate (drivers who accept more rides get priority), surge multiplier. (3) Send ride offers to the top N drivers (typically 3-5) simultaneously. (4) Driver who accepts first gets the ride. (5) No response from any driver? Expand radius and retry. (6) No response after 3 retries? Notify rider that no drivers are available.</p><p><b>Consistency in dispatch:</b> Two ride requests arriving simultaneously must not assign the same driver to both rides. Solution: (1) The dispatch service acquires a distributed lock (etcd/Redis) on the driver's ID before sending an offer. (2) If the lock cannot be acquired (driver is being considered for another ride), the dispatch retries with a different driver. (3) The lock is released when: driver accepts or driver declines or timeout (30 seconds). This guarantees that a driver receives only one ride offer at a time.</p>"
+        }
+      ],
+      "codeBlock": ""
+    }
+  ],
+  "details": "<p><b>FAANG Interview Tip:</b> The Uber design question tests: (1) Your ability to handle real-time geospatial data at scale. (2) Your understanding of consistency in a distributed dispatch system. (3) Your ability to design a system that handles failure gracefully (driver app crashes mid-trip, GPS signal loss, dispatch server failure). The SAP analog — Transportation Management — helps frame your experience. Use it to explain that you understand the domain (matching supply to demand in a geographic context), even though the scale and latency requirements differ.</p>"
+}

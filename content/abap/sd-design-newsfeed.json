@@ -1,0 +1,42 @@
+{
+  "id": "sd-design-newsfeed",
+  "title": "Design Newsfeed Algorithm & Infrastructure",
+  "category": "System Design",
+  "subcategory": "FAANG Whiteboarding",
+  "language": "text",
+  "description": "<p>Design a personalized newsfeed that ranks and delivers content to users. Covers feed generation (push, pull, hybrid), ranking algorithm design (recency, relevance, user engagement signals), ML feature engineering for feed ranking, A/B testing infrastructure for feed changes, real-time vs batch scoring, and how SAP's MRP planning and alert feeds provide a conceptual bridge.</p>",
+  "tags": ["FAANG", "Staff+", "System Design", "Newsfeed", "Ranking", "ML", "Personalization"],
+  "sections": [
+    {
+      "title": "Feed Generation Architecture",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>The newsfeed must surface relevant content from the user's social graph (friends, follows, pages, groups) and from the platform's content pool (trending, recommended, sponsored). The feed generation architecture determines how content is collected, ranked, and served.</p><p><b>Feed generation approaches:</b></p><p><b>1. Pre-computed feed (push):</b> When a user's friend creates content, the content item is pre-inserted into the user's feed (a sorted set in Redis, or a feed table in Cassandra). The user's feed is pre-computed before they open the app. <b>Pros:</b> very fast feed load (O(1) — just fetch and display). <b>Cons:</b> write amplification (one post becomes N feed inserts). Not all content will be seen (wasted writes).</p><p><b>2. On-demand feed (pull):</b> When the user opens the feed, fetch the latest content from friends/follows and rank it in real-time. <b>Pros:</b> no wasted writes. <b>Cons:</b> slow feed generation (must query all data sources, rank, and paginate).</p><p><b>3. Hybrid (recommended approach):</b> (a) Pre-compute a 'candidate pool' of the most recent N items from the user's social graph (push). (b) Apply real-time ranking models on the candidate pool (pull the top K from the pool). (c) Interleave with non-social content (sponsored posts, trending, suggested content). This combines the speed of pre-computation with the freshness of real-time ranking.</p><p><b>Feed storage (Redis sorted sets per user):</b> Each user's candidate pool is stored as a Redis sorted set. Member = content ID (8 bytes). Score = content timestamp + quality score (8 bytes). When the user opens the feed: (1) Fetch the top 100 items from the sorted set (by score descending). (2) Apply the ranking model to reorder these 100 candidates. (3) Return the top 20 for the first page, with cursor-based pagination.</p><p><b>SAP Bridge:</b> SAP's MRP planning generates a feed of 'planned orders' based on demand signals. The MRP result is a list of recommended actions ranked by urgency. Similarly, alert feeds in SAP (workflow inbox) present a list of pending actions ranked by due date. The ranking algorithm (due date + priority) is a simpler version of Facebook's newsfeed ranking.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Ranking Algorithm — From Simple to ML",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>The ranking algorithm determines which content appears at the top of the feed. The simplest approach is reverse-chronological. At Facebook/Instagram scale, the ranking involves hundreds of ML features and a DNN model.</p><p><b>Stage 1 — Reverse chronological (baseline):</b> Content is ordered by timestamp descending. Simplest to implement, most transparent to users. Used by Twitter's 'Latest Tweets' mode. <b>Pros:</b> simple, low-latency, no ML infrastructure needed. <b>Cons:</b> does not prioritize high-quality content over low-quality content.</p><p><b>Stage 2 — Rule-based scoring:</b> Each content item gets a score based on weighted rules: (1) Recency weight (0.5) — how recent is the content? (score = 1.0 for < 1 hour, decays to 0.1 after 24 hours). (2) Relationship weight (0.3) — how close is the user to the content creator? (close friend = 1.0, acquaintance = 0.3). (3) Engagement weight (0.2) — how many likes/comments/shares did this content get from the user's network? Weighted sum = final score. Items are sorted by score descending.</p><p><b>Stage 3 — ML-based ranking (FAANG standard):</b> A DNN (deep neural network) predicts the probability of user engagement (click, like, share, dwell time, comment). Features: (1) Content features — type (photo, video, link, status), topic, creator, recency, engagement velocity (likes in the last 5 minutes). (2) User features — past engagement with this creator, past engagement with similar content, device type, time of day, session count in the last 24 hours. (3) Context features — feed position (users engage more with the first few items), time since last visit, number of unread items. The model outputs a score for each content item. The feed is ordered by predicted engagement. Facebook's feed is ranked by a multi-task DNN that predicts: 'Will the user like this?', 'Will the user share this?', 'Will the user comment?', 'Will the user hide this?'</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "A/B Testing Infrastructure for Feed Changes",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Every change to the feed ranking algorithm must be A/B tested before full rollout. A failed feed change can reduce user engagement by 5-10%, which translates to millions of dollars in revenue impact.</p><p><b>A/B test architecture:</b> (1) User is assigned to a test cohort (control: existing ranking algorithm; treatment: new ranking algorithm). (2) The feed service checks the user's cohort before ranking and applies the appropriate model. (3) All user interactions (impressions, clicks, likes, shares, dwell time, hide, report) are logged with the cohort ID. (4) After sufficient data (typically 1-2 weeks, 10M+ user-days), the metrics are compared: engagement rate, dwell time per session, return rate, ad revenue per user. (5) If the treatment shows statistically significant improvement (p < 0.05) without negative side effects (e.g., increased misinformation spread), it is rolled out to 100% of users.</p><p><b>Metrics for feed quality:</b> (1) CTR (click-through rate) — fraction of content items that received at least one click. (2) Dwell time — how long the user spends viewing the feed. (3) Session depth — how many content items does the user scroll through? (4) Return rate — percentage of users who return within 24 hours. (5) Hide/block rate — fraction of content items that the user actively hides or blocks (negative signal). (6) Content diversity — is the user seeing content from diverse sources or the same creator repeatedly?</p>"
+        }
+      ],
+      "codeBlock": ""
+    }
+  ],
+  "details": "<p><b>FAANG Interview Tip:</b> The newsfeed question tests: (1) Your understanding of feed generation at scale (push vs pull hybrid). (2) Your knowledge of ranking algorithms from simple (reverse-chrono) to complex (ML-based DNN). (3) Your ability to design A/B testing infrastructure for ML model changes. The SAP engineer can bridge from MRP planning feeds and workflow inbox ranking: 'SAP ranks workflow items by priority and due date. Facebook's feed ranking is the same concept with 100x more signals and an ML model instead of a rule-based priority score.'</p>"
+}

@@ -1,0 +1,115 @@
+{
+  "id": "staff-perf-reviews",
+  "title": "FAANG Performance Reviews & Calibration",
+  "category": "Engineering Culture",
+  "subcategory": "Career Growth & Metrics",
+  "language": "text",
+  "description": "<p>How FAANG performance reviews actually work behind closed doors. Covers the full review cycle, calibration meetings, stack ranking, rating definitions, self-review writing, peer feedback collection, PIPs, and the specific challenges SAP engineers face when adapting to FAANG's performance culture.</p>",
+  "tags": ["FAANG", "Staff+", "Performance Review", "Calibration", "Stack Ranking", "PIP", "Career", "Growth"],
+  "sections": [
+    {
+      "title": "The FAANG Performance Review Cycle",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>The performance review cycle is the single most important operational process at a FAANG company. It determines your compensation, promotion trajectory, and career velocity. Unlike SAP's annual review (often a formality tied to fixed salary increments), FAANG reviews are high-stakes, data-driven, and surrounded by process.</p><p><b>Typical cycle (varies by company):</b> (1) <b>Self-review (2 weeks):</b> You write a document summarizing your achievements, impact, and growth areas for the review period. This is the foundation of your review. (2) <b>Peer feedback collection (2 weeks):</b> Your manager selects 5-10 peers to provide written feedback. You may also nominate peers. The feedback is confidential and specific to your collaboration. (3) <b>Manager review (1 week):</b> Your manager writes their assessment, incorporating your self-review, peer feedback, and their own observations. (4) <b>Calibration meeting (1-3 days):</b> All managers in the org meet to calibrate ratings across teams. This is where the real ratings are decided \u2014 not by your manager alone. (5) <b>Rating approval (1 week):</b> Senior leadership reviews and approves the calibrated ratings. (6) <b>Feedback delivery (1 week):</b> Your manager shares the rating and written feedback in a 1:1. (7) <b>Comp adjustment (1 week):</b> Ratings cascade to salary increases, bonuses, and RSU refreshers.</p><p><b>SAP Bridge:</b> In SAP, performance is often measured by utilization rate (billable hours), project delivery against specifications, and certifications earned. At FAANG, performance is measured by business impact, cross-team influence, and technical leadership. An SAP engineer's first review at FAANG is often a shock because they have been evaluated on different criteria their entire career. The key adaptation: stop describing what you did (tasks) and start describing what changed because of what you did (impact).</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Self-Reviews \u2014 Writing Your Own Narrative",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Your self-review is the most influential document in your performance review. Your manager uses it as the starting point for their assessment. The calibration panel sees it as evidence of self-awareness. A well-written self-review can raise your rating by one level. A poorly written one can lower it.</p><p><b>The STAR format for self-reviews:</b> (1) <b>Situation:</b> What was the context? 'Our payment system had 800ms P99 latency, causing a 15% cart abandonment rate.' (2) <b>Task:</b> What was your role? 'I led the payment reliability initiative across 5 teams.' (3) <b>Action:</b> What specifically did you do? 'I designed the idempotency key framework, implemented circuit breakers, and coordinated the migration across 3 payment providers.' (4) <b>Result:</b> What measurable outcome occurred? 'P99 latency reduced to 100ms. Cart abandonment dropped 12%. Annual revenue impact: $8M.'</p><p><b>Common self-review mistakes by SAP engineers:</b> (1) <b>Listing tasks instead of impact.</b> 'I maintained the payment module' \u2192 'I reduced payment module incidents by 80% through systematic monitoring and automated recovery.' (2) <b>Using technical terms without business context.</b> 'I migrated 2000 Z-programs' \u2192 'I reduced the custom code footprint by 85%, saving $2M in migration costs and $500K/year in maintenance.' (3) <b>Being too humble.</b> SAP culture discourages self-promotion. FAANG expects it. If you don't advocate for yourself, no one will. (4) <b>Ignoring growth areas.</b> A self-review should include honest self-assessment: 'I need to improve my cross-team communication. In Q3, I will lead the cross-team design review to build this skill.'</p>"
+        }
+      ],
+      "codeBlock": "# Self-Review Template\n\n## Impact Summary\n\n1. [Project Name]: [1-sentence description of what you did]\n   - Impact: [Measurable outcome with dollar value or percentage]\n   - Evidence: [Link to design doc, dashboard, or postmortem]\n\n2. [Project Name]: ...\n\n## Key Achievements\n\n### Achievement 1: [Title]\n- Situation: [Context and problem]\n- Task: [Your role and scope]\n- Action: [What you specifically did]\n- Result: [Measurable outcome]\n- Why it matters: [Business impact]\n\n## Growth Areas\n\n1. [Area]: [What I'm working on], [How I'm addressing it], [Expected outcome]\n\n## Next Quarter Goals\n\n1. [Goal]: [Measurable outcome], [Timeline]",
+      "adversarialResponse": {
+        "challenge": "\"Self-promotion feels wrong to me. I was taught that good work speaks for itself. Writing a self-review that talks about my impact feels like bragging. Isn't the work itself enough?\"",
+        "badResponse": "\"FAANG culture expects self-promotion. Get used to it.\" (dismissive, doesn't address the cultural discomfort)",
+        "goodResponse": "\"I understand that discomfort. In SAP consulting, your work \u2014 delivered projects, happy clients, high utilization \u2014 was visible to your manager through timesheets and project dashboards. At FAANG, your manager manages 8-12 people and may not see your daily work. The self-review is not bragging \u2014 it is providing evidence that your manager and the calibration panel would not otherwise have. Think of it as documentation, not promotion. If you were writing a design doc, you would include all the relevant details so another engineer could understand the system. The self-review is the same: include all the relevant details so the calibration panel can understand your impact. The system does not work without that documentation.\"",
+        "pattern": "cultural-reframing \u2014 help SAP engineers reframe self-review from 'bragging' to 'documentation.' The FAANG system requires written evidence because managers and calibration panels don't have direct visibility into daily work. The self-review fills that information gap."
+      }
+    },
+    {
+      "title": "Calibration Meetings \u2014 Where Ratings Are Really Decided",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>The calibration meeting is where your manager defends your rating to other managers. Your manager walks into a room with 10-15 other managers and presents your case. They are asked: 'Why does this engineer deserve a rating of Exceeds Expectations when we only have 20% of the org at that level?' Your manager must have evidence \u2014 not opinions \u2014 to support their recommendation.</p><p><b>How calibration works:</b> (1) Each manager presents their top and bottom performers first. The extremes are calibrated to ensure consistency across teams. (2) The calibration panel (senior managers, sometimes a Director) asks probing questions: 'How does this compare to another engineer who also led a cross-team initiative?' (3) Ratings are adjusted based on the calibration discussion. A manager who overrated their engineer may be asked to revise. A manager who underrated theirs may be asked to reconsider. (4) The distribution is enforced \u2014 typically 10-15% at the top rating, 60-70% at the middle, 10-15% at the bottom, and 5-10% at the lowest rating.</p><p><b>Why your manager's advocacy matters:</b> Your manager is your advocate in the calibration meeting. They need specific, quantified evidence to defend your rating. If your self-review is vague, your manager has nothing to work with. This is why a strong self-review is critical \u2014 it gives your manager the ammunition they need to fight for your rating.</p><p><b>SAP-specific calibration challenge:</b> SAP engineers often work on internal tools or enterprise systems that don't have obvious customer-facing impact. The calibration panel may not understand the value of reducing SAP upgrade costs or improving internal data pipeline reliability. It is your manager's job to translate, but they can only translate what you document. Make sure your self-review frames your SAP-related work in terms the panel will understand: cost savings, reliability improvements, velocity increases.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Rating Definitions \u2014 What Each Level Actually Means",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Each FAANG company uses different rating names, but the underlying distribution is similar. Understanding the definitions helps you calibrate your own expectations and understand what you need to achieve for your desired rating.</p><p><b>Common FAANG rating systems:</b> (1) <b>Google (Perf Ratings):</b> O (Outstanding) \u2014 top 2-3%, rare. EE (Exceeds Expectations) \u2014 top 10-15%. ME (Meets Expectations) \u2014 60-70%. NI (Needs Improvement) \u2014 10-15%. MI (Meets Most but Missed Some) \u2014 ~5%. (2) <b>Meta (PSR):</b> Greatly Exceeds \u2014 top 5-7%. Exceeds \u2014 top 15-20%. Meets All \u2014 60-70%. Meets Some \u2014 10-15%. Does Not Meet \u2014 2-5%. (3) <b>Amazon (Forté):</b> Top Tier (L7+ level impact) \u2014 top 5%. Great (exceeding expectations at current level) \u2014 15%. Achieves (meeting expectations) \u2014 60%. Developing (not yet meeting expectations) \u2014 15%. Needs Improvement \u2014 5%. (4) <b>Apple:</b> Exceeds Expectations (rare). Meets Expectations (majority). Below Expectations (uncommon). Apple uses a 5-point scale that is not publicly documented.</p><p><b>What 'Meets Expectations' actually means:</b> You successfully delivered your assigned projects at the expected level of quality. You are a reliable contributor. This is not a bad rating \u2014 most people get it. But if you are targeting promotion, you need 'Exceeds' or equivalent to build a promotion case. 'Meets' says 'you are performing well at your current level.' 'Exceeds' says 'you are performing at the next level.'</p><p><b>What 'Exceeds Expectations' requires at Staff+ level:</b> (1) Impact beyond your team \u2014 cross-team initiatives, org-wide improvements. (2) Technical leadership \u2014 setting direction that others follow, not just executing tasks. (3) Scaling yourself \u2014 mentoring, creating frameworks, improving engineering practices. (4) Visible business impact \u2014 your work demonstrably moved metrics that the company cares about.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Peer Feedback \u2014 How to Collect Strong Reviews",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Peer feedback carries significant weight in FAANG performance reviews. Managers use it to validate (or challenge) their own assessment. Calibration panels pay close attention to peer feedback because it provides an independent perspective.</p><p><b>Who to ask for peer feedback:</b> (1) People you have collaborated with on specific projects \u2014 they can provide concrete examples. (2) Engineers at or above your level \u2014 their assessment carries more weight. (3) People from different teams \u2014 demonstrates cross-team impact. (4) People who have seen you in different contexts \u2014 design reviews, incident response, mentoring.</p><p><b>How to set up strong peer feedback:</b> (1) Give feedback before you ask for it. 'I really valued your architecture input on the payment migration.' If you have a reputation for giving thoughtful feedback, people will return the favor. (2) Be specific about what you want. 'Could you mention the work I did on the circuit breaker pattern and how it reduced incidents?' (3) Provide context. 'I'm coming up for my review and would appreciate your perspective on our collaboration. The review period is Q2-Q3. Key projects we worked on together: [list].' (4) Make it easy. Send a calendar invite with a brief reminder of the projects and the specific feedback you are seeking. (5) Return the favor. When someone asks you for feedback, write a detailed, specific response. The reciprocity of feedback is real.</p><p><b>What to do if you receive weak or negative feedback:</b> (1) Don't argue. Your manager will share anonymized feedback with you. Listen without defending. (2) Reflect. Is there truth in the feedback? Even poorly delivered feedback often contains a kernel of truth. (3) Respond constructively. 'I appreciate this feedback. I will work on [specific action].' This turns a negative into a growth story. (4) Address it in your next self-review. 'After receiving feedback about my cross-team communication, I started a weekly sync with the data platform team. Here are the results: [improved collaboration, faster decision-making].'</p>"
+        }
+      ],
+      "codeBlock": "",
+      "quantifiedTradeoff": {
+        "title": "Peer Feedback: Quality vs Quantity",
+        "scenarios": [
+          {
+            "choice": "A: Fewer (3-4) but highly specific, detailed feedback from direct collaborators",
+            "tradeOff": "+Higher signal-to-noise ratio, each piece is detailed and credible but -Less diversity of perspectives, may miss cross-team impact signals",
+            "context": "You worked deeply with 3-4 people on a major project. Each can write a detailed account of your contributions. The calibration panel sees deep evidence from multiple angles.",
+            "recommendation": "This is ideal for first-year reviews or when you have a single major project to highlight. The depth compensates for the narrow scope."
+          },
+          {
+            "choice": "B: More (6-10) but broader, less detailed feedback from diverse collaborators",
+            "tradeOff": "+Shows widespread positive relationships and cross-team reach but -Each piece may be generic ('X is a great engineer'), missing the specific evidence the calibration panel needs",
+            "context": "You work across 5+ teams and have many lighter collaborations. Each person can say something positive but not deeply detailed.",
+            "recommendation": "Use this approach when you have broad org-wide impact. Mitigate generic feedback by asking each person for one specific example. Even one concrete sentence per person strengthens the overall signal."
+          }
+        ]
+      }
+    },
+    {
+      "title": "Performance Improvement Plans (PIPs) \u2014 What You Need to Know",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>A PIP is a formal process for an engineer who is not meeting performance expectations. It is the most feared process in FAANG \u2014 and also the most misunderstood. Understanding PIPs is important even if you are a strong performer because you may need to manage a team member through one, or you may want to help a peer avoid one.</p><p><b>What a PIP is:</b> A documented plan that outlines: (1) specific performance gaps, (2) measurable improvement goals, (3) a timeline (typically 30-90 days), (4) regular check-ins with the manager, and (5) consequences if improvement goals are not met. The PIP is designed to give the engineer a clear path to improvement. In practice, the outcome depends heavily on the manager's intent and the engineer's response.</p><p><b>PIP outcomes:</b> (1) Some engineers improve, complete the PIP successfully, and continue in their role. (2) Some decide the role is not a good fit and leave voluntarily. (3) Some are managed out (terminated) after failing the PIP. The statistics vary by company, but roughly 30-50% of PIPs result in the engineer leaving (voluntarily or involuntarily).</p><p><b>How to avoid a PIP:</b> (1) Surface problems early. If you are struggling with a project, tell your manager before they discover it. 'I'm behind on the data pipeline integration because I underestimated the API complexity. Here is my recovery plan.' (2) Ask for help. Staff+ engineers who ask for help are seen as self-aware, not weak. 'I need guidance on the architecture for the event-driven migration. Can we whiteboard it together?' (3) Document your work. If you have been delivering but your impact is invisible, the solution is documentation, not doing more work. (4) Know the expectations. If you are unsure what your manager expects, ask. 'What does success look like in my role this quarter? What are the top 3 things I should focus on?'</p><p><b>If you are put on a PIP:</b> (1) Do not panic. PIPs are survivable. (2) Understand the specific gaps and what 'success' looks like. Get written goals. (3) Ask for regular feedback. 'Can we meet weekly to review my progress against the PIP goals?' (4) Document everything. Keep a log of your accomplishments during the PIP period. (5) Consider whether this role is the right fit. Some PIPs are genuine attempts to help you improve. Others are documentation to support termination with legal protection. It is hard to tell the difference. If your manager is not responsive to your improvement efforts, start looking for a new role.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "How Ratings Cascade to Compensation",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Your performance rating directly determines your compensation adjustments. Understanding the compensation mechanics helps you make informed decisions about where to focus your energy and when to consider leaving.</p><p><b>Compensation levers:</b> (1) <b>Base salary increase:</b> A percentage increase to your base salary. Varies by rating: Top rating: 5-10% increase. Middle rating: 2-4% increase. Bottom rating: 0% increase. (2) <b>Annual bonus:</b> A percentage of your base salary, paid annually. Target bonus: 10-20% of base for Staff+ engineers. Actual bonus is multiplied by a factor based on your rating. Top rating: 1.5-2.0x target. Middle rating: 1.0x target. Bottom rating: 0-0.5x target. (3) <b>RSU refresher grant:</b> New RSU grant that vests over 4 years. This is the biggest comp lever for Staff+ engineers. Top rating: $200K-$500K+ in new RSUs. Middle rating: $100K-$200K. Bottom rating: $0-$50K.</p><p><b>SAP vs FAANG compensation structure:</b> SAP compensation is relatively simple: fixed salary + annual bonus (typically 10-20%). FAANG compensation is complex: base salary accounts for only 30-50% of total compensation for Staff+ engineers. The majority comes from RSUs and bonuses that are directly tied to performance ratings. A single rating can change your total compensation by $100K-$300K in a given year.</p><p><b>The long-term comp trajectory:</b> Because RSU refreshers vest over 4 years, your compensation in any given year is the sum of: (1) your base salary, (2) this year's bonus, (3) RSU tranches from the last 4 refresher grants. A top rating in year 1 increases your comp for the next 4 years through the refresher grant. A bottom rating not only reduces this year's comp but also reduces future comp by eliminating or reducing the refresher. This compounding effect is why performance ratings matter so much at FAANG.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "SAP-to-FAANG Performance Review Case Study",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>Background:</b> Amit was an SAP technical architect who joined Amazon as an L6 SDE. He had 12 years of experience in SAP implementations, leading 3 major S/4HANA migrations. In his first review cycle, he received 'Achieves' (meets expectations) \u2014 which felt insulting given his experience and the quality of his work.</p><p><b>What went wrong:</b> (1) His self-review described technical achievements in SAP terms ('migrated legacy IDoc integrations to CPI'). The calibration panel had no context for what this meant or why it was hard. (2) He focused on execution quality ('delivered on time, zero defects') rather than business impact. At Amazon, 'on time and zero defects' is baseline, not exceptional. (3) He did not collect peer feedback proactively. His manager gathered feedback from 3 peers, but none were from teams that benefited from his work. (4) He did not frame his work in terms of Amazon's Leadership Principles (Customer Obsession, Ownership, Deliver Results, etc.). At Amazon, every claim must tie back to specific LPs.</p><p><b>The fix for the next cycle:</b> (1) Translate every achievement into business impact. 'Migrated IDoc integrations to CPI, reducing integration failure rate by 90% and saving 200 engineer-hours per month of manual remediation.' (2) Identify cross-team impact. His CPI migration was being used by 3 other teams \u2014 he collected feedback from each of them. (3) Map to Leadership Principles. 'I demonstrated Ownership by taking responsibility for the migration end-to-end, including cleaning up 5-year-old legacy integrations that no one else wanted to touch.' (4) Start the brag document 6 months before the review, not 2 weeks before. (5) Ask his manager for quarterly check-ins on performance: 'Am I on track for Exceeds? What would make the difference?'</p><p><b>Outcome:</b> Amit received 'Great' (exceeds expectations) in his next review. He was promoted to L7 18 months later. The lesson: his technical work was always strong \u2014 but his documentation and framing needed to match FAANG's performance review culture.</p>"
+        }
+      ],
+      "codeBlock": ""
+    }
+  ],
+  "details": "<p><b>Staff+ Insight:</b> Performance reviews at FAANG are not an evaluation of your work \u2014 they are an evaluation of your documented impact. The best engineer on the team who writes a weak self-review will be outperformed by a decent engineer who writes an excellent self-review. This is not a flaw in the system \u2014 it is a feature. The review process forces engineers to develop self-awareness, communication skills, and the ability to articulate their value in business terms. These are exactly the skills needed at the Staff+ level and above. For SAP engineers, the performance review is the single biggest cultural adaptation. From the first day at a FAANG company, start documenting \u2014 not just what you did, but what changed because of what you did.</p>"
+}

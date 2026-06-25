@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>ABAP Bytes — ABAP Staff+ Engineering Interview Prep</title>
+  <meta name="description" content="ABAP study notes, cheat sheets, syntax references, and Staff+ interview preparation for FAANG engineering positions." />
+  <meta property="og:title" content="ABAP Bytes — Staff+ Engineering Interview Prep" />
+  <meta property="og:description" content="Master ABAP for FAANG Staff+ positions. CDS, AMDP, RAP, OData, SAP architecture, system design, and leadership." />
+  <meta property="og:image" content="assets/og-preview.svg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="ABAP Bytes" />
+  <meta name="twitter:description" content="From ERP to FAANG — Staff+ Engineering for SAP Architects" />
+  <meta name="twitter:image" content="assets/og-preview.svg" />
+  <meta name="keywords" content="ABAP, FAANG, Staff+, SAP, CDS, AMDP, RAP, SAP HANA, S/4HANA, BTP, clean code, system design, interview prep" />
+  <meta name="author" content="ABAP Bytes" />
+  <meta name="robots" content="index, follow" />
+  <meta name="theme-color" content="#2563EB" />
+  <link rel="canonical" href="https://kallolchakraborty.github.io/abap-bytes/" />
+  <link rel="icon" type="image/svg+xml" href="assets/logo.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <script src="js/theme.js"></script>
+  <link rel="stylesheet" href="css/tailwind.css" />
+  <link rel="stylesheet" href="css/main.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.min.css" rel="stylesheet" />
+</head>
+<body class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-sans min-h-screen flex flex-col transition-colors duration-200">
+  <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-white dark:focus:bg-slate-900 focus:text-brand-500 focus:border focus:border-brand-500 focus:rounded-lg focus:shadow-lg focus:text-sm focus:font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500">Skip to main content</a>
+  <header class="glass-nav sticky top-0 z-40 transition-colors duration-200">
+    <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+      <a href="index.html" class="text-slate-700 dark:text-slate-200 hover:text-brand-500 transition-all flex items-center gap-2">
+        <span class="material-symbols-outlined text-brand-500 text-[20px] animate-pulse">data_array</span>
+        <span class="text-base font-semibold">ABAP Bytes</span>
+      </a>
+      <div class="flex items-center gap-2">
+        <button class="theme-toggle-btn text-slate-400 hover:text-brand-500 transition-all" aria-label="Toggle theme">
+          <span class="material-symbols-outlined text-[16px]">light_mode</span>
+        </button>
+        <button class="open-share-btn text-slate-400 hover:text-brand-500 transition-all" aria-label="Share this page">
+          <span class="material-symbols-outlined text-[16px]">share</span>
+        </button>
+      </div>
+    </div>
+  </header>
+  <main id="main-content" class="flex-grow grid-bg py-16 px-6 relative overflow-hidden">
+    <div class="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
+      <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl aspect-[2/1] pointer-events-none" style="background: radial-gradient(ellipse at 50% 0%, rgba(37,99,235,0.06) 0%, transparent 60%);"></div>
+    </div>
+    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl aspect-[2/1] pointer-events-none hidden dark:block" style="background: radial-gradient(ellipse at 50% 0%, rgba(37,99,235,0.12) 0%, transparent 60%);"></div>
+    <div class="max-w-4xl mx-auto flex flex-col items-center text-center gap-3 relative z-10">
+      <div class="relative sparkle-hero-container mb-6 flex items-center justify-center">
+        <span class="material-symbols-outlined select-none sparkle-gradient sparkle-hero-animate sparkle-hero-icon relative z-10">data_array</span>
+      </div>
+      <div class="flex flex-col gap-4">
+        <h1 class="text-4xl sm:text-6xl font-bold text-slate-900 dark:text-white tracking-tight leading-none whitespace-nowrap">
+          ABAP Staff+ Interview Prep.
+        </h1>
+        <p class="text-lg text-slate-600 dark:text-slate-400 max-w-xl mx-auto leading-relaxed">
+          Comprehensive study notes, architecture diagrams, and interview strategies for ABAP engineers targeting FAANG Staff+ positions.
+        </p>
+      </div>
+      <button class="open-search-btn w-full max-w-lg border-2 border-slate-200 dark:border-slate-800 hover:border-brand-500 dark:hover:border-brand-500 bg-white dark:bg-slate-900 text-left px-5 py-3.5 rounded-xl shadow-lg shadow-slate-100 dark:shadow-none flex items-center justify-between text-slate-400 font-medium text-sm transition-all group">
+        <div class="flex items-center gap-3">
+          <span class="material-symbols-outlined text-slate-400 group-hover:text-brand-500 transition-colors">search</span>
+          <span>Search study guides...</span>
+        </div>
+        <div class="flex items-center gap-1.5 font-mono text-xs">
+          <kbd class="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-1.5 py-0.5 rounded">Ctrl</kbd>
+          <kbd class="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-1.5 py-0.5 rounded">K</kbd>
+        </div>
+      </button>
+      <div class="flex gap-4">
+        <a href="docs.html" class="px-6 py-3 bg-brand-500 hover:bg-brand-600 text-white font-semibold rounded-lg shadow-md shadow-brand-500/20 hover:shadow-brand-500/30 transition-all flex items-center gap-2">
+          <span>Start Learning</span>
+          <span class="material-symbols-outlined text-lg">arrow_forward</span>
+        </a>
+      </div>
+    </div>
+  </main>
+  <footer class="border-t border-slate-200 dark:border-slate-800 py-8 bg-slate-100 dark:bg-slate-900/60">
+    <div class="max-w-7xl mx-auto px-6 flex justify-center items-center text-sm text-slate-500 dark:text-slate-400">
+      <span>Built for ABAP engineers targeting FAANG Staff+ roles</span>
+    </div>
+  </footer>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js" defer></script>
+  <script src="js/generated.js" defer></script>
+  <script src="js/modals.js" defer></script>
+</body>
+</html>

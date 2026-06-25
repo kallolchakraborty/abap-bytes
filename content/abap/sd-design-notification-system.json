@@ -1,0 +1,42 @@
+{
+  "id": "sd-design-notification-system",
+  "title": "Design Notification System",
+  "category": "System Design",
+  "subcategory": "FAANG Whiteboarding",
+  "language": "text",
+  "description": "<p>Design a multi-channel notification system that delivers real-time alerts to users across push, email, SMS, and in-app channels. Covers notification pipeline architecture, templating, deduplication, delivery guarantees, channel preference management, rate limiting per channel, and how SAP's workflow notifications and alert management provide a conceptual bridge.</p>",
+  "tags": ["FAANG", "Staff+", "System Design", "Notification", "Push", "Delivery", "Alerting"],
+  "sections": [
+    {
+      "title": "Notification Pipeline Architecture",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>The notification pipeline ingests events from various sources (user actions, system alerts, scheduled reminders) and delivers them to users through their preferred channels. The pipeline must handle delivery failures, channel-specific constraints (push notification character limits, email rendering), and user preferences.</p><p><b>Pipeline stages:</b></p><p><b>1. Event ingestion:</b> Services publish 'notification events' to a Kafka topic (e.g., comment.liked, friend.request, payment.received). Each event contains: event_type, actor (who triggered the event), recipient (who should receive the notification), metadata (comment text, like count, amount).</p><p><b>2. Notification computation:</b> A consumer reads events from Kafka and computes the notification payload. For each event: (a) Look up the recipient's channel preferences (push, email, SMS, in-app, or a combination). (b) Render the notification template for each channel (push: short title + body; email: HTML template; SMS: text-only with 160-char limit). (c) Apply deduplication — if the same user receives the same notification type within 5 minutes, coalesce them (e.g., '5 people liked your comment' instead of 5 separate notifications). (d) Apply channel-specific rate limits (max 10 push notifications per hour per user, max 1 promotional email per day).</p><p><b>3. Channel dispatch:</b> For each channel, notifications are enqueued to a channel-specific queue: (a) <b>Push notifications</b> — sent via platform push services (APNs for iOS, FCM for Android). Each platform has its own rate limits and payload size limits (APNs: 4 KB, FCM: 4 KB). Push notifications must be sent from a server with a persistent connection to APNs/FCM. (b) <b>Email</b> — sent via SMTP or email delivery service (SendGrid, AWS SES, Mailgun). Email notifications support HTML templates, attachments, and unsubscribe links (CAN-SPAM compliance). (c) <b>SMS</b> — sent via SMS gateway (Twilio, AWS SNS). SMS is expensive ($0.0075/message) and character-limited (160 characters). Used only for critical notifications (password reset, payment confirmation, two-factor auth). (d) <b>In-app</b> — delivered via WebSocket connection if the user is online. Stored in a database for offline users (fetched on app open).</p><p><b>SAP Bridge:</b> SAP's workflow system sends work item notifications via SAP's alert framework. The alert inbox aggregates notifications from multiple sources. SAP's notification framework (transaction ALNTC) defines alert categories, delivery channels (email, SMS, internal), and user preferences. The same concepts apply: event → template → channel dispatch → deduplication. The difference is scale: SAP alerts handle thousands per day; FAANG notification systems handle billions.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Deduplication & Coalescing",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Without deduplication, a user could receive 100 separate notifications for 100 likes on a single comment. Deduplication and coalescing reduce notification volume while preserving information.</p><p><b>Coalescing strategies:</b> (1) Summarize — '5 people liked your comment' instead of 5 separate notifications. The coalesced count is incremental (as new likes arrive, the counter is updated). (2) Aggregate — '3 new notifications' (show in a grouped notification that expands on tap). (3) Suppress — if the user has already seen the content (viewed the comment after the like), suppress the notification entirely.</p><p><b>Deduplication key:</b> Each notification has a dedup key: notification_type + user_id + content_id. For 'comment.liked' notifications, the key is 'comment.liked:{user_id}:{comment_id}'. Within a dedup window (5-30 minutes), duplicate keys are coalesced. The dedup state is stored in Redis (key → coalesced_notification_json, with TTL = dedup window).</p><p><b>Rate limiting per notification type:</b> Different notification types have different rate limits. (1) Transactional (password reset, payment confirmation) — no rate limit (must always deliver). (2) Social (like, comment, follow) — max 100 push notifications per hour. (3) Promotional (new feature announcement, weekly digest) — max 1 per day. The rate limiter checks the user's notification type counter in Redis before enqueuing.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Channel Preference Management",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Users must control which notifications they receive and through which channels. A user might want: all notifications via email, but only critical notifications via SMS; or push notifications during work hours but not after 9 PM.</p><p><b>User preference model:</b> Each user has a notification preference profile: (1) Notification categories: comments, likes, follows, friend requests, mentions, system updates, promotions, payment confirmations. (2) Channels per category: in-app (always on), push (optional, configurable time window), email (frequency: immediate, daily digest, weekly digest, never), SMS (on/off per category). (3) Quiet hours: 'Do not disturb' time window (9 PM - 8 AM) — push and SMS are suppressed; in-app and email are still delivered. (4) Snooze: user can snooze all non-critical notifications for 1, 4, 8, or 24 hours.</p><p><b>Preference evaluation in the pipeline:</b> After the notification is computed and before it's dispatched, the pipeline checks: (1) Is this notification category enabled for this channel? (2) Are we within the user's quiet hours? (3) Has the user snoozed notifications? (4) Is this notification type rate-limited? The check is done before dispatch — rejected notifications are dropped (not queued). This saves channel dispatch resources.</p>"
+        }
+      ],
+      "codeBlock": ""
+    }
+  ],
+  "details": "<p><b>FAANG Interview Tip:</b> The notification system question tests: (1) Your ability to design a multi-channel delivery pipeline with different constraints per channel. (2) Your understanding of deduplication and coalescing strategies (not sending redundant notifications). (3) Your design of user preference management (channel selection, quiet hours, snooze). The SAP engineer has a strong bridge: 'SAP's workflow alert framework handles the same concepts — event ingestion, template rendering, channel dispatch, user preferences. At FAANG, the key difference is scale: we deliver billions of notifications per day, not thousands.'</p>"
+}

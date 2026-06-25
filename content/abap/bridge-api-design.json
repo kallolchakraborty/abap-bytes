@@ -1,0 +1,62 @@
+{
+  "id": "bridge-api-design",
+  "title": "From RFC/BAPI to REST, GraphQL & gRPC",
+  "category": "Foundations",
+  "subcategory": "Skill Bridge",
+  "language": "text",
+  "description": "<p>Bridges SAP's API paradigms (RFC, BAPI, IDoc, OData) to FAANG's modern API design. Covers RPC vs REST vs GraphQL vs gRPC, API versioning, error handling, pagination, authentication patterns, and how to translate your SAP integration experience into FAANG API design expertise.</p>",
+  "tags": ["FAANG", "SAP", "API", "REST", "gRPC", "GraphQL", "RFC", "BAPI", "OData"],
+  "sections": [
+    {
+      "title": "SAP API Paradigms and Their FAANG Equivalents",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>SAP has developed multiple API paradigms over 50 years. Each maps to a FAANG equivalent. Understanding this mapping is essential for translating your SAP experience in interviews and on the job.</p><p><b>RFC (Remote Function Call):</b> Synchronous RPC. The caller invokes a function on a remote system and waits for a response. FAANG equivalent: gRPC unary call. Both are synchronous RPC with typed parameters and return values. RFC's limitation: tight coupling (caller and callee must be available simultaneously), no streaming, binary protocol. gRPC addresses these limitations with HTTP/2 streaming, protocol buffers, and better error handling. Bridge: 'I designed RFC interfaces between SAP systems. This is equivalent to designing gRPC services \u2014 defining the service contract (function module signature), handling errors (RFC exceptions), and managing versioning (new function modules with different signatures).'</p><p><b>BAPI (Business Application Programming Interface):</b> Standardized, documented business object methods. BAPIs are RFC-enabled function modules that perform business operations (create sales order, change material master). FAANG equivalent: RESTful API endpoints mapped to business resources. BAPI's input structures map to request bodies, output structures to response bodies, and return parameters to HTTP status codes. Bridge: 'BAPIs are like REST endpoints for business objects \u2014 each BAPI is a well-defined operation on a business entity, with input validation, error handling, and business rule enforcement.'</p><p><b>IDoc (Intermediate Document):</b> Asynchronous messaging with defined message types and segments. IDocs are queued and processed asynchronously with acknowledgment and error handling. FAANG equivalent: Kafka/RabbitMQ event messages with schemas (Avro, Protobuf). IDoc's change pointers and ALE distribution map to event sourcing and CDC patterns. Bridge: 'IDoc-based integrations are event-driven architectures with reliable delivery, exactly-once processing semantics, and schema evolution through IDoc versioning. This is exactly what FAANG achieves with Kafka, schema registry, and event sourcing.'</p><p><b>OData (Open Data Protocol):</b> RESTful protocol for querying and updating SAP data. Supports $filter, $orderby, $expand, $top/$skip for query flexibility. FAANG equivalent: GraphQL. Both allow clients to specify which fields and related resources they need. OData is more structured (RESTful resources) while GraphQL is more flexible (single endpoint with custom queries). Bridge: 'I designed OData services for SAP Fiori applications. This experience translates directly to designing GraphQL or RESTful APIs \u2014 the same considerations of query flexibility, performance, and client needs apply.'</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "API Versioning \u2014 From SAP to FAANG",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>SAP handles API versioning through a combination of: new function module versions (Z_<name>_V2), IDoc version numbers in the control record, and OData service versions in the service URL. FAANG uses similar patterns with different terminology.</p><p><b>SAP versioning patterns:</b> (1) <b>Function module versioning:</b> A new version gets a new name (BAPI_SALESORDER_CREATEFROMDAT2). The old version continues to work for existing consumers. FAANG equivalent: URL versioning (/v1/orders, /v2/orders). (2) <b>IDoc versioning:</b> The IDoc control record contains the version number. The receiver can process multiple versions by checking the version field. FAANG equivalent: schema registry with compatibility checks (BACKWARD, FORWARD, FULL). (3) <b>OData versioning:</b> Version in the service root URL (/sap/opu/odata/sap/ZZ1_SVC/V2/). FAANG equivalent: GraphQL schema evolution through deprecation and field addition.</p><p><b>FAANG best practices for API versioning:</b> (1) Prefer additive changes (never remove or rename fields, always add optional fields). This avoids the need for versioning entirely. (2) Use URL versioning for major breaking changes only. (3) Provide a 12-month deprecation window with clear migration documentation. (4) Test backward compatibility in CI/CD. SAP engineers already understand versioning deeply because they have managed multiple versions of BAPIs and IDocs that must coexist. The FAANG version is simpler \u2014 the same principles, newer tools.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Error Handling \u2014 BAPI Return to HTTP Problem Details",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>BAPIs return a structured RETURN table with message type (S-success, E-error, W-warning, I-info), message text, and optional field-level error details. This is remarkably similar to RFC 9457 Problem Details for HTTP APIs \u2014 the standard error format adopted by Microsoft, Google, and SAP Cloud Platform.</p><p><b>BAPI RETURN structure:</b> TYPE, ID, NUMBER, MESSAGE, LOG_NO, LOG_MSG_NO, MESSAGE_V1-V4, FIELD, PARAMETER, ROW. The FIELD and PARAMETER fields provide field-level validation errors, similar to the 'errors' array in RFC 9457. The MESSAGE_V1-V4 variables are placeholders for dynamic message content, similar to structured error codes.</p><p><b>FAANG error format (RFC 9457):</b> type (error type URL), title (short description), status (HTTP status code), detail (human-readable explanation), instance (request identifier), errors (field-level validation errors array). The parallel is clear: BAPI RETURN is SAP's version of structured error handling. The FAANG version is simpler and more standardized.</p><p><b>Interview translation:</b> 'In SAP, every BAPI returns a structured error table with message type, text, and field-level details. This is the same pattern as RFC 9457 Problem Details for HTTP APIs. I applied this consistent error handling pattern to all integrations \u2014 clients always received a predictable error structure they could parse programmatically. In a FAANG context, I would implement the same pattern using RFC 9457 as the standard error format.'</p>"
+        }
+      ],
+      "codeBlock": "# BAPI Return (SAP) vs RFC 9457 (FAANG)\n\n## SAP BAPI RETURN (SYSTEM-INTERNAL)\nBAPI_MESSAGE\n- TYPE: 'E'  (Error)\n- ID: 'ZORDER'\n- NUMBER: '001'\n- MESSAGE: 'Product XYZ is out of stock'\n- FIELD: 'ITEM-MATERIAL'\n- ROW: '000010'\n\n## FAANG RFC 9457 (HTTP API)\nHTTP/1.1 422 Unprocessable Entity\nContent-Type: application/problem+json\n\n{\n  \"type\": \"https://api.example.com/errors/out-of-stock\",\n  \"title\": \"Product Out of Stock\",\n  \"status\": 422,\n  \"detail\": \"Product ABC123 is out of stock and cannot be added to the order.\",\n  \"instance\": \"req_abc123\",\n  \"errors\": [\n    {\n      \"field\": \"items[0].product_id\",\n      \"message\": \"Product ABC123 is out of stock\",\n      \"code\": \"OUT_OF_STOCK\"\n    }\n  ]\n}"
+    },
+    {
+      "title": "Authentication \u2014 SAP Logon to OAuth 2.0 & JWT",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>SAP's authentication model is based on user IDs, roles, and authorization objects checked via AUTHORITY-CHECK. FAANG uses OAuth 2.0 with JWT tokens for authentication and scopes/permissions for authorization. The concepts are similar but the implementation is different.</p><p><b>SAP auth model:</b> User authenticates with username/password (SAP logon). Authorization is checked through authorization objects (activity, object class, field values). Roles group authorization objects. The system checks AUTHORITY-CHECK before executing sensitive operations. This is a role-based access control (RBAC) model with field-level granularity.</p><p><b>FAANG auth model (OAuth 2.0):</b> Client authenticates and receives an access token (typically a JWT). The token contains claims about the user (sub, email, roles). The API gateway verifies the token and extracts claims. The service checks permissions based on claims (scopes, roles, or custom policy). This is also RBAC but with token-based authentication and standard protocols.</p><p><b>Bridge concepts:</b> (1) SAP authorization object = OAuth scope + policy. Both define what a user can do. (2) SAP role = OAuth scope. Both are groups of permissions assigned to a user. (3) SAP AUTHORITY-CHECK = token validation + policy check. Both gate access based on the user's permissions. (4) SAP logon ticket = JWT. Both are tokens that carry user identity and claims. The translation is direct. The difference is that OAuth 2.0 is standardized across companies, while SAP's auth model is proprietary to the SAP ecosystem.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "SAP CPI/PI/PO Integration vs API Gateway Patterns",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>SAP's integration middleware (CPI, PI, PO) handles message routing, transformation, protocol bridging, and error handling for enterprise integrations. FAANG uses API gateways (Kong, Apigee, AWS API Gateway) combined with event streaming (Kafka) for the same purpose. The concepts are directly parallel.</p><p><b>SAP CPI features and FAANG equivalents:</b> (1) <b>Channel/Adapter configuration:</b> Defines how to connect to a specific system (SOAP, REST, RFC, JDBC, SFTP). FAANG equivalent: API gateway plugins for authentication, rate limiting, protocol translation. (2) <b>Integration flow (iFlow):</b> Defines the message processing pipeline (receive, transform, route, send). FAANG equivalent: Kafka streams or event-driven workflow (Step Functions, Temporal). (3) <b>Content modifier/Message mapping:</b> Transforms message formats (XML to JSON, IDoc to XML). FAANG equivalent: schema registry + stream transformation (KSQL, Kafka Streams). (4) <b>Error handling:</b> Configurable retry, dead-letter queue, escalation. FAANG equivalent: dead-letter topics, retry queues, circuit breakers.</p><p><b>Interview translation:</b> 'I designed enterprise integration flows using SAP CPI/PI, handling message routing, transformation, error handling, and protocol bridging between SAP and non-SAP systems. This experience maps directly to designing API gateway and event streaming architectures in a FAANG environment. The patterns are the same \u2014 decouple systems, transform messages, handle failures gracefully, ensure reliable delivery. The technology stack is different but the architecture principles are universal.'</p>"
+        }
+      ],
+      "codeBlock": ""
+    }
+  ],
+  "details": "<p><b>Staff+ Insight:</b> SAP engineers have 20+ years of API design experience \u2014 they just call it by different names. RFC, BAPI, IDoc, OData, CPI, PI, PO, ALE, RFC/BAPI, SOAP, REST \u2014 these are all API and integration patterns. The FAANG interview does not test whether you know REST or gRPC syntax. It tests whether you understand API design principles: versioning, error handling, authentication, reliability, and scale. SAP engineers who can articulate these principles using examples from their SAP experience will outperform candidates who memorize RESTful API patterns without understanding the underlying principles. The key is translation: use the FAANG terminology but ground it in your SAP experience.</p>"
+}

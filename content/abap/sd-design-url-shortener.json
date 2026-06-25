@@ -1,0 +1,52 @@
+{
+  "id": "sd-design-url-shortener",
+  "title": "Design URL Shortener (TinyURL)",
+  "category": "System Design",
+  "subcategory": "FAANG Whiteboarding",
+  "language": "text",
+  "description": "<p>Design a URL shortening service. Covers key generation strategies, hash collision handling, redirection performance, analytics tracking, custom aliases, and how SAP's GUID generation and short URL functionality provide a conceptual bridge.</p>",
+  "tags": ["FAANG", "Staff+", "System Design", "URL Shortener", "Key Generation", "Redirect", "Analytics"],
+  "sections": [
+    {
+      "title": "Key Generation Strategies",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>The core technical challenge is generating a short, unique key for each long URL. Three strategies exist:</p><p><b>Strategy 1 - Hash-based:</b> Compute MD5/SHA-256 of the URL, take first N base62 characters. Check for collision in DB; if collision (different URL, same prefix), extend prefix or append salt. <b>Cons:</b> collision retries, unnecessary hash computation.</p><p><b>Strategy 2 - Base62 of auto-increment ID (most common):</b> Get a unique 64-bit ID from Snowflake or Redis INCR. Encode as base62. 6 chars = 62^6 = ~56B unique keys. <b>Pros:</b> no collisions, fast. <b>Cons:</b> predictable keys (sequential). Mitigation: XOR the ID with a secret mask before encoding.</p><p><b>Strategy 3 - Random key:</b> Generate random 6-char base62 string. Check for collision. If collision, regenerate. <b>Pros:</b> no enumeration possible. <b>Cons:</b> birthday paradox - at 10M entries, 0.5% collision probability on each insert. Acceptable with retry.</p><p><b>SAP Bridge:</b> SAP's transaction SHORTURL generates short keys for Fiori apps. SAP GUIDs (UUID v4, 32 hex chars) are the long identifier; short URL keys are the compressed version.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Redirection Performance & Caching",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>A URL shortener must redirect users in under 10ms. Every millisecond of redirect latency reduces click-through rate.</p><p><b>HTTP redirect codes:</b> (1) <b>301 Moved Permanently</b> — browser caches the redirect. Subsequent requests go directly to the target URL, bypassing the shortener. <b>Good for:</b> permanent links where analytics are not critical (browser never reports clicks after the first). (2) <b>302 Found (Temporary Redirect)</b> — browser always hits the shortener first. <b>Good for:</b> analytics tracking, A/B testing different target URLs, temporary links. Most production shorteners use 302.</p><p><b>Caching for redirect speed:</b> The key-to-URL mapping should be cached at multiple levels: (1) CDN edge cache — popular short URLs are cached at the CDN edge. The CDN returns a 302 redirect without hitting the origin server. (2) Redis cache — the redirect is a Redis GET by key. Redis handles 100K+ GET/s with sub-millisecond latency. (3) Database fallback — if the key is not in Redis, fallback to the database (Cassandra or PostgreSQL).</p><p><b>Cache-aside redirect flow:</b> (1) User hits GET /abc123. (2) DNS routes to CDN edge. (3) If cached at CDN, return 302 redirect immediately. (4) If not cached, CDN forwards to origin server (API gateway). (5) API gateway checks Redis: GET abc123. (6) If Redis hit, return 302 with target URL, async log analytics event. (7) If Redis miss, query DB: SELECT target_url FROM url_map WHERE short_key = 'abc123'. (8) Populate Redis (SET abc123 target_url WITH TTL 24h). Return 302. (9) Log analytics event (async to Kafka).</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Analytics & Click Tracking",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Every redirect generates an analytics event. For a popular short URL shared on social media, this can be 10K+ clicks/second in the first hour. The analytics pipeline must ingest these events without slowing down the redirect.</p><p><b>Analytics event pipeline:</b> (1) The redirect handler publishes a 'click' event to a Kafka topic: {short_key, timestamp, user_agent, referrer, ip_address, geo_country}. (2) A streaming consumer reads events from Kafka and updates counters in Redis (ZINCRBY short_url:clicks 1 'hour:20240625:14'). (3) A batch processor (Spark) reads events hourly, aggregates by day, and writes to the analytics database (ClickHouse or PostgreSQL). (4) The API returns aggregated stats: total clicks in last 24h, last 7d, last 30d; clicks by country; clicks by referrer.</p><p><b>Real-time click dashboard:</b> For users with many clicks (marketing campaigns), real-time click data is streamed via WebSocket to a live dashboard. The streaming consumer broadcasts click events to connected clients (Debezium or Redis Pub/Sub).</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Custom Aliases & Expiration",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Users may want custom aliases (e.g., /my-campaign instead of /abc123) and time-limited URLs.</p><p><b>Custom alias validation:</b> (1) Check that the alias is not already taken (SELECT count(*) FROM url_map WHERE short_key = 'my-campaign'). (2) Check that the alias meets constraints: length (3-32 characters), alphanumeric + hyphens only. (3) Check that the alias does not match reserved routes (/api, /admin, /analytics). (4) If all checks pass, insert into DB. Custom aliases are treated as reserved keys — the key generator skips them.</p><p><b>URL expiration:</b> Short URLs can have an optional TTL. The TTL is stored in the URL record (expires_at timestamp). On redirect, the system checks the current time against expires_at. If expired, return 410 Gone (or a custom expired page). Expired keys are cleaned up by a background job (DELETE FROM url_map WHERE expires_at < NOW()). The Redis cache TTL is set to min(24h, remaining TTL of the URL).</p>"
+        }
+      ],
+      "codeBlock": ""
+    }
+  ],
+  "details": "<p><b>FAANG Interview Tip:</b> The URL shortener is a classic 'warm-up' system design question. The Staff+ signal is not in the basic design but in the depth: (1) You discuss multiple key generation strategies with tradeoffs (not just base62). (2) You design for analytics at scale (async event pipeline, Kafka, real-time dashboards). (3) You discuss caching strategy (CDN edge, Redis, DB fallback). (4) You handle edge cases: custom aliases, expiration, abuse prevention (rate limiting URL creation per user). The SAP engineer can bridge: 'SAP generates UUIDs for every business object. A URL shortener is the same mapping problem with a shorter output format and redirect semantics instead of database lookups.'</p>"
+}

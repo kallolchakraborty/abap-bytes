@@ -1,0 +1,93 @@
+[
+  {
+    "id": "cp-vs-ap-cost",
+    "title": "CP vs AP — The Economic Calculus",
+    "variables": [
+      {"name": "Write rate", "value": "500 TPS", "source": "Peak load from 100M orders/day ÷ 8 peak hours"},
+      {"name": "Stale read tolerance", "value": "50ms", "source": "Product SLA for order dashboard"},
+      {"name": "Partition probability", "value": "0.5%/month", "source": "AWS multi-AZ historical partitioning rate"}
+    ],
+    "calculation": {
+      "formula": "TotalCost = WriteLatency × WriteVolume × PenaltyPerMs",
+      "cp": {"writeLatency": "200ms", "monthlyPenalty": "$2,500 — additional DB capacity for synchronous replication"},
+      "ap": {"writeLatency": "50ms", "monthlyPenalty": "$800 — reconciliation tooling for conflict resolution"},
+      "breakeven": "At 1,200 TPS, CP becomes cheaper because reconciliation costs grow linearly with volume (more conflicts = more reconciliation overhead) while DB capacity costs grow sub-linearly."
+    }
+  },
+  {
+    "id": "cache-breach-even",
+    "title": "Cache Strategy — Cost Comparison",
+    "variables": [
+      {"name": "Read rate", "value": "10,000 QPS", "source": "User dashboard traffic"},
+      {"name": "Write rate", "value": "200 TPS", "source": "Order creation rate"},
+      {"name": "DB read latency (uncached)", "value": "50ms", "source": "PostgreSQL on r6g.2xlarge"},
+      {"name": "Cache read latency (cached)", "value": "3ms", "source": "Redis on cache.r6g.large"}
+    ],
+    "calculation": {
+      "formula": "AnnualCost = (CacheNode × 12) + (DBCapacitySaved × 12) + (Maintenance × 12)",
+      "cp": {"writeLatency": "15ms", "monthlyPenalty": "$1,200 — Write-Through: doubles write IO, additional Redis cluster"},
+      "ap": {"writeLatency": "5ms", "monthlyPenalty": "$400 — Write-Behind: single Redis cluster, risk of data loss"},
+      "breakeven": "Write-Through costs 3x more than Write-Behind at 200 TPS. At 1,000 TPS, Write-Through must be used because Write-Behind's data loss window becomes unacceptable."
+    }
+  },
+  {
+    "id": "monolith-vs-microservices-cost",
+    "title": "Monolith vs Microservices — Total Cost of Operations",
+    "variables": [
+      {"name": "Number of services", "value": "5 vs 1", "source": "Modular monolith = 1 deployment unit; Microservices = 5"},
+      {"name": "Team size", "value": "25 engineers", "source": "Org with 5 squads of 5"},
+      {"name": "Deploy frequency", "value": "20/week vs 5/week", "source": "Independent deploys vs coordinated releases"}
+    ],
+    "calculation": {
+      "formula": "TCO = InfraCost + CI_Cost + OncallCost",
+      "cp": {"writeLatency": "N/A", "monthlyPenalty": "$15,000 — Monolith: simpler infra ($3K), but higher coordination cost ($12K in meetings + release mgmt)"},
+      "ap": {"writeLatency": "N/A", "monthlyPenalty": "$22,000 — Microservices: higher infra ($10K for service mesh + monitoring), lower coordination ($3K), higher oncall ($9K for 5 services)"},
+      "breakeven": "At 8+ services, microservices TCO becomes cheaper because monolith coordination costs grow as O(n²) while microservices coordination grows as O(n)."
+    }
+  },
+  {
+    "id": "strong-vs-eventual-cost",
+    "title": "Strong vs Eventual Consistency — Cost Analysis",
+    "variables": [
+      {"name": "Write rate", "value": "1,000 TPS", "source": "Order processing system"},
+      {"name": "Read after write consistency", "value": "Required within 100ms", "source": "Customer-facing order status"},
+      {"name": "Multi-region deployment", "value": "3 regions (US, EU, APAC)", "source": "Global customer base"}
+    ],
+    "calculation": {
+      "formula": "Cost = (ReplicationLatency × FailurePenalty) + ReconciliationCost",
+      "cp": {"writeLatency": "350ms (cross-region quorum)", "monthlyPenalty": "$12,000 — Spanner-like setup: 3 regions, 7 nodes each, synchronous replication"},
+      "ap": {"writeLatency": "50ms (local write)", "monthlyPenalty": "$4,500 — DynamoDB-like: 3 regions, global tables, CRDT conflict resolution"},
+      "breakeven": "At write rates below 500 TPS, strong consistency costs 2.6x more. At 2,000+ TPS with 3+ regions, CRDT conflict resolution overhead explodes (O(n²) conflict pairs) and strong consistency with partitioned leader becomes cheaper."
+    }
+  },
+  {
+    "id": "managed-vs-unmanaged-rap",
+    "title": "RAP Managed vs Unmanaged — Development Cost",
+    "variables": [
+      {"name": "Number of entities", "value": "15", "source": "Order-to-cash business object"},
+      {"name": "Entity complexity", "value": "Simple (7), Medium (5), Complex (3)", "source": "Child entities with standard CRUD + 2 custom actions"},
+      {"name": "Team experience", "value": "3 engineers, 2 with RAP experience", "source": "Typical SAP development team"}
+    ],
+    "calculation": {
+      "formula": "TotalEffort = (Entities × BoilerplateReduction) + CustomLogic",
+      "cp": {"writeLatency": "N/A", "monthlyPenalty": "$52,500 — Managed: 15 entities × 3 days/entity × $1,200/day = $54K. Draft + locking included."},
+      "ap": {"writeLatency": "N/A", "monthlyPenalty": "$180,000 — Unmanaged: 15 entities × 10 days/entity × $1,200/day = $180K. Draft + locking are manual."},
+      "breakeven": "For any entity with >40% standard CRUD, managed is 3.3x cheaper in development cost. Unmanaged is only cost-effective when >60% of operations are custom (e.g., legacy BAPI wrappers)."
+    }
+  },
+  {
+    "id": "sharding-cost",
+    "title": "Database Sharding — The Cost Decision",
+    "variables": [
+      {"name": "Data volume", "value": "50 TB", "source": "ERP transaction data, 5-year retention"},
+      {"name": "Write rate", "value": "10,000 TPS", "source": "Peak during month-end close"},
+      {"name": "Shard count", "value": "10 shards (tenant-based)", "source": "Legal entity = shard boundary"}
+    ],
+    "calculation": {
+      "formula": "TotalCost = ShardInfra + QueryFanout + MigrationCost",
+      "cp": {"writeLatency": "200ms (fan-out queries)", "monthlyPenalty": "$18,000 — Sharded: 10 × $1,200 (r6g.4xlarge) + $6,000 fan-out query overhead"},
+      "ap": {"writeLatency": "50ms (single instance)", "monthlyPenalty": "$8,000 — Single HANA instance: scale-up to 6TB. But single point of failure and scaling limit at 20 TB."},
+      "breakeven": "At 20 TB, sharding becomes mandatory regardless of cost — single-node can't hold the data. Sharding also improves blast radius: 1 corrupt shard affects 10% of tenants, not 100%."
+    }
+  }
+]

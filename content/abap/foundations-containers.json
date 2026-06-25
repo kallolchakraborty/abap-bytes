@@ -1,0 +1,89 @@
+{
+  "id": "foundations-containers",
+  "title": "Containers & Kubernetes Fundamentals for SAP Engineers",
+  "category": "Engineering Foundations",
+  "subcategory": "FAANG Tech Stack",
+  "language": "text",
+  "description": "<p>Docker and Kubernetes fundamentals for SAP engineers transitioning to FAANG. Covers container concepts vs SAP's system architecture, Docker images vs SAP deployment units, Kubernetes architecture (pods, deployments, services, ingress, ConfigMaps), Kyma as SAP's Kubernetes offering, and how FAANG uses containers for microservice deployment, scaling, and management.</p>",
+  "tags": [
+    "FAANG",
+    "Containers",
+    "Docker",
+    "Kubernetes",
+    "K8s",
+    "Infrastructure",
+    "SAP"
+  ],
+  "sections": [
+    {
+      "title": "What Are Containers? (Explained for SAP Engineers)",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>A container is a lightweight, standalone, executable package that includes everything needed to run software: code, runtime, system tools, libraries, and settings. This is fundamentally different from traditional SAP architecture. An SAP system is a heavyweight environment consisting of an AS ABAP layer, a database layer, and the application itself. Spinning up a new SAP system requires infrastructure provisioning, system copy, and configuration — a process that takes hours or days. A container, by contrast, starts in milliseconds. Containers share the host OS kernel, making them far more resource-efficient than virtual machines or full SAP system instances. Think of a container like an SAP application server instance: it handles requests, has its own configuration, and is disposable. But containers go further — they are portable across any environment (laptop, test server, production cloud), immutable (you rebuild rather than patch in place), and designed for horizontal scaling. Docker is the platform for building and running containers; Kubernetes is the orchestrator that manages thousands of containers across a cluster of machines, handling deployment, scaling, networking, and self-healing.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Docker — Images, Containers, and Registries",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>To understand Docker, use the SAP analogy: A <b>Docker image</b> is like an SAP system template or export file — it contains everything needed but is not running. A <b>Docker container</b> is like a running SAP instance — it is the active, executing environment created from the template. A <b>Docker registry</b> (like Docker Hub) is similar to SAP's Software Download Center or SAP Support Portal but vastly simpler: you push images to a registry and pull them anywhere. Building a Docker image uses a Dockerfile — a recipe that defines the base OS, dependencies, application code, and startup command. This is analogous to an SAP installation media or system export but declarative, version-controlled, and automated. Key differences: Docker images are layered (each instruction in a Dockerfile creates a layer that can be cached and reused), small (typical images are hundreds of MB vs hundreds of GB for SAP systems), and built with CI/CD pipelines rather than manual installation procedures. A well-optimized Docker image for a Java microservice may be 150 MB; an SAP S/4HANA system image is 200 GB+. This size and layering difference is what enables containers to start in seconds and scale horizontally.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Kubernetes Architecture — Pods, Deployments, Services",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Kubernetes (K8s) is a container orchestration platform. Three core abstractions: <b>Pod</b>, <b>Deployment</b>, and <b>Service</b>. A Pod is the smallest deployable unit — it wraps one or more containers with shared storage and network. Think of a Pod as a work process in SAP: each work process (dialog, update, background) handles a specific type of request. A Deployment defines the desired state — how many replicas of a Pod should be running, which image version to use, and the update strategy. This maps to ensuring a configured number of SAP work processes are active. A Service provides a stable network endpoint (IP + DNS name) to access Pods, similar to how the SAP dispatcher routes requests to available work processes. Ingress adds external HTTP/HTTPS routing, analogous to SAP's load balancer or Web Dispatcher. The diagram below maps K8s primitives to their SAP counterparts:</p>"
+        },
+        {
+          "type": "svg",
+          "value": "<svg viewBox=\"0 0 680 240\" xmlns=\"http://www.w3.org/2000/svg\"><style>.t{fill:var(--text-primary);font-family:system-ui;font-size:13px;font-weight:600;text-anchor:middle}.b{fill:var(--bg-secondary);rx:5;stroke-width:2}.k{stroke:var(--brand-primary)}.s{stroke:var(--border-default)}.l{fill:var(--text-primary);font-family:system-ui;font-size:11px;text-anchor:middle}.n{stroke:var(--border-default);stroke-width:1.5;fill:none}.d{stroke:var(--border-default);stroke-width:1.5;fill:none;stroke-dasharray:4}</style><defs><marker id=\"a\" markerWidth=\"7\" markerHeight=\"5\" refX=\"7\" refY=\"2.5\" orient=\"auto\"><path d=\"M0,0 L7,2.5 L0,5Z\" fill=\"var(--border-default)\"/></marker></defs><text class=\"t\" x=\"170\" y=\"22\">Kubernetes</text><text class=\"t\" x=\"510\" y=\"22\">SAP Application Server</text><rect class=\"b k\" x=\"20\" y=\"32\" width=\"300\" height=\"32\"/><text class=\"l\" x=\"170\" y=\"52\">Ingress (HTTP Routing)</text><rect class=\"b s\" x=\"360\" y=\"32\" width=\"300\" height=\"32\"/><text class=\"l\" x=\"510\" y=\"52\">Load Balancer / Web Dispatcher</text><line class=\"n\" x1=\"170\" y1=\"64\" x2=\"170\" y2=\"82\" marker-end=\"url(#a)\"/><line class=\"n\" x1=\"510\" y1=\"64\" x2=\"510\" y2=\"82\" marker-end=\"url(#a)\"/><rect class=\"b k\" x=\"20\" y=\"82\" width=\"300\" height=\"32\"/><text class=\"l\" x=\"170\" y=\"102\">Service (Stable Network Endpoint)</text><rect class=\"b s\" x=\"360\" y=\"82\" width=\"300\" height=\"32\"/><text class=\"l\" x=\"510\" y=\"102\">Dispatcher (Request Routing)</text><line class=\"n\" x1=\"170\" y1=\"114\" x2=\"170\" y2=\"132\" marker-end=\"url(#a)\"/><line class=\"n\" x1=\"510\" y1=\"114\" x2=\"510\" y2=\"132\" marker-end=\"url(#a)\"/><rect class=\"b k\" x=\"20\" y=\"132\" width=\"300\" height=\"32\"/><text class=\"l\" x=\"170\" y=\"152\">Pod (1+ Containers)</text><rect class=\"b s\" x=\"360\" y=\"132\" width=\"300\" height=\"32\"/><text class=\"l\" x=\"510\" y=\"152\">Work Process (Dialog/Update/BG)</text><line class=\"n\" x1=\"170\" y1=\"164\" x2=\"170\" y2=\"182\" marker-end=\"url(#a)\"/><line class=\"n\" x1=\"510\" y1=\"164\" x2=\"510\" y2=\"182\" marker-end=\"url(#a)\"/><rect class=\"b k\" x=\"20\" y=\"182\" width=\"300\" height=\"32\"/><text class=\"l\" x=\"170\" y=\"202\">Container (Application Code)</text><rect class=\"b s\" x=\"360\" y=\"182\" width=\"300\" height=\"32\"/><text class=\"l\" x=\"510\" y=\"202\">AS ABAP (Application Runtime)</text><line class=\"d\" x1=\"320\" y1=\"48\" x2=\"360\" y2=\"48\"/><line class=\"d\" x1=\"320\" y1=\"98\" x2=\"360\" y2=\"98\"/><line class=\"d\" x1=\"320\" y1=\"148\" x2=\"360\" y2=\"148\"/><line class=\"d\" x1=\"320\" y1=\"198\" x2=\"360\" y2=\"198\"/></svg>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Kubernetes Deployments — How FAANG Ships Code",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>FAANG companies ship code hundreds of times per day using Kubernetes deployments. Three main strategies: <b>Rolling updates</b> (gradually replace pods, similar to promoting transports through a chain — new pods spin up while old ones drain), <b>Canary deployments</b> (route a small percentage of traffic to a new version, validate, then ramp up — analogous to testing a transport in a quality system before production release), and <b>Blue-green deployments</b> (run two identical environments in parallel, switch traffic instantly — like maintaining a shadow SAP system and cutting over with a DNS change). The SAP transport system promotes changes through dev → quality → production, but it is inherently manual, slow, and often requires downtime or complex system copies. Kubernetes automates this with zero-downtime deployments, automatic rollbacks on health check failure, and declarative configuration that is version-controlled. Below is a sample Kubernetes Deployment YAML with a rolling update strategy and health checks:</p>"
+        },
+        {
+          "type": "code",
+          "language": "yaml",
+          "value": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: my-app\n  labels:\n    app: my-app\nspec:\n  replicas: 3\n  strategy:\n    type: RollingUpdate\n    rollingUpdate:\n      maxSurge: 1\n      maxUnavailable: 0\n  selector:\n    matchLabels:\n      app: my-app\n  template:\n    metadata:\n      labels:\n        app: my-app\n    spec:\n      containers:\n      - name: app\n        image: my-app:1.0.0\n        ports:\n        - containerPort: 8080\n        readinessProbe:\n          httpGet:\n            path: /healthz\n            port: 8080\n        livenessProbe:\n          httpGet:\n            path: /livez\n            port: 8080"
+        }
+      ],
+      "codeBlock": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: my-app\nspec:\n  replicas: 3\n  strategy:\n    type: RollingUpdate\n    rollingUpdate:\n      maxSurge: 1\n      maxUnavailable: 0\n  selector:\n    matchLabels:\n      app: my-app\n  template:\n    spec:\n      containers:\n      - name: app\n        image: my-app:1.0.0\n        ports:\n        - containerPort: 8080\n        readinessProbe:\n          httpGet:\n            path: /healthz\n            port: 8080"
+    },
+    {
+      "title": "Kyma — SAP's Kubernetes Runtime",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Kyma is SAP's managed Kubernetes runtime on Business Technology Platform (BTP). It is Kubernetes under the hood but extended with SAP-specific modules: <b>Eventing</b> (based on NATS message queue, enabling event-driven integrations with SAP systems), <b>Service Binding</b> (connecting applications to SAP backends like S/4HANA via secure credentials injection — analogous to K8s Secrets), <b>API Gateway</b> (exposing and securing REST/HTTP APIs — analogous to K8s Ingress + TLS), and <b>Serverless Functions</b> (running code without managing infrastructure, similar to K8s Jobs but simplified). Comparing Kyma to vanilla Kubernetes: Kyma's Application Connector maps to a K8s Ingress plus an External Service; Kyma's Eventing maps to a message queue (NATS) plus K8s event subscriptions; Kyma's Service Catalog (now deprecated) mapped to the Kubernetes Service Catalog concept. Understanding Kyma is your bridge from SAP to Kubernetes — it wraps K8s concepts in SAP-friendly terms and BTP tooling. But under the hood, it is standard Kubernetes. Learning vanilla K8s concepts — pods, deployments, services, ConfigMaps, secrets — transfers directly to Kyma. SAP engineers who understand Kyma have a significant advantage when transitioning to FAANG because Kyma forces you to think in terms of microservices, containers, and declarative infrastructure.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Why FAANG Uses Containers and What It Means for You",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>FAANG companies run millions of containers daily. Containers are the foundation of their infrastructure for five reasons: <b>Microservices architecture</b> — each service runs in its own container, can be developed, deployed, and scaled independently. <b>Continuous deployment</b> — containers enable automated pipelines that build, test, and deploy code multiple times daily. <b>Auto-scaling</b> — Kubernetes automatically scales pods based on CPU, memory, or custom metrics. <b>Resource efficiency</b> — containers share the OS kernel, achieving far higher density than virtual machines (30+ containers per host vs 1-2 VMs). <b>Portability</b> — a container runs identically on a developer's laptop, a test server, or a production cluster across any cloud provider. As an SAP engineer, you do not need to be a Kubernetes expert on day one at FAANG. But you need a conceptual understanding: know what a container is, how images are built and stored in registries, the core K8s abstractions (pod, deployment, service, ingress, ConfigMap, secret), deployment strategies (rolling, canary, blue-green), and how your existing knowledge of SAP system architecture, transport management, and work processes maps to K8s concepts. This mental model will differentiate you in interviews and accelerate your ramp-up exponentially.</p>"
+        }
+      ],
+      "codeBlock": ""
+    }
+  ],
+  "details": "<p><b>Staff+ Insight:</b> You don't need to become a Kubernetes expert before joining FAANG. But you need to understand the concepts at an architectural level. The best way to learn: run a simple app on your local machine using Docker and Minikube. Spend a weekend: (1) Dockerize a simple Python web app, (2) Deploy it to a local K8s cluster, (3) Configure a service and ingress. This 2-day exercise will teach you more about how FAANG deploys software than any book or tutorial. Your SAP transport system knowledge gives you a mental model for deployment pipelines — the steps are the same, the speed is just faster.</p>"
+}

@@ -1,0 +1,82 @@
+{
+  "id": "abap-btp-platform",
+  "title": "BTP Platform Architecture",
+  "category": "Modern ABAP",
+  "subcategory": "Cloud Native",
+  "language": "text",
+  "description": "<p>SAP Business Technology Platform (BTP) is SAP's platform-as-a-service (PaaS) offering for building, extending, and integrating enterprise applications. Covers BTP runtimes, services, regions, multi-tenancy, security, CI/CD, observability, and cost management — from a Staff+ architect's perspective.</p>",
+  "tags": ["BTP", "Cloud Foundry", "Kyma", "Platform", "PaaS", "Architecture", "Staff+"],
+  "sections": [
+    {
+      "title": "BTP Runtime Options",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>BTP offers three runtime options, each optimized for different application types. Choosing the right runtime is the foundational architectural decision in any BTP project.</p><p><b>Cloud Foundry</b> is the primary runtime for BTP. It supports Java, Node.js, Python, Go, and ABAP (Steampunk). Cloud Foundry provides: automatic scaling (horizontal and vertical), built-in logging (ELK stack integration), service binding (easy connection to HANA, Redis, Event Mesh), and blue-green deployment. Use Cloud Foundry for: CAP applications, Steampunk ABAP extensions, integration flows, and API proxies. Cloud Foundry's key limitation: no Kubernetes-native features (no sidecars, no custom ingress controllers, no service mesh).</p><p><b>Kyma</b> is BTP's Kubernetes-based runtime (based on SAP's Gardener project, which runs Kubernetes clusters on AWS, Azure, and GCP). Kyma provides: full Kubernetes API compatibility, Istio service mesh, serverless functions (based on Kubeless), API Gateway, and eventing (NATS). Use Kyma for: applications that need Kubernetes-native features (sidecars, custom operators), workloads that need to run outside the Cloud Foundry security model, and teams that already have Kubernetes expertise.</p><p><b>ABAP Steampunk</b> is the ABAP environment running on Cloud Foundry. It provides a full ABAP application server with RAP, CDS, and ABAP Cloud semantics. Use Steampunk for: side-by-side extensions that need deep integration with S/4HANA semantics (business objects, transactional composition, authorization).</p>"
+        },
+        {
+          "type": "svg",
+          "value": "<svg viewBox=\"0 0 700 300\" xmlns=\"http://www.w3.org/2000/svg\"><style>.btp-box{fill:var(--bg-secondary);stroke:var(--brand-primary);stroke-width:2;rx:8}.btp-runtime{fill:var(--bg-secondary);stroke:var(--text-primary);stroke-width:2;rx:6}.btp-lbl{fill:var(--text-primary);font-family:system-ui;font-size:11px;font-weight:600;text-anchor:middle}.btp-sub{fill:var(--text-primary);font-family:system-ui;font-size:9px;text-anchor:middle}</style><rect class=\"btp-box\" x=\"15\" y=\"15\" width=\"670\" height=\"270\"/><text class=\"btp-lbl\" x=\"350\" y=\"38\">BTP Runtime Decision Framework</text><rect class=\"btp-runtime\" x=\"25\" y=\"55\" width=\"200\" height=\"80\"/><text class=\"btp-lbl\" x=\"125\" y=\"78\">Cloud Foundry</text><text class=\"btp-sub\" x=\"125\" y=\"98\">CAP / Java / Node.js</text><text class=\"btp-sub\" x=\"125\" y=\"113\">Standard BTP apps</text><text class=\"btp-sub\" x=\"125\" y=\"128\">Auto-scaling, service binding</text><rect class=\"btp-runtime\" x=\"250\" y=\"55\" width=\"200\" height=\"80\" stroke=\"var(--svg-accent-stroke)\"/><text class=\"btp-lbl\" x=\"350\" y=\"78\">Kyma (Kubernetes)</text><text class=\"btp-sub\" x=\"350\" y=\"98\">K8s-native workloads</text><text class=\"btp-sub\" x=\"350\" y=\"113\">Istio service mesh</text><text class=\"btp-sub\" x=\"350\" y=\"128\">Serverless functions</text><rect class=\"btp-runtime\" x=\"475\" y=\"55\" width=\"200\" height=\"80\" stroke=\"var(--svg-success-stroke)\"/><text class=\"btp-lbl\" x=\"575\" y=\"78\">ABAP Steampunk</text><text class=\"btp-sub\" x=\"575\" y=\"98\">RAP / CDS / ABAP Cloud</text><text class=\"btp-sub\" x=\"575\" y=\"113\">Deep S/4 integration</text><text class=\"btp-sub\" x=\"575\" y=\"128\">Transactional semantics</text><rect class=\"btp-box\" x=\"25\" y=\"155\" width=\"640\" height=\"65\"/><text class=\"btp-lbl\" x=\"345\" y=\"175\">Decision: CF for stateless APIs | Kyma for K8s-native | Steampunk for S/4 deep integration</text><text class=\"btp-sub\" x=\"345\" y=\"195\">You can use all three in the same BTP subaccount for different bounded contexts</text></svg>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "BTP Region & Multi-Cloud Strategy",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>BTP runs on AWS, Azure, and GCP across 30+ regions worldwide. The choice of <b>hyperscaler</b> and <b>region</b> affects latency, data residency compliance, available services, and cost.</p><p><b>Hyperscaler Selection:</b> BTP on AWS is the default option with the most regions and the broadest service availability. BTP on Azure offers deep integration with Microsoft 365 and Azure Active Directory. BTP on GCP provides competitive pricing for data-intensive workloads and strong AI/ML services. Many enterprises choose the hyperscaler that matches their existing cloud strategy — 'We are an AWS shop, so BTP runs on AWS.' However, multi-cloud BTP is increasingly common: S/4HANA on AWS (primary), analytics on GCP (BigQuery integration), and Microsoft 365 integration via Azure.</p><p><b>Region Selection Factors:</b> Data residency regulations (GDPR requires EU data to stay in EU). User proximity (SAP Fiori latency should be <100ms). BTP service availability (some services are not available in all regions). Disaster recovery (primary and DR regions must be >500km apart for geographic redundancy).</p><p><b>Multi-Region Architecture:</b> For global deployments, deploy BTP applications in multiple regions with a global load balancer (Cloud Load Balancer or Azure Traffic Manager). Use Event Mesh for cross-region event propagation. Use HANA Cloud with cross-region replication for data availability. Each region has its own BTP subaccount with region-specific configurations.</p>"
+        }
+      ],
+      "codeBlock": "",
+      "decisionTree": {
+        "prompt": "Which BTP hyperscaler and region should I choose for this deployment?",
+        "firstQuestion": "\"What is the primary data residency requirement?\" EU customer data = BTP on AWS/Azure/GCP with EU region. US government = BTP on AWS GovCloud or Azure Government. Global deployment with local data residency = multi-region with per-region subaccounts.",
+        "branches": [
+          {"condition": "EU data residency, no existing hyperscaler preference, standard S/4HA extension workload", "path": "BTP on AWS — Frankfurt (eu-central-1) or Amsterdam (eu-west-1). Broadest service availability. Both regions support HANA Cloud, Event Mesh, AI Foundation, and all core services.", "selected": true},
+          {"condition": "Existing Azure enterprise agreement, deep Microsoft 365 integration needed (Teams, SharePoint, Azure AD)", "path": "BTP on Azure — West Europe (Netherlands) or North Europe (Ireland). Azure AD integration for single sign-on. Microsoft 365 connector for CPI integration.", "selected": false},
+          {"condition": "Global deployment requiring data residency in 5+ countries, AI/ML workloads", "path": "Multi-cloud BTP: AWS for primary regions (broadest service coverage), GCP for AI/analytics-heavy regions (BigQuery integration). Each region gets its own subaccount. Event Mesh for cross-region event propagation.", "selected": false}
+        ],
+        "staffPlusTip": "The BTP region decision is less important than the hyperscaler decision, which is less important than the subaccount structure. Design your subaccount structure before choosing regions: one subaccount per environment (dev/test/prod) per region, with cross-region subaccounts for global services like Event Mesh."
+      }
+    },
+    {
+      "title": "BTP Security & Identity",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>BTP security follows a layered model: <b>platform security</b> (SAP-managed infrastructure, encryption at rest, encryption in transit), <b>identity and access management</b> (SAP Cloud Identity Services — IAS, IPS), <b>application security</b> (XSUAA, OAuth 2.0, application router), and <b>data security</b> (HANA Cloud encryption, audit logging).</p><p><b>SAP Cloud Identity Services:</b> Identity Authentication (IAS) is BTP's identity provider — it handles user authentication, password policies, MFA, and federation with corporate IdPs (Azure AD, Okta, Ping). Identity Provisioning (IPS) synchronizes users and groups from corporate directories to BTP subaccounts. Trust configuration maps corporate IdP to BTP subaccount via SAML 2.0 or OpenID Connect.</p><p><b>Application Security (XSUAA):</b> BTP applications use XSUAA (SAP's OAuth 2.0 authorization server) for securing APIs. The application router acts as a reverse proxy that handles authentication (redirects to IAS) and authorization (validates JWT tokens). Applications receive scopes and role collections in the JWT token, which they use for fine-grained authorization. Key pattern: <b>token exchange</b> — the application router exchanges a user token for a technical token to call downstream services.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "BTP CI/CD & DevOps",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>BTP supports multiple CI/CD approaches. The recommended approach uses <b>SAP Continuous Integration and Delivery (CI/CD)</b> service — a managed CI/CD service that builds, tests, and deploys CAP and Steampunk applications to BTP Cloud Foundry.</p><p><b>CI/CD Pipeline Stages:</b> (1) Build — npm/gradle/mta build compiles the application. (2) Unit Test — Jest/JUnit tests run. (3) Static Analysis — ESLint/Checkstyle/ATC (for ABAP) code quality checks. (4) Deploy to Dev — MTA deployment to dev space. (5) Integration Test — Postman/newman or Selenium tests against the deployed app. (6) Deploy to Staging — MTA deployment to staging space with smoke tests. (7) Deploy to Prod — Manual approval gate, then MTA deployment to prod space with zero-downtime (blue-green or rolling update).</p><p><b>MTA (Multi-Target Application) Deployment:</b> BTP uses MTA archives for deployment — a ZIP file containing the application artifacts and an MTA deployment descriptor (mta.yaml) that defines modules, resources (HANA, Redis, Event Mesh), and dependencies. The <code>cf deploy</code> command processes the MTA and provisions resources in the correct order.</p>"
+        }
+      ],
+      "codeBlock": "# sample mta.yaml for a CAP application\n_schema-version: '3.2'\nID: my-cap-app\nversion: 1.0.0\n\nmodules:\n  - name: my-cap-app-srv\n    type: nodejs\n    path: gen/srv\n    requires:\n      - name: my-cap-app-hana\n      - name: my-cap-app-uaa\n    provides:\n      - name: srv-api\n        properties:\n          srv-url: ${default-url}\n\n  - name: my-cap-app-db-deployer\n    type: hdb\n    path: gen/db\n    requires:\n      - name: my-cap-app-hana\n\nresources:\n  - name: my-cap-app-hana\n    type: org.cloudfoundry.existing-service\n    parameters:\n      service: hana\n      service-plan: hdi-shared\n  - name: my-cap-app-uaa\n    type: org.cloudfoundry.existing-service\n    parameters:\n      service: xsuaa\n      service-plan: application",
+      "adversarialResponse": {
+        "challenge": "\"We have 50+ custom ABAP programs running on our on-premise system. The team knows ABAP, not Kubernetes or CI/CD. Why should we migrate these to BTP when they work perfectly on-premise?\"",
+        "badResponse": "\"On-premise is legacy technology. SAP is moving everything to the cloud.\" (no business justification)",
+        "goodResponse": "\"Let me separate the concerns: the ABAP language itself is not the problem — ABAP runs on BTP Steampunk and works well. The question is whether each of your 50 programs should move. Here's the decision framework: (1) Programs that are integration points (RFC, IDoc, web services) benefit most from migration to BTP because they can use Event Mesh, Cloud Integration, and API Management — reducing point-to-point complexity. (2) Programs that are batch processing (month-end closing, material ledger) should stay on-premise until the on-premise system is decommissioned — migrating them to BTP adds latency without benefit. (3) Programs that are UIs or reports should be rebuilt as Fiori apps on BTP — the user experience improvement alone justifies the migration cost. The CI/CD part is not optional — even if you stay on-premise, you should adopt Git-based development and automated testing. The migration to BTP is an opportunity to modernize your development practices, not a punishment for having on-premise systems.\"",
+        "pattern": "separate-by-function — not all programs should move to BTP. Classify by integration vs batch vs UI, and move only the ones that benefit from cloud-native services. The CI/CD modernization is independent of the migration decision — adopt it regardless of runtime."
+      }
+    },
+    {
+      "title": "BTP Cost Management & FinOps",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>BTP costs can quickly spiral if not managed. The key cost drivers are: Cloud Foundry runtime (vCPU/memory for app instances), HANA Cloud (compute + storage), Event Mesh (message volume), and Integration Suite (message count). A Staff+ engineer designs for cost efficiency as a first-class concern.</p><p><b>Cost Optimization Strategies:</b> (1) Rightsize app instances — most CAP applications run comfortably on 256MB-512MB memory. Don't default to 1GB. (2) Use auto-scaling with min=0 for non-production environments — stop paying for dev instances overnight and on weekends. (3) Choose HANA Cloud tier appropriately — use HANA Cloud Serverless for dev/test (pay per second, no baseline cost). (4) Monitor BTP cost usage via the BTP cockpit Usage Analytics dashboard. Set budget alerts at 80% and 100% of monthly budget. (5) Use BTP credits wisely — RISE with SAP includes BTP credits. Plan credit consumption across the contract year to avoid forfeiting unused credits or exceeding the allocation.</p>"
+        }
+      ],
+      "codeBlock": ""
+    }
+  ],
+  "details": "<p><b>Staff+ Insight:</b> BTP is SAP's platform play — analogous to AWS, Azure, or GCP for SAP workloads. In a FAANG interview, your BTP experience demonstrates that you understand platform architecture beyond a single product. The key Staff+ signals: (1) You know that runtime choice (CF vs Kyma vs Steampunk) is an architectural decision, not a preference. (2) You consider cost, security, and operations alongside feature delivery. (3) You understand multi-region, multi-cloud deployment as a platform capability, not a theoretical concept.</p>"
+}

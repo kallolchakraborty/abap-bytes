@@ -1,0 +1,52 @@
+{
+  "id": "sd-design-whatsapp",
+  "title": "Design WhatsApp — Chat at Scale",
+  "category": "System Design",
+  "subcategory": "FAANG Whiteboarding",
+  "language": "text",
+  "description": "<p>Design a real-time messaging platform supporting billions of messages daily. Covers WebSocket connection management, message delivery guarantees (at-least-once, exactly-once with dedup), end-to-end encryption (Signal Protocol), group chat architecture, media sharing, offline message storage, multi-device sync, and how SAP's workflow items and notification system provide a conceptual bridge.</p>",
+  "tags": ["FAANG", "Staff+", "System Design", "WhatsApp", "Messaging", "Real-Time", "Encryption"],
+  "sections": [
+    {
+      "title": "Functional & Non-Functional Requirements",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>Functional requirements:</b> (1) One-on-one messaging: send/receive text, images, video, voice, documents. (2) Group messaging: send to a group of up to 1024 members (WhatsApp's limit). (3) Delivery status: sent, delivered, read (blue ticks). (4) End-to-end encryption: messages should be readable only by sender and recipient. (5) Last seen, online status, typing indicator. (6) Message sync across multiple devices. (7) Voice/video calls.</p><p><b>Non-functional requirements:</b> (1) Availability: 99.99% — messaging should never fail. (2) Latency: message delivery < 100ms P99 (message from sender to recipient). (3) Scalability: 2B+ users, 100B+ messages/day. (4) Durability: sent messages must never be lost (persist to disk before acknowledging). (5) Ordering: messages in a conversation must be displayed in order (per-conversation ordering, not global ordering).</p><p><b>SAP Bridge:</b> SAP's workflow system has similar patterns: work items (messages), deadline monitoring (delivery SLA), forwarding rules (routing). The difference is scale: SAP workflow handles millions of work items per day; WhatsApp handles 100B+ messages per day. The concept of 'message status' (sent, in-progress, completed) maps directly to WhatsApp's delivery status model.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Connection Management & Routing",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>The connection layer manages persistent WebSocket connections between clients and servers. This is the most critical infrastructure — if a user cannot connect, they cannot send or receive messages.</p><p><b>WebSocket server farm:</b> Thousands of WebSocket servers (connection gateways) handle long-lived connections. Each server handles 500K-1M concurrent connections. Connection routing: when a user connects, the load balancer assigns them to a connection server. The assignment is sticky — the user's subsequent connections go to the same server (or a server with the same connection state).</p><p><b>Connection server responsibilities:</b> (1) Maintain WebSocket connection with the client. (2) Handle heartbeat/ping-pong (every 30 seconds) to detect disconnections. (3) Buffer outgoing messages when the client is temporarily disconnected (reconnect). (4) Route messages to the correct storage server for persistence. (5) Broadcast presence information (online/offline, last seen) to authorized contacts.</p><p><b>Message routing — the fan-out problem:</b> When User A sends a message to User B, the routing layer must find which connection server User B is connected to and forward the message. WhatsApp uses a 'shadow routing' approach: the message is persisted first, then routed to the recipient's connection server. If the recipient is offline, the message is stored for later delivery. This is the at-least-once delivery model: the message is persisted before acknowledgment, so it can be re-delivered if the routing fails.</p><p><b>Group message fan-out:</b> Sending a message to a 1024-member group requires delivering to 1024 recipients. Approaches: (1) Sender fan-out — the sender's server sends 1024 copies individually. Simple but sender's server is the bottleneck. (2) Receiver fan-out — the sender stores one message; each recipient's mailbox server fetches the message. More complex but better scaling. WhatsApp uses a hybrid approach: for small groups (< 32 members), sender fan-out. For large groups, receiver fan-out with an optimized delivery tree.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "End-to-End Encryption — Signal Protocol",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>WhatsApp uses the Signal Protocol for end-to-end encryption. This means that WhatsApp servers cannot read message content — encryption/decryption happens entirely on client devices.</p><p><b>Signal Protocol key exchange:</b> (1) Each client generates a set of key pairs on first use: a long-term identity key (IK), a signed pre-key (SPK), and a batch of one-time pre-keys (OTPK). (2) The public keys are uploaded to the server. (3) When User A wants to send a message to User B, A's client requests B's public keys from the server. (4) A's client performs the X3DH (Extended Triple Diffie-Hellman) key agreement to establish a shared session key. (5) All subsequent messages are encrypted with the session key using AES-256-GCM.</p><p><b>Forward secrecy:</b> Signal Protocol provides forward secrecy: if a long-term key is compromised, past messages cannot be decrypted. This is achieved by using the Double Ratchet algorithm — the encryption key is constantly updated (ratcheted) based on each message's Diffie-Hellman exchange. Each message uses a new encryption key derived from the previous key and new Diffie-Hellman output.</p><p><b>Key rotation for groups:</b> For group messages, the sender encrypts the message with the group's session key. The group session key is distributed to all members using the pairwise Signal Protocol (each member receives the group key encrypted with their individual session key). When a member leaves or is removed, the group key is rotated and re-distributed (so the removed member cannot decrypt future messages).</p><p><b>Metadata exposure:</b> End-to-end encryption protects message content but not metadata: who is communicating with whom, at what time, from which IP address. This is a known limitation. WhatsApp (and Signal) minimize metadata collection, but the server must know the recipient's identity to route the message. This metadata is visible to WhatsApp (unlike Signal, which is designed to minimize even metadata).</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Offline Message Storage & Multi-Device Sync",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>When a user is offline, messages must be stored until they reconnect. When a user uses multiple devices (phone + desktop + web), messages must sync across all devices.</p><p><b>Offline message storage:</b> Messages are stored in a per-user mailbox (Cassandra for its write-optimized, wide-column model). Each conversation has a sequence number (monotonically increasing). When the user connects, the server sends all messages with sequence numbers greater than the user's last known sequence number. Messages are kept for 30 days (WhatsApp's retention window). After 30 days, messages are deleted from the server (to respect end-to-end encryption — the server should not store messages indefinitely).</p><p><b>Multi-device sync:</b> WhatsApp's multi-device architecture (launched 2021) allows up to 4 linked devices per account. Previously, WhatsApp required the phone to be online for other devices to work. The new architecture: each device maintains its own key bundle (Signal Protocol). Messages are encrypted per-device — the sender encrypts the message once, and the server re-encrypts it for each recipient device. This means the server does have transient access to message plaintext (a design compromise). WhatsApp's approach trades some pure-E2E design for multi-device usability.</p>"
+        }
+      ],
+      "codeBlock": ""
+    }
+  ],
+  "details": "<p><b>FAANG Interview Tip:</b> The WhatsApp/chat system question tests: (1) Your understanding of persistent connections at massive scale (WebSocket server farm, connection balancing, reconnection). (2) Your knowledge of message delivery guarantees (at-least-once, exactly-once with dedup, ordering per conversation). (3) Your understanding of end-to-end encryption (Signal Protocol, key exchange, forward secrecy). The SAP engineer can bridge from workflow items and work queues but should spend most of the interview demonstrating distributed systems knowledge — the chat domain is not complex, but the scaling and encryption requirements are extremely demanding.</p>"
+}

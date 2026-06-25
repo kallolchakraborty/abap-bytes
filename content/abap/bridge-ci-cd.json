@@ -1,0 +1,62 @@
+{
+  "id": "bridge-ci-cd",
+  "title": "From SAP Transports to CI/CD Pipelines",
+  "category": "Foundations",
+  "subcategory": "Skill Bridge",
+  "language": "text",
+  "description": "<p>Bridges SAP's transport management system (TMS, CTS) to FAANG's CI/CD pipeline culture. Covers the mindset shift from manual transport requests to automated deployment pipelines, Git-based version control, infrastructure as code, deployment strategies, and the cultural change from SAP's change control boards to FAANG's deploy-anytime philosophy.</p>",
+  "tags": ["FAANG", "SAP", "CI/CD", "DevOps", "Transport", "TMS", "Git", "Deployment"],
+  "sections": [
+    {
+      "title": "SAP Transport Management vs CI/CD \u2014 The Cultural Shift",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>SAP's transport management system (TMS/CTS) is designed for safety and auditability. Changes are bundled into transport requests, reviewed by a change control board (CCB), approved, and transported through a fixed landscape (DEV \u2192 QAS \u2192 PRD). The process takes days to weeks. FAANG CI/CD is designed for speed and safety through automation. Changes are committed to a shared repository, automatically tested, and deployed to production within minutes to hours.</p><p><b>The fundamental differences:</b> (1) <b>SAP transport:</b> Manual approval gates, fixed landscape, change-centric (approve the change, then deploy). <b>FAANG CI/CD:</b> Automated quality gates, dynamic environments, artifact-centric (build the artifact, test it, promote it). (2) <b>SAP:</b> Transport is monolithic \u2014 one transport can contain changes to 50 objects. Rollback requires importing the transport again with reversal changes. <b>FAANG:</b> Deployments are granular \u2014 each service is deployed independently with its own version. Rollback is a single command to redeploy the previous version. (3) <b>SAP:</b> Change management is focused on 'did we get approval?' <b>FAANG:</b> Change management is focused on 'did the tests pass? Is the deployment safe?'</p><p><b>The SAP engineer's valuable experience:</b> You have managed complex change processes in regulated environments (SOX compliance, GxP, FDA validation). You understand: (1) audit trails (every change is logged with who, what, when), (2) separation of duties (developers don't deploy to production), (3) change approval workflows (CCB, EWM, CAB), (4) rollback procedures (transport reversal, emergency fixes). These are exactly the skills that FAANG needs for its regulated workloads (financial reporting, healthcare, privacy compliance). The difference is FAANG automates these controls rather than relying on manual processes.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Git-Based Version Control \u2014 abapGit and Beyond",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>SAP's native version control is the transport system \u2014 changes are tracked in transport requests, and version history is maintained in the system's object directory. abapGit bridges this gap by enabling Git-based version control for ABAP code. Understanding abapGit and its limitations is the foundation for understanding FAANG's Git-centric development model.</p><p><b>abapGit vs native Git:</b> (1) <b>abapGit:</b> Pulls ABAP objects from the SAP system into a Git repository as files. Pushing commits back to SAP writes the objects into the system. It's a serialization layer, not a native integration. Limitations: no branch-based development for active objects, merge conflicts are manual, CI/CD integration is limited. (2) <b>Native Git:</b> Developers work in feature branches, commit locally, push to a remote repository, create pull requests, run CI checks, merge to main, deploy from main. The development environment is the Git repository, not the runtime system.</p><p><b>The mental model shift:</b> In SAP, the system is the source of truth. Objects live in the system, and the transport is a snapshot for migration. In FAANG, the Git repository is the source of truth. Code lives in the repository, and the deployment is a packaging of that code for the runtime system. This is the most important DevOps concept for SAP engineers to internalize: your IDE is not the system \u2014 your Git repository is the system. Bridge: 'I used abapGit to version-control ABAP code in Git, enabling code reviews, branch-based development, and basic CI/CD. I understand the limitations of abapGit and would apply the FAANG standard of Git-centric development with feature branches, pull requests, and automated CI pipelines.'</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "The CI/CD Pipeline \u2014 From Step-by-Step to Automated",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>SAP's deployment process: developer releases transport \u2192 administrator approves transport \u2192 administrator imports transport to QA \u2192 tester validates \u2192 CCB approves \u2192 administrator schedules import to production \u2192 administrator imports transport during maintenance window. Each step is manual, takes hours to days, and requires multiple people. FAANG's CI/CD pipeline: developer pushes code \u2192 CI server builds and tests automatically \u2192 artifact is published \u2192 CD pipeline deploys to staging \u2192 automated integration tests run \u2192 deployment is approved (or gated by metrics) \u2192 canary deployment to production \u2192 full rollout. The entire process takes minutes and requires no manual intervention except the initial code review and final approval.</p><p><b>Key CI/CD concepts for SAP engineers:</b> (1) <b>Build artifact:</b> A deployable package (Docker image, JAR, compiled binary) that is built once and promoted through environments. SAP equivalent: a transport request that is exported once and imported across the landscape. (2) <b>Immutable infrastructure:</b> Deployments create new instances rather than modifying existing ones. SAP equivalent: a system copy rather than applying a transport to an existing system. (3) <b>Blue-green deployment:</b> Two identical environments (blue and green). Deploy to the inactive environment, then switch traffic. Zero downtime. SAP has no equivalent \u2014 transports are applied to the running system. (4) <b>Canary deployment:</b> Deploy to a small subset of users, monitor for issues, then roll out to all users. SAP has no equivalent \u2014 transports affect all users immediately.</p>"
+        }
+      ],
+      "codeBlock": "# SAP Deployment vs FAANG CI/CD Timeline\n\n## SAP Transport Process (Manual, ~5-15 days)\nDay 1: Developer releases transport request\nDay 2-3: CCB reviews and approves transport\nDay 4: Administrator schedules import to QA\nDay 5: Transport imported to QA\nDay 6-10: QA testing (manual)\nDay 11: CCB approves production deployment\nDay 12-14: Scheduled maintenance window\nDay 15: Transport imported to production during downtime\n\n## FAANG CI/CD (Automated, ~15-30 minutes)\nMinute 0: Developer merges PR to main branch\nMinute 1-3: CI server builds and runs unit tests\nMinute 3-5: Artifact published to registry\nMinute 5-7: Deployed to staging environment\nMinute 7-12: Integration, contract, and e2e tests run\nMinute 12-14: Canary deploy to 1% of production traffic\nMinute 14-20: Canary monitored for errors, latency, metrics\nMinute 20: Automated approval (if metrics healthy)\nMinute 20-25: Gradual rollout: 10% -> 50% -> 100%\nMinute 25-30: Full production deployment complete"
+    },
+    {
+      "title": "Testing in CI/CD \u2014 From ABAP Unit to the Test Pyramid",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>SAP's testing model relies on manual functional testing in the QA system. ABAP Unit tests exist but are not widely used in enterprise SAP projects. FAANG's CI/CD pipelines enforce automated testing at every stage: unit tests, integration tests, contract tests, end-to-end tests. Understanding the test pyramid and where each test type fits is essential for designing CI/CD pipelines.</p><p><b>The test pyramid (bottom to top):</b> (1) <b>Unit tests:</b> Test individual functions/methods in isolation. Fast (< 100ms each), deterministic, high coverage. SAP equivalent: ABAP Unit tests (CL_AUNIT_ASSERT). (2) <b>Integration tests:</b> Test interactions between components (service A calls service B). Medium speed, medium confidence. SAP equivalent: scenario tests in the QA system. (3) <b>Contract tests:</b> Verify that service APIs conform to their contracts. Used to detect breaking changes before deployment. SAP equivalent: IDoc structure validation, RFC interface checks. (4) <b>End-to-end tests:</b> Test the full system from UI to database. Slow, flaky, low coverage. SAP equivalent: business process tests in the staging environment.</p><p><b>CI/CD gate strategy:</b> (1) PR gate: unit tests + linter must pass. (2) Build gate: integration tests + contract tests must pass. (3) Deploy gate: end-to-end smoke tests must pass after deployment to staging. (4) Production gate: canary must show healthy metrics (error rate, latency, throughput) before full rollout. This layered approach ensures that failures are caught early and cheaply. Bridge: 'In SAP, testing is manual and happens late in the process (QA and User Acceptance Testing). CI/CD moves testing left \u2014 automated tests run with every code change, catching failures within minutes instead of weeks.'</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "DevOps Culture \u2014 You Build It, You Run It",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Perhaps the biggest cultural difference between SAP and FAANG is the deployment model. In SAP, developers build, an administrator deploys, and a separate operations team runs the system. In FAANG, the same team that builds the service also deploys it, runs it, and is on-call for it. This is the 'You Build It, You Run It' philosophy popularized by Amazon and now standard across FAANG.</p><p><b>What this means for SAP engineers:</b> (1) You are responsible for your code in production. If your deployment breaks, you fix it \u2014 at 2 AM if necessary. This creates a strong incentive to build reliable systems. (2) You must understand operations: monitoring, logs, metrics, alerting, capacity planning. These are not separate roles \u2014 they are part of your engineering responsibility. (3) You must design for operability: graceful degradation, health checks, circuit breakers, feature flags, rollback capability. SAP systems are designed by developers and operated by Basis administrators. FAANG systems are designed by engineers who will operate them. (4) Deployment frequency is high (multiple times per day) and downtime is unacceptable. The systems must support zero-downtime deployments through blue-green, canary, or rolling update strategies.</p><p><b>Interview translation:</b> 'In SAP, I experienced a strict separation between development and operations \u2014 developers build, Basis admins deploy and run. I recognize that FAANG's 'You Build It, You Run It' model creates better outcomes through accountability. In my FAANG role, I would prioritize: (a) building observability into every service, (b) designing for graceful degradation, (c) automating deployment and rollback, and (d) participating in the on-call rotation with a focus on reducing operational load through better engineering.'</p>"
+        }
+      ],
+      "codeBlock": ""
+    }
+  ],
+  "details": "<p><b>Staff+ Insight:</b> SAP engineers have a unique perspective on CI/CD that FAANG native engineers often lack: they understand compliance, auditability, and change control in regulated environments. Most FAANG CI/CD systems are designed for speed, not compliance. As FAANG companies enter regulated industries (healthcare, finance, government), the ability to design CI/CD pipelines that balance speed with compliance is becoming increasingly valuable. SAP engineers who can bridge these two worlds \u2014 bringing FAANG speed to regulated environments, and regulated controls to FAANG processes \u2014 have a significant career advantage. The key insight: CI/CD is not just about tools (Jenkins, GitHub Actions, Spinnaker). It is about culture \u2014 the confidence that automated testing and incremental deployment are safer than manual gates and big-bang releases.</p>"
+}

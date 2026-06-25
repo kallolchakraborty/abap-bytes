@@ -1,0 +1,63 @@
+{
+  "id": "ds-cqrs-es-deep",
+  "title": "CQRS & Event Sourcing in Practice",
+  "category": "Distributed Systems",
+  "subcategory": "Patterns",
+  "language": "text",
+  "description": "<p>Command Query Responsibility Segregation (CQRS) and Event Sourcing are powerful architectural patterns that are often over-prescribed. This file covers when CQRS actually helps, when Event Sourcing makes sense, the operational costs, snapshot management, projection rebuild, event store design, the saga pattern, and how SAP's V1/V3 updates and change documents provide a familiar analog for these patterns.</p>",
+  "tags": ["FAANG", "Staff+", "CQRS", "Event Sourcing", "Architecture", "Saga", "Patterns"],
+  "sections": [
+    {
+      "title": "When CQRS Actually Helps",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>CQRS separates read and write models. The write model (command side) handles mutations with strong consistency. The read model (query side) handles reads optimized for specific query patterns. The two models may use different data stores, different schemas, and different consistency models.</p><p><b>CQRS is worth the complexity when:</b> (1) Read and write workloads have fundamentally different characteristics. Example: writes are transactional (few, small, strongly consistent) while reads are analytical (many, large, eventually consistent). An analytics dashboard that queries terabytes of data should not share a database with the transactional order system. (2) There are multiple read models for the same data. Example: mobile app needs aggregated order data, web app needs line-item detail, analytics needs time-series. Each consumer gets its own optimized read model. (3) Write throughput is limited by read contention. Example: a write-heavy system where every read query is expensive and blocks writes. Separating the models removes read contention. (4) The write model needs to enforce complex business rules that are different from the read model's denormalized structure.</p><p><b>CQRS is NOT worth the complexity when:</b> (1) Simple CRUD — if reads and writes operate on the same data with similar patterns, CQRS adds latency and complexity. (2) Single read model — if all consumers query the same data in the same way, there is no benefit. (3) Team doesn't have operational maturity — CQRS requires at least two databases, two deployment pipelines, and async consistency management.</p><p><b>SAP Bridge:</b> SAP's CDS views are a form of CQRS — the write model is the ABAP transactional system (SAP LUW), and the read model is the CDS view layer (optimized for analytics). SAP's V3 update bundling is also CQRS-adjacent: the command side (V1/V2) processes immediate updates, while the query side (V3) processes deferred aggregate updates. The insight: SAP has been doing CQRS-like patterns for decades, just with different terminology.</p>"
+        },
+        {
+          "type": "svg",
+          "value": "<svg viewBox=\"0 0 700 200\" xmlns=\"http://www.w3.org/2000/svg\"><style>.cq-box{fill:var(--bg-secondary);stroke:var(--brand-primary);stroke-width:2;rx:8}.cq-node{fill:var(--bg-secondary);stroke:var(--text-primary);stroke-width:2;rx:6}.cq-lbl{fill:var(--text-primary);font-family:system-ui;font-size:11px;font-weight:600;text-anchor:middle}.cq-sub{fill:var(--text-primary);font-family:system-ui;font-size:9px;text-anchor:middle}.cq-ed{stroke:var(--brand-primary);stroke-width:2;fill:none;marker-end:url(#cqa)}</style><defs><marker id=\"cqa\" markerWidth=\"8\" markerHeight=\"6\" refX=\"8\" refY=\"3\" orient=\"auto\"><path d=\"M0,0 L8,3 L0,6Z\" fill=\"var(--brand-primary)\"/></marker></defs><rect class=\"cq-box\" x=\"15\" y=\"15\" width=\"670\" height=\"170\"/><text class=\"cq-lbl\" x=\"350\" y=\"38\">CQRS Architecture</text><rect class=\"cq-node\" x=\"25\" y=\"55\" width=\"160\" height=\"50\"/><text class=\"cq-lbl\" x=\"105\" y=\"78\">Command Side</text><text class=\"cq-sub\" x=\"105\" y=\"96\">Write DB (normalized)</text><path d=\"M185,80 L220,80\" class=\"cq-ed\"/><rect class=\"cq-node\" x=\"220\" y=\"55\" width=\"120\" height=\"50\" stroke=\"var(--svg-warning-stroke)\"/><text class=\"cq-lbl\" x=\"280\" y=\"78\">Event Bus</text><path d=\"M340,80 L375,80\" class=\"cq-ed\"/><rect class=\"cq-node\" x=\"375\" y=\"55\" width=\"160\" height=\"50\" stroke=\"var(--svg-info-stroke)\"/><text class=\"cq-lbl\" x=\"455\" y=\"78\">Query Side</text><text class=\"cq-sub\" x=\"455\" y=\"96\">Read DB (denormalized)</text><path d=\"M535,80 L570,80\" class=\"cq-ed\"/><rect class=\"cq-node\" x=\"570\" y=\"55\" width=\"110\" height=\"50\" stroke=\"var(--svg-success-stroke)\"/><text class=\"cq-lbl\" x=\"625\" y=\"78\">Cache</text></svg>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Event Sourcing — The Event Store as Source of Truth",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Event Sourcing stores all changes to application state as a sequence of events. The current state is derived by replaying events. This is different from CQRS (you can have CQRS without Event Sourcing and vice versa), but they are commonly paired.</p><p><b>Event store fundamentals:</b> (1) Events are immutable — once appended to the event store, they are never modified or deleted. (2) Events are ordered — each event has a monotonically increasing sequence number or position. (3) Current state is a projection — computed by replaying all events (or starting from a snapshot and replaying subsequent events). (4) The event store is a log-structured data structure — append-only with sequential read patterns. This makes it highly write-efficient (no random writes, no in-place updates).</p><p><b>When Event Sourcing makes sense:</b> (1) Audit trail is a hard requirement — financial systems, regulatory compliance, medical records. Every state change is recorded as an event; there is no way to alter history. (2) Temporal queries — 'what was the state on March 15?' Events naturally support time-travel queries because every event has a timestamp. (3) Multiple projections — the same event stream can be projected into different read models (transactional view, analytical view, ML features view). Add a new projection without migrating the existing data.</p><p><b>When Event Sourcing is a mistake:</b> (1) Simple CRUD — storing a profile update as an event is unnecessary complexity when you can just UPDATE the row. (2) High-volume, short-lived data — events accumulate (no DELETE), and the event store grows unboundedly. (3) Strong read-after-write consistency — events are eventually consistent (there is a delay between appending an event and updating projections). (4) Team is new to distributed systems — Event Sourcing + CQRS is one of the most complex architectural patterns.</p>"
+        }
+      ],
+      "codeBlock": "",
+      "quantifiedTradeoff": {
+        "title": "CQRS + Event Sourcing Adoption Decision",
+        "scenarios": [
+          {
+            "choice": "A: CQRS without Event Sourcing (separate read/write models, but write model is current-state DB)",
+            "tradeOff": "+Simpler than full Event Sourcing. +Write model is a standard RDBMS (easy operational knowledge). +Strong consistency for writes. -Requires synchronization between write and read models (eventual consistency gap). -No audit trail by default.",
+            "context": "You have an e-commerce system. The write model handles order creation (complex business rules, transactional). The read model handles product search (denormalized, indexed for full-text). They share the same logical data but use different schemas. Write → Event Bus → Read model sync happens via CDC (Debezium → Kafka).",
+            "recommendation": "Default CQRS pattern. Use when: write and read models have different schemas, and you need strong consistency on writes."
+          },
+          {
+            "choice": "B: CQRS + Event Sourcing (event store as source of truth, projections as read models)",
+            "tradeOff": "+Full audit trail (every event recorded). +Temporal queries (state at any point in time). +Multiple projections from same event stream. -Complex operational infrastructure (event store, projections, snapshots). -No immediate read-after-write consistency. -Event store grows unboundedly (requires snapshots and compaction).",
+            "context": "Financial system: account transactions, balance calculations, audit requirements from regulators. Every account operation (credit, debit, hold, release) is an event. The current balance is a projection. The regulator can time-travel to see the balance at any point in history.",
+            "recommendation": "Use only when: audit trail is a regulatory requirement, or temporal queries are critical, or multiple projections are needed. For all other cases, CQRS without Event Sourcing is simpler and cheaper."
+          }
+        ]
+      }
+    },
+    {
+      "title": "Snapshots & Projection Rebuild",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Event Sourcing without snapshots is impractical at scale. Replaying every event since the beginning of time to rebuild a projection would take hours on even a moderately sized event store.</p><p><b>Snapshot mechanics:</b> (1) After every N events (e.g., 1000), the system takes a snapshot of the current state. (2) The snapshot is stored in a separate data store (blob storage: S3, GCS). (3) When rebuilding a projection, start from the latest snapshot and replay only the events after the snapshot. (4) The snapshot interval determines rebuild time: 1000 events at 10ms/event = 10s rebuild. Choosing N is a tradeoff: too small = too many snapshots (write overhead); too large = slow rebuild (especially for disaster recovery).</p><p><b>Snapshot strategies:</b> (1) Periodic (time-based) — take a snapshot every 24 hours. Simple but can't recover state within the last 24 hours without replaying all events. (2) Event-count-based — take a snapshot every 10,000 events. Rebuild time is bounded. But a burst of 100K events in 5 minutes creates 10 snapshots in rapid succession. (3) Hybrid — take periodic snapshots AND on-demand snapshots before major deployments. Allows quick rollback: start from the pre-deployment snapshot and replay post-deployment events selectively.</p><p><b>Projection rebuild vs. catch-up:</b> A projection rebuild reads all events from scratch (start from snapshot, replay everything). A catch-up continues from where the projection left off (reads only new events). Rebuild is needed when: (a) the projection logic changed (new field added). (b) the projection database was corrupted. (c) a bug was fixed in the projection code. In production, rebuilds are rare — typically 1-2 per quarter. Catch-ups happen continuously (every few seconds).</p>"
+        }
+      ],
+      "codeBlock": ""
+    }
+  ],
+  "details": "<p><b>FAANG Interview Tip:</b> CQRS and Event Sourcing come up in system design interviews when the question involves audit trails, temporal queries, or complex write models. The Staff+ signal is: (1) You explain why you need CQRS before advocating for it — most systems don't need it. (2) You distinguish between CQRS and Event Sourcing and know they can be used independently. (3) You discuss snapshot management and projection rebuild — most candidates stop at 'events are appended to a log.' (4) You reference real operational challenges: 'We had an event backlog of 10M events after a projection failed — it took 4 hours to catch up.'</p>"
+}

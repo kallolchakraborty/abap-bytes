@@ -1,0 +1,103 @@
+[
+  {
+    "id": "cap-tradeoff",
+    "title": "CAP Theorem Tradeoff",
+    "prompt": "How do I decide between CP and AP for a given system?",
+    "firstQuestion": "\"What happens when the user sees stale data?\" If the answer is 'fraud, regulatory fine, or safety hazard', lean CP. If the answer is 'slightly wrong dashboard or delayed notification', lean AP.",
+    "branches": [
+      {"condition": "Cost of stale reads > cost of rejected writes", "path": "Choose CP. Use quorum reads (R+W > N). Cost: write latency increases by 2x-3x. Breakeven: at write rates below 500 TPS, the latency penalty is less than the reconciliation cost of AP.", "selected": false},
+      {"condition": "Cost of rejected writes > cost of stale reads", "path": "Choose AP. Use last-write-wins or CRDT conflict resolution. Cost: reconciliation tooling and potential data loss windows. Breakeven: at partition probability below 0.1%, the window for inconsistency is negligible.", "selected": false},
+      {"condition": "Partition probability > 1% per month", "path": "Strongly consider AP. Frequent partitions mean CP systems become unavailable during every partition event, violating availability SLAs.", "selected": false}
+    ],
+    "staffPlusTip": "Don't just name CP or AP. Show the interviewer your 3-question framework: (1) cost of stale reads? (2) cost of rejected writes? (3) partition frequency? Walk through the economic calculus live. This demonstrates Staff+-level structured reasoning."
+  },
+  {
+    "id": "cache-strategy",
+    "title": "Caching Strategy Selection",
+    "prompt": "Which caching strategy should I use for my read-heavy workload?",
+    "firstQuestion": "\"How much data staleness can the business tolerate?\" Write-Through has zero staleness but doubles write latency. Write-Behind has optimal write performance but risks data loss on cache failure.",
+    "branches": [
+      {"condition": "Write rate < 100 TPS, read:write ratio > 10:1", "path": "Cache-Aside. Simple, resilient. Cache misses trigger DB reads. TTL-based invalidation. Best for read-heavy workloads with moderate consistency requirements.", "selected": true},
+      {"condition": "Strict consistency required, write volume moderate", "path": "Write-Through. Every write hits cache + DB synchronously. Write latency doubles but read latency is optimal. Use for critical data (orders, payments).", "selected": false},
+      {"condition": "Write-heavy workload, eventual consistency acceptable", "path": "Write-Behind. Writes go to cache immediately, asynchronously batched to DB. Best throughput. Risk: cache failure = data loss. KAFKA-backed WAL can mitigate.", "selected": false}
+    ],
+    "staffPlusTip": "Go beyond naming the pattern. Show the interviewer you can calculate the cost: 'With Write-Through, my 200 TPS write load goes from 5ms to 12ms p99. That costs me $X/month in additional DB capacity. But the read path drops from 15ms to 3ms, saving $Y/month in read replicas.'"
+  },
+  {
+    "id": "db-selection",
+    "title": "Database Selection Decision Framework",
+    "prompt": "Should I use SQL or NoSQL for this use case?",
+    "firstQuestion": "\"Is the data highly relational, or can it be aggregated into documents/keys?\" If you have joins across 5+ tables with referential integrity constraints, lean SQL. If you have self-contained entities with write-heavy access patterns, lean NoSQL.",
+    "branches": [
+      {"condition": "Strong consistency + ACID transactions required", "path": "Relational (PostgreSQL, CockroachDB). Use for financial close, inventory management, order processing where atomicity is non-negotiable.", "selected": false},
+      {"condition": "High write throughput with eventual consistency OK", "path": "NoSQL (Cassandra, DynamoDB). Use for event logs, user sessions, product catalogs. Benchmark: Cassandra handles 1M writes/sec on a 12-node cluster.", "selected": false},
+      {"condition": "Complex queries with aggregations and joins", "path": "Relational with read replicas. Use for reporting, analytics, business intelligence. Materialized views + read replicas can scale to 10K QPS.", "selected": false},
+      {"condition": "Flexible schema + rapid iteration", "path": "Document store (MongoDB, Firestore). Use when schema evolves weekly. Tradeoff: no JOINs, eventual consistency by default.", "selected": false}
+    ],
+    "staffPlusTip": "The right answer at L6 is never just 'SQL' or 'NoSQL'. It's 'SQL for transactional paths, NoSQL for event logs, with a CDC pipeline keeping them in sync. The cost: two storage systems, CDC infrastructure, reconciliation jobs. Let me calculate the breakeven..."
+  },
+  {
+    "id": "monolith-vs-microservices",
+    "title": "Monolith vs Microservices Decision",
+    "prompt": "Should I start with a modular monolith or microservices?",
+    "firstQuestion": "\"How many independent deployment cadences do I actually need?\" If the answer is 1-2, start with a modular monolith. If 5+ independent teams need to deploy on different schedules, the coordination cost of a monolith exceeds the operational cost of microservices.",
+    "branches": [
+      {"condition": "Fewer than 3 teams, one deployment cadence", "path": "Modular monolith. Clear module boundaries with strict APIs. Cheaper operations (1 deployment, 1 monitoring stack). Migrate to microservices only when team count forces independent deploys.", "selected": true},
+      {"condition": "5+ teams, independent deploy schedules required", "path": "Microservices with bounded contexts. Cost: 3x operational overhead (service mesh, observability, CI/CD pipelines). Each service should own its data store — shared databases create coupling that defeats the purpose.", "selected": false},
+      {"condition": "Organization is growing from 2 to 10 teams", "path": "Start modular monolith, plan extraction. Identify bounded contexts early (DDD). Extract one service at a time when team boundaries solidify. This is the Amazon 'API Gateway' approach — services emerged from teams, not architecture.", "selected": false}
+    ],
+    "staffPlusTip": "At Staff+, your recommendation must consider organizational maturity. Microservices are an organizational pattern, not a technical one. Conway's Law applies: your service boundaries will mirror your team boundaries. Design for the org you expect to have in 18 months."
+  },
+  {
+    "id": "sync-vs-async",
+    "title": "Synchronous vs Asynchronous Communication",
+    "prompt": "Should this service call use synchronous (REST/gRPC) or asynchronous (event/message queue) communication?",
+    "firstQuestion": "\"Does the caller need an immediate response to proceed, or can it defer processing?\" If the user is waiting for a confirmation page, synchronous is appropriate. If the system can acknowledge and process later, asynchronous reduces coupling.",
+    "branches": [
+      {"condition": "User-facing request with <500ms response expected", "path": "Synchronous (gRPC or REST). User is waiting. Use circuit breakers and retries with exponential backoff. Target p99 < 200ms.", "selected": false},
+      {"condition": "Background processing, no user waiting", "path": "Async (Kafka/RabbitMQ/SQS). Producer writes event, consumer processes independently. Cost: eventual consistency, idempotency handling, dead letter queues. Benefit: decoupled deployability, independent scaling.", "selected": false},
+      {"condition": "Data pipeline with multiple consumers", "path": "Async with event streaming (Kafka). One event, N consumers. Each consumer maintains its own offset. At-least-once delivery requires idempotent consumers.", "selected": false},
+      {"condition": "Strict ordering required + real-time", "path": "Synchronous with ordered async fallback. Use Kafka with single partition for ordering, but accept that this limits throughput to ~1M msg/sec per partition.", "selected": false}
+    ],
+    "staffPlusTip": "Don't fall into the trap of 'async is always better.' Async introduces complexity: dead letter queues, monitoring, idempotency, exactly-once vs at-least-once tradeoffs. At Staff+, you should quantify: 'Sync costs $X in coupling, async costs $Y in infrastructure. Here's the breakeven at Z TPS.'"
+  },
+  {
+    "id": "consistency-model",
+    "title": "Consistency Model Selection",
+    "prompt": "Should I use strong, eventual, or read-your-writes consistency?",
+    "firstQuestion": "\"Who is affected by stale data and for how long?\" External customers and regulators require strong consistency. Internal dashboards and analytics can tolerate seconds of staleness.",
+    "branches": [
+      {"condition": "Financial/regulatory data with audit trail", "path": "Strong consistency. Quorum writes + reads. Cost: write throughput is halved, latency adds 50-200ms. Required for: payments, compliance records, inventory counts.", "selected": false},
+      {"condition": "User-facing content with personalization", "path": "Read-your-writes consistency. User always sees their own changes immediately. Other users may see stale data for seconds. Good for: social feeds, dashboards, preferences.", "selected": false},
+      {"condition": "Analytics/reporting with bounded staleness", "path": "Eventual consistency with 5-minute staleness SLA. Cheapest operational cost. Use for: aggregated reports, trend analysis, ML feature computation.", "selected": false},
+      {"condition": "Global multi-region deployment", "path": "Strong within region, eventual across regions. Use CRDT-based conflict resolution for cross-region writes. Google Spanner achieves strong consistency globally via TrueTime, but costs 10x single-region.", "selected": false}
+    ],
+    "staffPlusTip": "At Staff+, you should never propose a single consistency model for an entire system. Different data flows have different consistency requirements. The Staff+ answer explicitly maps consistency model to data classification: 'Customer profiles: strong. Query logs: eventual. Shopping cart: read-your-writes.'"
+  },
+  {
+    "id": "rap-managed-vs-unmanaged",
+    "title": "RAP Managed vs Unmanaged Decision",
+    "prompt": "Should I use RAP managed or unmanaged scenario for this business object?",
+    "firstQuestion": "\"How much of the standard CRUD behavior matches my requirement?\" If the CREATE/UPDATE/DELETE logic is standard data persistence with simple validations, managed is correct. If you need custom locking, late numbering with complex business rules, or non-standard transaction control, unmanaged is required.",
+    "branches": [
+      {"condition": "Standard CRUD with simple validations and determinations", "path": "Managed. ~50 lines of behavior pool code. Built-in draft, locking, numbering. Save ~80% boilerplate vs unmanaged. Use for: simple master data, status management, document headers with standard items.", "selected": true},
+      {"condition": "Custom locking strategy required (e.g., optimistic locking via ETag)", "path": "Managed with custom lock handling via feature control. You can still declare locking as managed but add custom authorization checks in determinations.", "selected": false},
+      {"condition": "Complex create with legacy number ranges, cross-BO validation", "path": "Unmanaged. Manual CREATE/UPDATE/DELETE implementations. ~400+ lines per entity. Required for: integration scenarios, legacy BAPI wrappers, complex financial objects.", "selected": false},
+      {"condition": "Existing BAPI/function module needs RAP wrapper", "path": "Unmanaged with BAPI call in create/update methods. This is the migration pattern: wrap existing function modules in RAP behavior, migrate to managed incrementally.", "selected": false}
+    ],
+    "staffPlusTip": "At Staff+, the answer is not 'managed is always better.' The answer is: 'I use managed for all new development because 80% of entities fit the standard pattern. For the 20% that don't, I start unmanaged, isolate the custom logic in a dedicated class, and migrate to managed when the framework catches up.' This shows pragmatic judgment, not dogmatic framework preference."
+  },
+  {
+    "id": "cds-vs-amdp-vs-opensql",
+    "title": "CDS vs AMDP vs Open SQL Decision",
+    "prompt": "Should I implement this data retrieval as a CDS view, AMDP method, or Open SQL query?",
+    "firstQuestion": "\"Is this a declarative data model or a procedural transformation?\" Declarative = CDS view. Procedural = AMDP. Simple read = Open SQL.",
+    "branches": [
+      {"condition": "Standard data retrieval with associations and aggregations", "path": "CDS view. Declarative, reusable, annotation-driven. Optimizer can push down predicates. Use for: analytical queries, OData projections, transactional read models.", "selected": true},
+      {"condition": "Complex procedural logic with loops, cursors, or multi-step transformations", "path": "AMDP (SQLScript). Set-based operations in HANA. Use for: data migrations, complex reporting (pivot, window functions), ML scoring with PAL/APL.", "selected": false},
+      {"condition": "Simple SELECT with internal table processing in ABAP", "path": "Open SQL. Best for: small data volumes (<10K rows), when subsequent processing is easier in ABAP (ALV, dynamic formatting), or when you need ABAP runtime features (authority checks, field symbols).", "selected": false},
+      {"condition": "Performance-critical query that needs HANA optimization", "path": "CDS table function backed by AMDP. CDS provides the semantic layer and annotations. AMDP provides HANA-optimized SQLScript. Best of both worlds.", "selected": false}
+    ],
+    "staffPlusTip": "At Staff+, the decision is not about syntax — it's about architecture. CDS views are your semantic data model (consumption layer). AMDP is your compute pushdown layer. Open SQL is your application integration layer. Each has a role. The Staff+ answer shows you understand where each belongs in your layered architecture."
+  }
+]

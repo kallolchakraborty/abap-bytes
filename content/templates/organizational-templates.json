@@ -1,0 +1,68 @@
+[
+  {
+    "id": "erp-adoption",
+    "title": "Getting 50 Legal Entities to Adopt a New ERP Platform",
+    "migrationStrategy": "Strangler Fig migration: Phase 1 (months 1-3) wraps existing SAP ECC with an API gateway, exposing standardized REST endpoints. Phase 2 (months 4-16) migrates one legal entity per month starting with the least complex — lowest regulatory burden, strongest local tech team. Phase 3 (months 17-18) sunsets legacy ECC instances. Risk: parallel-run period doubles reconciliation cost for 12 months. Mitigation: automated reconciliation script comparing old and new system outputs daily.",
+    "stakeholders": [
+      {"who": "Country CFOs", "concern": "Loss of control over the financial close process", "address": "Parallel run for first 3 months per entity. CFO can compare old vs new close outputs side-by-side. No trust, no cutover."},
+      {"who": "IT Operations (on-prem)", "concern": "New cloud infrastructure learning curve, fear of job loss", "address": "6-week paid training program culminating in certification. Dedicated migration support team of 5 senior engineers roving between entities. No layoffs during migration — natural attrition handles headcount reduction."},
+      {"who": "External Auditors", "concern": "Data integrity during migration — any discrepancy triggers qualified audit opinion", "address": "Third-party audit firm validates migration scripts before go-live. Automated reconciliation report generated daily during parallel run. Auditor has read-only access to both old and new systems."},
+      {"who": "Local Compliance Officers", "concern": "Local tax/regulatory reporting requirements not met by new system", "address": "Per-country compliance matrix: each entity's statutory reporting requirements mapped to new system modules. Any gap triggers a local extension, not a global configuration change."}
+    ]
+  },
+  {
+    "id": "data-platform-adoption",
+    "title": "Migrating 50 Data Sources to a Central Data Platform",
+    "migrationStrategy": "Lift-and-shift with parallel CDC: Phase 1 deploys CDC connectors (Debezium) on all source databases without modifying source schemas. Phase 2 adds a streaming transformation layer (Kafka Streams) to normalize schemas. Phase 3 (12 months) sunsets legacy ETL jobs. Each source gets a 'data quality scorecard' before migration — sources below 80% quality get remediation before joining the platform.",
+    "stakeholders": [
+      {"who": "Source System Owners", "concern": "CDC adds load to production databases, risks performance degradation", "address": "CDC runs on read replicas, not primary databases. Resource limits configured per connector. Weekly performance review during migration."},
+      {"who": "Data Consumers (Analytics Team)", "concern": "Schema changes break existing dashboards", "address": "Schema registry with backward-compatibility enforcement. Breaking changes require 2-week notice window. Dashboard tests run in CI to detect breaks before deploy."},
+      {"who": "Data Governance Team", "concern": "Data lineage and PII tracking lost in new pipeline", "address": "OpenLineage integration for end-to-end lineage tracking. PII detection runs at ingest and again at transform — any leak triggers automatic pipeline halt."},
+      {"who": "Security Team", "concern": "New data pipeline expands attack surface", "address": "Pipeline runs on isolated VPC with no public endpoints. All data encrypted at rest and in transit. Penetration test completed before Phase 1 go-live."}
+    ]
+  },
+  {
+    "id": "framework-adoption",
+    "title": "Driving Adoption of a New Framework Across 5 Engineering Teams",
+    "migrationStrategy": "The 'Influencer Strategy': map the organization by adoption archetype — Innovators (1-2 early adopters), Early Majority (50%), Late Majority (35%), Laggards (15%). Spend zero time on Laggards until Late Majority has adopted. Start with Innovators to prove value, codify their patterns into a 'cookbook', then target Early Majority with workshops and migration support.",
+    "stakeholders": [
+      {"who": "Innovator Teams (Team A, Team C)", "concern": "Framework is not mature enough, don't want to be guinea pigs", "address": "Guarantee dedicated support: 2 senior framework authors embedded in their sprint for first 2 weeks. Fast feedback loop: any issue gets triaged within 24 hours."},
+      {"who": "Early Majority Teams (Team B, Team D, Team E)", "concern": "Migration will slow feature delivery, impact their OKRs", "address": "Migration work counts 2x toward OKRs (engineering improvement credit). Dedicated migration week per quarter with no feature work. Tooling does 80% of the mechanical migration automatically."},
+      {"who": "Late Majority Teams (Team F, Team G)", "concern": "Not seeing the value, comfortable with current approach", "address": "Skip — let Early Majority demonstrate value first. Only engage when 3+ Early Majority teams have completed migration and have measurable improvement data (defect rate, delivery speed)."},
+      {"who": "Engineering Director", "concern": "Migration takes engineering time away from product work", "address": "Phased rollout. Phase 1 (20% of teams) proves ROI with metrics. Phase 2 (next 50%) gets approved only if Phase 1 shows >=20% improvement in defect rate or delivery speed. Phase 3 is optional."}
+    ]
+  },
+  {
+    "id": "security-policy-adoption",
+    "title": "Rolling Out a New Security Policy Across an Organization",
+    "migrationStrategy": "The 'No Surprises' strategy: announce the new policy 90 days before enforcement. First 30 days are feedback and adjustment. Next 30 days are pilot with one team. Final 30 days are org-wide rollout with automated enforcement. Any team that fails compliance gets an automatic 7-day exception to fix, no questions asked. After 2 exceptions, escalation to their director.",
+    "stakeholders": [
+      {"who": "Development Teams", "concern": "Security policies slow down development velocity", "address": "Policy is enforced as CI checks (fast feedback), not manual gates (slow feedback). Blocking at deploy time only — developers can experiment freely in dev environments. Automatic exception for P0 production incidents."},
+      {"who": "DevOps/SRE Teams", "concern": "New policy means more alert noise and page duty changes", "address": "Policy violations generate P3 tickets, not P1 pages. SRE team gets 1 dedicated headcount funded by security budget to manage the new tooling. Automated remediation for common violations."},
+      {"who": "Legal/Compliance", "concern": "Policy must be verifiable for audits, cannot rely on honor system", "address": "Every policy violation is logged with a tamper-evident audit trail. Automated compliance report generated weekly. Any manual override requires VP approval and artifacts stored for 7 years."},
+      {"who": "Executive Sponsor (CISO)", "concern": "Adoption rate must be >95% within 6 months", "address": "Monthly adoption dashboards with team-level breakdown. Any team below 80% compliance gets automatic escalation to their director. At 90% org-wide, the primary metric is satisfied. Target: 95% by month 6."}
+    ]
+  },
+  {
+    "id": "migration-strategy",
+    "title": "Migrating a Legacy Monolith to Modular Architecture",
+    "migrationStrategy": "The 'Squeeze and Strangle' pattern: Step 1 — identify bounded contexts using event storming with all 5 engineering teams (4-week workshop). Step 2 — extract one bounded context per quarter starting with the one that has the most independent deployment cadence (usually reporting or notifications). Step 3 — each extraction gets its own CI/CD pipeline, database, and on-call rotation. The monolith shrinks by 15-20% per quarter.",
+    "stakeholders": [
+      {"who": "Engineering Teams", "concern": "Extraction creates new services = new on-call burden", "address": "Each extracted service gets dedicated on-call rotation. The monolith team's on-call load decreases proportionally to lines removed. Net change is zero per team during transition."},
+      {"who": "Product Managers", "concern": "Architecture work delays feature delivery", "address": "Each extraction includes a feature improvement for the extracted module (e.g., new API endpoint the product team was already requesting). Extraction is never 'pure refactoring' — it always ships user value."},
+      {"who": "VP of Engineering", "concern": "16-quarter extraction timeline is too long", "address": "Parallel extraction: two bounded contexts extracted simultaneously by independent teams. Timeline goes from 16 quarters to 8. Risk: 2 simultaneous extractions require 2 senior architects — acceptable if available."},
+      {"who": "QA Team", "concern": "Each extraction requires regression testing of entire system", "address": "Contract testing between services (Pact framework) replaces end-to-end regression tests. Each extraction only requires contract test verification, not full regression. Test time drops from 4 hours to 20 minutes per deployment."}
+    ]
+  },
+  {
+    "id": "tech-debt-reduction",
+    "title": "Reducing Organizational Technical Debt (500 Z-Programs)",
+    "migrationStrategy": "The 'Triage Framework': categorize all 500 Z-programs into 4 buckets — Strategic (20% = 100 programs, enhance and maintain), Stable (40% = 200 programs, wrap with API gateway, no changes), Retire (30% = 150 programs, no users, sunset immediately), Replace (10% = 50 programs, migrate to RAP/CDS). Execute in that order: Retire first (quick wins), then Wrap (risk reduction), then Replace (strategic investment), then Enhance (competitive advantage).",
+    "stakeholders": [
+      {"who": "Application Owners", "concern": "My program is classified as 'Retire' but users depend on it", "address": "60-day deprecation notice. Usage analytics deployed on the program before classification happens. If data shows active usage, program moves to 'Replace' bucket. Data-driven classification removes emotion from decision."},
+      {"who": "IT Operations", "concern": "Wrapping 200 programs with API gateway is a lot of deployment work", "address": "Automated API gateway configuration via Swagger/OpenAPI generation from program signatures. 95% of wrapping is automated. Each wrap takes 2 days, not 2 weeks."},
+      {"who": "Business Stakeholders", "concern": "Why should I invest in replacing a program that works?", "address": "The program has 12 known defects, takes 4 days to deploy a change, and has no automated tests. Each production incident costs $50K in business impact. Replacement breaks even at 3 incidents."},
+      {"who": "Engineering Managers", "concern": "My team loses headcount to the replacement effort", "address": "Each replaced program reduces support burden by 8 hours/month. Freed capacity is retained by the team for new feature work — not centralized. Team that replaces its own programs keeps the productivity dividend."}
+    ]
+  }
+]

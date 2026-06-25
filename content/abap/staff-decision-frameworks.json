@@ -1,0 +1,104 @@
+{
+  "id": "staff-decision-frameworks",
+  "title": "Decision-Making Frameworks for Staff+ Engineers",
+  "category": "Leadership",
+  "subcategory": "Career Mastery",
+  "language": "text",
+  "description": "<p>How Staff+ engineers make high-quality decisions under uncertainty, communicate them effectively, and build decision-making culture. Covers RAPID framework, DACI, decision logs, reversible vs irreversible decisions, 70% rule, and SAP-specific decision anti-patterns where consensus replaces clear ownership.</p>",
+  "tags": ["FAANG", "Staff+", "Decision-Making", "Frameworks", "Leadership"],
+  "sections": [
+    {
+      "title": "Why Decision-Making Defines Staff+",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Every decision a Staff+ engineer makes has org-wide impact. The ability to make decisions quickly and correctly — or quickly and reversibly — is the highest-leverage skill in the Staff+ toolkit. At FAANG, Staff+ engineers are expected to operate with autonomy: they identify what needs to be decided, gather input from the right stakeholders, make a call, and absorb the consequences. The organization trusts them not because they are always right, but because they make decisions transparently and adjust when wrong.</p><p>SAP environments often diffuse decision ownership through committees, escalation chains, and mile-long email threads. A decision that could be made in a day by a single accountable engineer instead travels through a 'Project Committee,' a 'Steering Committee,' and a 'Quality Gate Review' — each adding latency but rarely adding value. FAANG assigns clear decision-makers and expects them to decide. This is the single biggest cultural shift SAP engineers face when transitioning to FAANG.</p>"
+        },
+        {
+          "type": "svg",
+          "value": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 600 300\"><rect width=\"600\" height=\"300\" fill=\"#f8f9fa\" rx=\"8\"/><text x=\"300\" y=\"35\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"16\" font-weight=\"bold\" fill=\"#1a1a2e\">Decision Flow: Staff+ Engineer</text><ellipse cx=\"300\" cy=\"70\" rx=\"120\" ry=\"18\" fill=\"#e3f2fd\" stroke=\"#1976d2\" stroke-width=\"1.5\"/><text x=\"300\" y=\"74\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"11\" fill=\"#1565c0\">Problem Arises / Decision Needed</text><line x1=\"300\" y1=\"88\" x2=\"300\" y2=\"110\" stroke=\"#555\" stroke-width=\"1.5\" marker-end=\"url(#arrow)\"/><polygon points=\"265,130 335,130 355,150 335,170 265,170 245,150\" fill=\"#fce4ec\" stroke=\"#c62828\" stroke-width=\"1.5\"/><text x=\"300\" y=\"148\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"10\" fill=\"#c62828\">Reversible?</text><text x=\"300\" y=\"223\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"12\" fill=\"#2e7d32\" font-weight=\"bold\">YES → Decide with 70% confidence</text><text x=\"300\" y=\"243\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"12\" fill=\"#c62828\" font-weight=\"bold\">NO → Full analysis + review</text><rect x=\"200\" y=\"258\" width=\"200\" height=\"28\" rx=\"6\" fill=\"#e8f5e9\" stroke=\"#43a047\" stroke-width=\"1.5\"/><text x=\"300\" y=\"276\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"11\" fill=\"#2e7d32\">Document in Decision Log</text><defs><marker id=\"arrow\" markerWidth=\"6\" markerHeight=\"6\" refX=\"5\" refY=\"3\" orient=\"auto\"><path d=\"M0,0 L6,3 L0,6\" fill=\"#555\"/></marker></defs></svg>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "RAPID Framework — Who Decides What",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>RAPID is a decision-making framework developed by Bain &amp; Company that assigns clear roles to stakeholders so every decision has a single accountable owner. The acronym stands for:</p><ul><li><b>R</b>ecommend — propose the decision, gather data, present options</li><li><b>A</b>gree — must sign off; has veto power if concerns are not addressed</li><li><b>P</b>erform — executes the decision once made</li><li><b>I</b>nput — provides relevant data and perspective; consulted but not a veto</li><li><b>D</b>ecide — the single person who makes the final call</li></ul><p>Each stakeholder gets exactly one role. One person should never hold both Recommend and Decide. The power of RAPID is that it surfaces who has authority and who is just providing input — eliminating the illusion of shared ownership.</p>"
+        },
+        {
+          "type": "code",
+          "value": "// RAPID template for a migration decision\n// Example: SAP ECC to S/4HANA migration approach\n\n| Role       | Person                  | Responsibility                          |\n|------------|-------------------------|----------------------------------------|\n| Recommend  | Staff Engineer (you)    | Analyze options, recommend approach    |\n| Agree      | Principal Engineer      | Sign off on technical soundness        |\n| Perform    | Tech Lead, team         | Execute the migration                  |\n| Input      | Product, Ops, Security  | Provide constraints and data           |\n| Decide     | Director of Engineering | Make the final call                    |\n\n// FAANG rule: If you Recommend and another person Decides,\n// your job is to present options fairly, not to lobby.\n// If you are the Decider, you own the outcome completely."
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Reversible vs Irreversible Decisions",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Amazon CEO Jeff Bezos famously distinguished between Type 1 (irreversible) and Type 2 (reversible) decisions. Most technical decisions are Type 2: you can pick Cassandra over DynamoDB today and migrate next quarter if it does not work out. The cost of a wrong Type 2 decision is the cost of rework — a few weeks. The cost of delaying a Type 2 decision is lost momentum — often months of stalled progress.</p><p><b>The 70% Rule:</b> Once you have 70% of the information you think you need, make the call. Waiting for 95% certainty means you are either procrastinating or collecting vanity data. For irreversible decisions, invest in deeper analysis, write a design doc, get a second opinion, and run a proof of concept before deciding.</p>"
+        },
+        {
+          "type": "quantifiedTradeoff",
+          "value": {
+            "title": "70% threshold vs 95% threshold",
+            "description": "The expected cost of deciding early vs waiting for more information for a typical technical decision.",
+            "rows": [
+              {
+                "label": "Time to decision",
+                "70pct": "1-2 days",
+                "95pct": "2-4 weeks"
+              },
+              {
+                "label": "Cost of wrong decision (rework)",
+                "70pct": "1-3 weeks",
+                "95pct": "0-1 weeks"
+              },
+              {
+                "label": "Cost of delay (lost momentum)",
+                "70pct": "0",
+                "95pct": "2-4 weeks"
+              },
+              {
+                "label": "Total expected cost",
+                "70pct": "~2-3 weeks",
+                "95pct": "~3-6 weeks"
+              },
+              {
+                "label": "Org velocity impact",
+                "70pct": "High — fast iterations",
+                "95pct": "Low — bottlenecks form"
+              }
+            ]
+          }
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Decision Logs — Institutional Memory",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>A decision log is a living document that records every significant technical decision your team makes. Each entry captures enough context so that someone reading it six months later understands why the decision was made. This prevents the most expensive organizational behavior: re-litigating old decisions because nobody remembers the original rationale.</p><p><b>Decision log entry template:</b></p><ul><li><b>Date:</b> When the decision was made</li><li><b>Decision:</b> What was decided (one clear sentence)</li><li><b>Context:</b> What problem prompted this decision</li><li><b>Alternatives considered:</b> What options were evaluated and why they were rejected</li><li><b>Rationale:</b> Why this option was chosen</li><li><b>Expected outcomes:</b> What you predict will happen as a result</li><li><b>Outcome (retrospective):</b> Filled in later — did the prediction hold?</li></ul><p>At FAANG, teams own their decision logs and reference them during quarterly planning. At SAP, decisions are often buried in PowerPoint decks that nobody reads. A searchable, lightweight decision log is a force multiplier for a Staff+ engineer.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "SAP Decision Anti-Patterns",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>SAP's enterprise DNA creates three decision anti-patterns that actively harm engineers transitioning to FAANG. Recognizing them is the first step to unlearning them.</p><p><b>Anti-pattern 1: 'Let's form a committee.'</b><br/>At SAP, difficult decisions get escalated to a committee. At FAANG, the Staff+ engineer owns the decision. If you find yourself suggesting a committee, stop and ask: who should decide? Appoint one person and make them accountable.</p><p><b>Anti-pattern 2: 'Let's escalate to the steering committee.'</b><br/>Escalation is sometimes necessary, but using it as a default mechanism to avoid personal accountability is toxic. If you are asked for an opinion, give it. If you are asked to decide, decide. Escalating a decision you should own signals that you are not ready for Staff+ responsibility.</p><p><b>Anti-pattern 3: 'We need 100% of the information.'</b><br/>SAP projects demand exhaustive documentation before any decision is made. At FAANG, this is called analysis paralysis. Use the 70% rule: if you know enough to make a good decision, decide. You can course-correct later. The cost of being wrong is almost always lower than the cost of not deciding.</p>"
+        }
+      ],
+      "codeBlock": ""
+    }
+  ],
+  "details": "<p><b>Staff+ Insight:</b> The most common decision-making mistake SAP engineers make at FAANG is treating every decision as high-stakes and irreversible. At FAANG, most technical decisions are reversible — you can change them later. The cost of a wrong decision is usually the cost of rework (weeks). The cost of delaying a decision is often months of lost momentum. Use the 70% rule: have you considered this enough to make a call? If yes, decide and move on. Document the decision so if it needs reversing, you know why it was made.</p>"
+}

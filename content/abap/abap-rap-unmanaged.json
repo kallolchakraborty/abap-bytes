@@ -1,0 +1,304 @@
+{
+  "id": "abap-rap-unmanaged",
+  "title": "RAP Unmanaged Scenario — Expert Implementation",
+  "category": "Modern ABAP",
+  "subcategory": "Staff+ Core",
+  "language": "abap",
+  "description": "<p>Manual implementation of every RAP operation. When to choose unmanaged, custom CRUD implementation, locking patterns, transaction control, draft hand-written implementation, and integration with legacy BAPIs/RFCs.</p>",
+  "tags": [
+    "ABAP",
+    "RAP",
+    "unmanaged",
+    "BO",
+    "Staff+"
+  ],
+  "sections": [
+    {
+      "title": "When to Choose Unmanaged",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>The choice between RAP managed and unmanaged scenario is one of the most consequential architectural decisions in modern ABAP development. Managed scenario provides a framework that implements CREATE, UPDATE, DELETE, and draft handling automatically. Unmanaged scenario requires you to implement every operation manually. The tradeoff is developer productivity vs architectural flexibility.</p><p><b>Choose Unmanaged when:</b> (1) <b>Custom persistence</b> — the business object data is not stored in a single database table but across multiple legacy tables, views, or even external systems. You need to control exactly how data is written. (2) <b>Integration with existing BAPIs/RFCs</b> — if you must call BAPI or RFC function modules for create/update/delete operations, managed scenario cannot support this. (3) <b>Complex locking logic</b> — the standard RAP locking (based on CDS entity) is insufficient. You need custom lock object calls with complex lock parameter logic. (4) <b>Transaction control</b> — you need explicit COMMIT WORK / ROLLBACK WORK control, or you need to participate in an existing LUW. Managed scenario controls the transaction boundary. (5) <b>Non-standard draft behavior</b> — the managed draft lifecycle does not fit your business process. For example, you need to prevent draft creation for certain users, or you need to enforce unique constraints across draft and active records.</p><p><b>Choose Managed when:</b> Your business object maps cleanly to CDS views backed by database tables, standard draft handling is acceptable, and you want maximum developer productivity. For 80% of use cases, managed scenario is the right choice. For the remaining 20%, unmanaged provides the necessary escape valve.</p>"
+        },
+        {
+          "type": "svg",
+          "value": "<svg viewBox=\"0 0 700 420\" xmlns=\"http://www.w3.org/2000/svg\"><style>.um-box{fill:var(--bg-secondary);stroke:var(--brand-primary);stroke-width:2;rx:8}.um-mgd{fill:var(--bg-secondary);stroke:var(--brand-primary);stroke-width:2;rx:6}.um-unm{fill:var(--bg-secondary);stroke:#e67e22;stroke-width:2;rx:6}.um-lbl{fill:var(--text-primary);font-family:system-ui;font-size:11px;font-weight:600;text-anchor:middle}.um-sub{fill:var(--text-primary);font-family:system-ui;font-size:9px;text-anchor:middle}.um-flow{stroke:var(--border-default);stroke-width:2;fill:none;marker-end:url(#arrow)}.ann-pulse{animation:pulse 2s ease-in-out infinite}@keyframes pulse{0%,100%{opacity:.6}50%{opacity:1}}</style><defs><marker id=\"arrow\" markerWidth=\"8\" markerHeight=\"6\" refX=\"8\" refY=\"3\" orient=\"auto\"><path d=\"M0,0 L8,3 L0,6 Z\" fill=\"var(--border-default)\"/></marker></defs><rect class=\"um-box\" x=\"15\" y=\"15\" width=\"670\" height=\"390\"/><text class=\"um-lbl\" x=\"350\" y=\"42\">Managed vs Unmanaged Decision Framework</text><ellipse cx=\"350\" cy=\"90\" rx=\"100\" ry=\"25\" fill=\"var(--bg-secondary)\" stroke=\"var(--text-primary)\" stroke-width=\"2\"/><text class=\"um-lbl\" x=\"350\" y=\"95\">Is your BO simple CRUD?</text><line x1=\"280\" y1=\"115\" x2=\"180\" y2=\"150\" class=\"um-flow\"/><line x1=\"420\" y1=\"115\" x2=\"520\" y2=\"150\" class=\"um-flow\"/><rect class=\"um-mgd\" x=\"50\" y=\"150\" width=\"260\" height=\"100\"/><text class=\"um-lbl\" x=\"180\" y=\"172\">Use Managed Scenario</text><text class=\"um-sub\" x=\"180\" y=\"192\">• Single CDS-backed table</text><text class=\"um-sub\" x=\"180\" y=\"207\">• Standard draft OK</text><text class=\"um-sub\" x=\"180\" y=\"222\">• Simple CRUD operations</text><text class=\"um-sub\" x=\"180\" y=\"237\">• Maximum productivity</text><rect class=\"um-unm\" x=\"390\" y=\"150\" width=\"260\" height=\"100\"/><text class=\"um-lbl\" x=\"520\" y=\"172\">Use Unmanaged Scenario</text><text class=\"um-sub\" x=\"520\" y=\"192\">• Custom persistence</text><text class=\"um-sub\" x=\"520\" y=\"207\">• BAPI/RFC integration</text><text class=\"um-sub\" x=\"520\" y=\"222\">• Custom locking / transaction</text><text class=\"um-sub\" x=\"520\" y=\"237\">• Non-standard draft behavior</text><line x1=\"180\" y1=\"250\" x2=\"180\" y2=\"280\" class=\"um-flow\"/><line x1=\"520\" y1=\"250\" x2=\"520\" y2=\"280\" class=\"um-flow\"/><rect class=\"um-box\" x=\"50\" y=\"280\" width=\"260\" height=\"90\"/><text class=\"um-lbl\" x=\"180\" y=\"300\">Tradeoff: Speed</text><text class=\"um-sub\" x=\"180\" y=\"318\">Managed: ~60% less code</text><text class=\"um-sub\" x=\"180\" y=\"333\">Faster to market</text><text class=\"um-sub\" x=\"180\" y=\"348\">Limited flexibility</text><rect class=\"um-box\" x=\"390\" y=\"280\" width=\"260\" height=\"90\"/><text class=\"um-lbl\" x=\"520\" y=\"300\">Tradeoff: Control</text><text class=\"um-sub\" x=\"520\" y=\"318\">Unmanaged: full control</text><text class=\"um-sub\" x=\"520\" y=\"333\">Integrate legacy systems</text><text class=\"um-sub\" x=\"520\" y=\"348\">More test surface area</text></svg>"
+        },
+        {
+          "type": "code",
+          "language": "abap",
+          "value": "\"\"\"\n  BDEF: Unmanaged scenario declaration\n\"\"\"\nunmanaged implementation in class zbp_rap_unmanaged unique;\nstrict;\nstrict(2);\nwith draft;\n\ndefine behavior for Z_ComplexBO alias ComplexBO\n{\n  create;\n  update;\n  delete;\n\n  association _Child { create; with draft; }\n\n  numbering managed;\n  field ( numbering : managed ) BoID;\n\n  determination setInitialStatus on modify { create; }\n  validation validateBusinessRule on save { create; update; }\n\n  action processResult result [1] $self;\n\n  draft action Resume;\n  draft action Edit;\n  draft action Activate;\n  draft action Discard;\n}\n\n\"\"\"\n  Note the key difference from managed:\n  - 'unmanaged implementation' instead of 'managed implementation'\n  - No 'persistent table' (framework does not manage persistence)\n  - No 'mapping' section (no direct table mapping)\n  - All create/update/delete must be implemented manually\n  - Draft action handlers must be implemented manually\n\"\"\""
+        }
+      ],
+      "codeBlock": "\" BDEF: Unmanaged scenario declaration\nunmanaged implementation in class zbp_rap_unmanaged unique;\nstrict; strict(2);\nwith draft;\n\ndefine behavior for Z_ComplexBO alias ComplexBO\n{\n  create; update; delete;\n  association _Child { create; with draft; }\n  numbering managed;\n  field ( numbering : managed ) BoID;\n  determination setInitialStatus on modify { create; }\n  validation validateBusinessRule on save { create; update; }\n  action processResult result [1] $self;\n  draft action Resume;\n  draft action Edit;\n  draft action Activate;\n  draft action Discard;\n}\n\n\" Key differences from managed:\n\" - 'unmanaged implementation' (not 'managed')\n\" - No 'persistent table' (framework doesn't manage persistence)\n\" - No 'mapping' section (no direct table mapping)\n\" - All CRUD + draft actions must be implemented manually",
+      "comparisonTable": {
+        "headers": [
+          "Aspect",
+          "Managed RAP",
+          "Unmanaged RAP"
+        ],
+        "rows": [
+          [
+            "Boilerplate",
+            "Auto-generated",
+            "Manual"
+          ],
+          [
+            "Locking",
+            "Automatic (ENQUEUE_ES_*)",
+            "Manual CALL FUNCTION"
+          ],
+          [
+            "Draft Support",
+            "Built-in",
+            "Custom implementation"
+          ],
+          [
+            "Validation",
+            "Framework-managed",
+            "Manual"
+          ],
+          [
+            "Control",
+            "Opinionated",
+            "Full flexibility"
+          ],
+          [
+            "Best For",
+            "Standard CRUD",
+            "Complex legacy logic"
+          ]
+        ]
+      },
+      "decisionTree": {
+        "prompt": "Should I choose unmanaged RAP for this business object?",
+        "firstQuestion": "\"Does your business object require custom persistence, legacy BAPI integration, or non-standard draft behavior?\" Answer yes to any = unmanaged candidate. Otherwise, start with managed and migrate only when you hit framework limits.",
+        "branches": [
+          {
+            "condition": "Data spans multiple legacy tables or external systems",
+            "path": "Unmanaged. Custom persistence requires manual CREATE/UPDATE/DELETE. The framework cannot auto-generate SQL for multi-table or external persistence."
+          },
+          {
+            "condition": "Must wrap existing BAPIs/RFCs with standard commit behavior",
+            "path": "Unmanaged. BAPIs call COMMIT WORK internally, breaking RAP's managed transaction assumption. Implement BAPI calls in create/update methods, handle double-commit prevention via set_update_state."
+          },
+          {
+            "condition": "Standard CRUD on single CDS-backed table with simple validations",
+            "path": "Managed. Use managed scenario. Save ~80% boilerplate. Unmanaged is 10x more code for no additional benefit."
+          }
+        ],
+        "staffPlusTip": "Unmanaged is the escape valve for the 20% of entities that don't fit the managed pattern. Start managed, migrate to unmanaged only when you hit a concrete framework limitation."
+      }
+    },
+    {
+      "title": "Manual CRUD Implementation",
+      "description": [
+        {
+          "type": "svg",
+          "value": "<div style=\"margin:20px 0;display:flex;justify-content:center\"><svg viewBox=\"0 0 700 300\" xmlns=\"http://www.w3.org/2000/svg\"><style>.b{fill:var(--bg-secondary);stroke:var(--brand-primary);stroke-width:2;rx:8}.s{fill:var(--bg-secondary);stroke:var(--text-primary);stroke-width:2;rx:6}.t{fill:var(--bg-secondary);stroke:var(--border-default);stroke-width:1.5;rx:5}.l{fill:var(--text-primary);font-family:system-ui;font-size:11px;font-weight:600;text-anchor:middle}.u{fill:var(--text-primary);font-family:system-ui;font-size:9px;text-anchor:middle}.f{stroke:var(--brand-primary);stroke-width:2;fill:none;marker-end:url(#a)}.d{stroke:var(--border-default);stroke-width:1.5;fill:none;stroke-dasharray:4;animation:flow-dash .8s linear infinite}.g{animation:svg-glow 2s ease-in-out infinite}.p{animation:node-pop .3s ease-out}<defs><marker id=\"a\" markerWidth=\"8\" markerHeight=\"6\" refX=\"8\" refY=\"3\" orient=\"auto\"><path d=\"M0,0 L8,3 L0,6Z\" fill=\"var(--brand-primary)\"/></marker></defs><text class=\"l\" x=\"350\" y=\"20\">Manual CRUD in Unmanaged RAP</text><rect class=\"b\" x=\"15\" y=\"40\" width=\"320\" height=\"50\"/><text class=\"l\" x=\"175\" y=\"62\">CREATE — INSERT INTO + %cid mapping</text><text class=\"u\" x=\"175\" y=\"82\">Entity → DB record → Mapped response</text><rect class=\"s\" x=\"365\" y=\"40\" width=\"320\" height=\"50\"/><text class=\"l\" x=\"525\" y=\"62\">UPDATE — %control selective fields</text><text class=\"u\" x=\"525\" y=\"82\">Read current → Apply → MODIFY</text><rect class=\"t\" x=\"15\" y=\"115\" width=\"320\" height=\"50\"/><text class=\"l\" x=\"175\" y=\"137\">DELETE — Referential integrity check</text><text class=\"u\" x=\"175\" y=\"157\">Cascade deletes for child entities</text><rect class=\"t\" x=\"365\" y=\"115\" width=\"320\" height=\"50\"/><text class=\"l\" x=\"525\" y=\"137\">SAVE — Final validation before commit</text><text class=\"u\" x=\"525\" y=\"157\">Cross-entity constraint checks</text><text class=\"l\" x=\"350\" y=\"210\">CQRS Pattern: Command Handlers at the Framework Level</text><rect class=\"b\" x=\"100\" y=\"230\" width=\"500\" height=\"40\"/><text class=\"l\" x=\"350\" y=\"255\">%control → failed → reported → mapped Quadrant</text></svg></div>"
+        },
+        {
+          "type": "text",
+          "value": "<p>In unmanaged scenario, you must implement the CREATE, UPDATE, and DELETE methods manually. The framework does not write to the database for you — it calls your methods and expects you to handle persistence. The contract between the framework and your implementation is defined by the parameter interfaces of these methods.</p><p><b>CREATE Contract:</b> The framework passes the data to be created in the <code>entities</code> parameter. You must: (1) Validate the data (authorization, field validity, business rules). (2) Assign an ID (if early numbering, done by the framework; if late, you must generate). (3) Write the data to the database (or external system). (4) Map %cid to actual keys in the <code>mapped</code> table. (5) Handle errors via <code>failed</code> and <code>reported</code>.</p><p><b>UPDATE Contract:</b> The framework passes the entities with the changed fields marked in <code>%control</code>. You must: (1) Read the current state from the database. (2) Apply only the changed fields (check <code>%control-&lt;field&gt;</code> = <code>if_abap_behv=&gt;mk-on</code>). (3) Validate the updated state. (4) Persist the changes.</p><p><b>DELETE Contract:</b> You must: (1) Check if deletion is allowed (referential integrity, business rules). (2) Delete the database record(s). (3) Handle cascading deletes for child entities.</p><p><b>Staff+ Insight:</b> The unmanaged CREATE/UPDATE/DELETE methods are the <b>command handlers</b> in CQRS terminology. They receive commands, validate them, and persist events. This separation is architecturally cleaner than the classic ABAP pattern of mixing read and write logic in the same function module.</p>"
+        },
+        {
+          "type": "code",
+          "language": "abap",
+          "value": "CLASS zbp_rap_unmanaged IMPLEMENTATION.\n\n  METHOD create FOR INSERT\n    IMPORTING entities FOR ComplexBO.\n\n    DATA: ls_db TYPE zcomplexbo.\n\n    LOOP AT entities INTO DATA(ls_entity).\n      \" Copy data from RAP entity to DB structure\n      MOVE-CORRESPONDING ls_entity TO ls_db.\n\n      \" Handle early numbering (ID already assigned)\n      IF ls_entity-%tky-BoID IS INITIAL.\n        \" Generate ID if needed\n        ls_db-boid = cl_system_uuid=>create_uuid_x16_static( ).\n      ELSE.\n        ls_db-boid = ls_entity-BoID.\n      ENDIF.\n\n      \" Insert into database\n      INSERT INTO zcomplexbo VALUES ls_db.\n      IF sy-subrc <> 0.\n        APPEND VALUE #( %cid = ls_entity-%cid ) TO failed-complexbo.\n        APPEND VALUE #(\n          %cid = ls_entity-%cid\n          %msg = new_message_with_text(\n            severity = if_abap_behv_message=>severity-error\n            text     = |Insert failed for BO { ls_db-boid }| )\n        ) TO reported-complexbo.\n      ELSE.\n        \" Map %cid to actual key\n        APPEND VALUE #(\n          %cid = ls_entity-%cid\n          BoID = ls_db-boid\n        ) TO mapped-complexbo.\n      ENDIF.\n    ENDLOOP.\n\n  ENDMETHOD.\n\n\n  METHOD update FOR MODIFY\n    IMPORTING entities FOR ComplexBO.\n\n    LOOP AT entities INTO DATA(ls_entity).\n      \" Read current DB state\n      SELECT SINGLE * FROM zcomplexbo\n        WHERE boid = @ls_entity-BoID\n        INTO @DATA(ls_db).\n\n      IF sy-subrc <> 0.\n        APPEND VALUE #( BoID = ls_entity-BoID ) TO failed-complexbo.\n        CONTINUE.\n      ENDIF.\n\n      \" Apply only changed fields\n      IF ls_entity-%control-Name = if_abap_behv=>mk-on.\n        ls_db-name = ls_entity-Name.\n      ENDIF.\n      IF ls_entity-%control-Status = if_abap_behv=>mk-on.\n        ls_db-status = ls_entity-Status.\n      ENDIF.\n      IF ls_entity-%control-Date = if_abap_behv=>mk-on.\n        ls_db-date = ls_entity-Date.\n      ENDIF.\n\n      \" Write back to database\n      MODIFY zcomplexbo FROM ls_db.\n    ENDLOOP.\n\n  ENDMETHOD.\n\n\n  METHOD delete FOR MODIFY\n    IMPORTING keys FOR ComplexBO.\n\n    LOOP AT keys INTO DATA(ls_key).\n      \" Check delete allowed\n      SELECT SINGLE status FROM zcomplexbo\n        WHERE boid = @ls_key-BoID\n        INTO @DATA(lv_status).\n\n      IF lv_status = 'CLOSED'.\n        APPEND VALUE #( BoID = ls_key-BoID ) TO failed-complexbo.\n        APPEND VALUE #(\n          %tky = ls_key-%tky\n          %msg = new_message_with_text(\n            severity = if_abap_behv_message=>severity-error\n            text     = |Cannot delete BO in CLOSED status| )\n        ) TO reported-complexbo.\n        CONTINUE.\n      ENDIF.\n\n      DELETE FROM zcomplexbo WHERE boid = @ls_key-BoID.\n    ENDLOOP.\n\n  ENDMETHOD.\n\nENDCLASS."
+        }
+      ],
+      "codeBlock": "\" CREATE — manual implementation\nMETHOD create FOR INSERT\n  IMPORTING entities FOR ComplexBO.\n  LOOP AT entities INTO DATA(ls_entity).\n    DATA(ls_db) = CORRESPONDING #( ls_entity ).\n    IF ls_entity-%tky-BoID IS INITIAL.\n      ls_db-boid = cl_system_uuid=>create_uuid_x16_static( ).\n    ENDIF.\n    INSERT INTO zcomplexbo VALUES ls_db.\n    IF sy-subrc = 0.\n      APPEND VALUE #( %cid = ls_entity-%cid BoID = ls_db-boid\n      ) TO mapped-complexbo.\n    ELSE.\n      APPEND VALUE #( %cid = ls_entity-%cid ) TO failed-complexbo.\n    ENDIF.\n  ENDLOOP.\nENDMETHOD.\n\n\" UPDATE — apply only changed fields via %control\nMETHOD update FOR MODIFY\n  IMPORTING entities FOR ComplexBO.\n  LOOP AT entities INTO DATA(ls_upd).\n    SELECT SINGLE * FROM zcomplexbo\n      WHERE boid = @ls_upd-BoID INTO @DATA(ls_db).\n    IF sy-subrc <> 0.\n      APPEND VALUE #( BoID = ls_upd-BoID ) TO failed-complexbo.\n      CONTINUE.\n    ENDIF.\n    IF ls_upd-%control-Name = if_abap_behv=>mk-on.\n      ls_db-name = ls_upd-Name.\n    ENDIF.\n    IF ls_upd-%control-Status = if_abap_behv=>mk-on.\n      ls_db-status = ls_upd-Status.\n    ENDIF.\n    MODIFY zcomplexbo FROM ls_db.\n  ENDLOOP.\nENDMETHOD.\n\n\" DELETE\nMETHOD delete FOR DELETE\n  IMPORTING keys FOR ComplexBO.\n  LOOP AT keys INTO DATA(ls_key).\n    DELETE FROM zcomplexbo WHERE boid = ls_key-BoID.\n  ENDLOOP.\nENDMETHOD.",
+      "quantifiedTradeoff": {
+        "title": "Development Cost vs Flexibility Tradeoff in Unmanaged CRUD",
+        "variables": [
+          {
+            "name": "Entity count",
+            "value": "10 entities",
+            "source": "Order-to-cash business object family"
+          },
+          {
+            "name": "Entity complexity",
+            "value": "4 simple, 4 medium, 2 complex",
+            "source": "Simple = 1 table, Medium = 3 tables, Complex = legacy BAPI"
+          },
+          {
+            "name": "Team experience",
+            "value": "2 engineers, 1 with RAP experience",
+            "source": "Typical SAP development team"
+          }
+        ],
+        "calculation": {
+          "formula": "TotalDevCost = Sum(EntityComplexity × ImplementationDays) × DailyRate + MaintenanceCost",
+          "managed": {
+            "writeLatency": "N/A",
+            "monthlyPenalty": "$36,000 — Managed: 10 entities × avg 3 days × $1,200/day = $36K. Draft + locking included. 80% less code."
+          },
+          "unmanaged": {
+            "writeLatency": "N/A",
+            "monthlyPenalty": "$132,000 — Unmanaged: 10 entities × avg 11 days × $1,200/day = $132K. Every CREATE/UPDATE/DELETE + locking + draft + save must be implemented manually."
+          },
+          "breakeven": "Unmanaged is 3.7x more expensive in development. It only makes financial sense when >60% of operations are custom — the managed framework would require so many workarounds that the productivity advantage disappears."
+        }
+      }
+    },
+    {
+      "title": "Custom Locking",
+      "description": [
+        {
+          "type": "svg",
+          "value": "<div style=\"margin:20px 0;display:flex;justify-content:center\"><svg viewBox=\"0 0 700 300\" xmlns=\"http://www.w3.org/2000/svg\"><style>.b{fill:var(--bg-secondary);stroke:var(--brand-primary);stroke-width:2;rx:8}.s{fill:var(--bg-secondary);stroke:var(--text-primary);stroke-width:2;rx:6}.t{fill:var(--bg-secondary);stroke:var(--border-default);stroke-width:1.5;rx:5}.l{fill:var(--text-primary);font-family:system-ui;font-size:11px;font-weight:600;text-anchor:middle}.u{fill:var(--text-primary);font-family:system-ui;font-size:9px;text-anchor:middle}.f{stroke:var(--brand-primary);stroke-width:2;fill:none;marker-end:url(#a)}.d{stroke:var(--border-default);stroke-width:1.5;fill:none;stroke-dasharray:4;animation:flow-dash .8s linear infinite}.g{animation:svg-glow 2s ease-in-out infinite}.p{animation:node-pop .3s ease-out}<defs><marker id=\"a\" markerWidth=\"8\" markerHeight=\"6\" refX=\"8\" refY=\"3\" orient=\"auto\"><path d=\"M0,0 L8,3 L0,6Z\" fill=\"var(--brand-primary)\"/></marker></defs><text class=\"l\" x=\"350\" y=\"20\">Custom Locking — Pessimistic Lock Lifecycle</text><rect class=\"b\" x=\"30\" y=\"45\" width=\"200\" height=\"45\"/><text class=\"l\" x=\"130\" y=\"68\">LOCK (FOR MODIFY)</text><text class=\"u\" x=\"130\" y=\"85\">ENQUEUE_EZ_*</text><line x1=\"230\" y1=\"67\" x2=\"300\" y2=\"67\" class=\"f\"/><rect class=\"s\" x=\"300\" y=\"45\" width=\"180\" height=\"45\"/><text class=\"l\" x=\"390\" y=\"68\">Modify Data</text><text class=\"u\" x=\"390\" y=\"85\">In-Transaction Buffer</text><line x1=\"480\" y1=\"67\" x2=\"540\" y2=\"67\" class=\"f\"/><rect class=\"t\" x=\"540\" y=\"45\" width=\"150\" height=\"45\"/><text class=\"l\" x=\"615\" y=\"68\">SAVE / COMMIT</text><text class=\"u\" x=\"615\" y=\"85\">DEQUEUE_ALL</text><rect class=\"t\" x=\"30\" y=\"125\" width=\"200\" height=\"40\"/><text class=\"u\" x=\"130\" y=\"148\">Foreign Lock → Failed</text><rect class=\"t\" x=\"300\" y=\"125\" width=\"180\" height=\"40\"/><text class=\"u\" x=\"390\" y=\"148\">_scope = 1 (LUW)</text><rect class=\"t\" x=\"540\" y=\"125\" width=\"150\" height=\"40\"/><text class=\"u\" x=\"615\" y=\"148\">Rollback on error</text><line x1=\"130\" y1=\"45\" x2=\"130\" y2=\"125\" class=\"d\"/><line x1=\"390\" y1=\"45\" x2=\"390\" y2=\"125\" class=\"d\"/><line x1=\"615\" y1=\"45\" x2=\"615\" y2=\"125\" class=\"d\"/><rect class=\"b\" x=\"150\" y=\"195\" width=\"400\" height=\"50\"/><text class=\"l\" x=\"350\" y=\"215\">SELECT … FOR UPDATE (DB-level)</text><text class=\"u\" x=\"350\" y=\"235\">Redis Redlock / ZooKeeper for distributed</text></svg></div>"
+        },
+        {
+          "type": "text",
+          "value": "<p>In RAP unmanaged scenario, you have full control over locking. The framework does not automatically manage ENQUEUE calls — you must implement them manually. This is both a burden and an opportunity: you can implement sophisticated locking strategies that go beyond simple entity-level locking.</p><p><b>Lock Object Integration:</b> SAP's classic lock objects (created via transaction SM31) expose function modules <code>ENQUEUE_*</code> and <code>DEQUEUE_*</code>. In unmanaged scenario, you call these explicitly in your behavior pool methods. The typical pattern is: (1) Lock in the <code>FOR MODIFY</code> or <code>early number</code> method. (2) Commit or rollback the lock in the <code>save</code> method. (3) Unlock in case of failure.</p><p><b>CDS-Based Locking:</b> Even in unmanaged scenario, you can use CDS-based locking by referencing a CDS entity that has <code>@Lock</code> annotations. The framework will then automatically manage basic record-level locking for that entity. However, you lose this benefit if you are using custom persistence (non-CDS tables).</p><p><b>Staff+ Insight:</b> Custom locking in unmanaged RAP is the same pattern as <b>pessimistic locking</b> in any transaction system. FAANG engineers implement this with database-level locking (<code>SELECT ... FOR UPDATE</code>) or distributed locks (Redis Redlock, ZooKeeper). The principles are identical: acquire lock before modification, hold lock for minimum duration, release lock after commit.</p>"
+        },
+        {
+          "type": "code",
+          "language": "abap",
+          "value": "CLASS zbp_rap_unmanaged IMPLEMENTATION.\n\n  METHOD lock FOR LOCK\n    IMPORTING keys TO LOCK ComplexBO.\n\n    \" Custom lock implementation\n    \" Called before MODIFY operations to acquire locks\n\n    LOOP AT keys INTO DATA(ls_key).\n      CALL FUNCTION 'ENQUEUE_EZ_COMPLEXBO'\n        EXPORTING\n          mode_zcomplexbo = 'E'\n          mandt          = sy-mandt\n          boid           = ls_key-BoID\n          _scope         = '1'  \" Lock for current LUW\n        EXCEPTIONS\n          foreign_lock   = 1\n          system_failure = 2\n          OTHERS         = 3.\n\n      CASE sy-subrc.\n        WHEN 1.\n          \" Lock held by another user\n          APPEND VALUE #( BoID = ls_key-BoID ) TO failed-complexbo.\n          APPEND VALUE #(\n            %tky = ls_key-%tky\n            %msg = new_message_with_text(\n              severity = if_abap_behv_message=>severity-error\n              text     = |BO { ls_key-BoID } is locked by another user| )\n            %element-BoID = if_abap_behv=>mk-on\n          ) TO reported-complexbo.\n\n        WHEN 2.\n          \" System failure in lock management\n          APPEND VALUE #( BoID = ls_key-BoID ) TO failed-complexbo.\n          APPEND VALUE #(\n            %tky = ls_key-%tky\n            %msg = new_message_with_text(\n              severity = if_abap_behv_message=>severity-error\n              text     = |Lock system failure for BO { ls_key-BoID }| )\n          ) TO reported-complexbo.\n      ENDCASE.\n    ENDLOOP.\n\n  ENDMETHOD.\n\n\n  METHOD unlock FOR UNLOCK\n    IMPORTING keys TO UNLOCK ComplexBO.\n\n    \" Release locks on transaction completion\n    LOOP AT keys INTO DATA(ls_key).\n      CALL FUNCTION 'DEQUEUE_EZ_COMPLEXBO'\n        EXPORTING\n          mode_zcomplexbo = 'E'\n          mandt          = sy-mandt\n          boid           = ls_key-BoID.\n    ENDLOOP.\n\n  ENDMETHOD.\n\nENDCLASS."
+        }
+      ],
+      "codeBlock": "\" Custom lock implementation\nMETHOD lock FOR LOCK\n  IMPORTING keys TO LOCK ComplexBO.\n  LOOP AT keys INTO DATA(ls_key).\n    CALL FUNCTION 'ENQUEUE_EZ_COMPLEXBO'\n      EXPORTING\n        mode_zcomplexbo = 'E'\n        mandt  = sy-mandt\n        boid   = ls_key-BoID\n        _scope = '1'\n      EXCEPTIONS\n        foreign_lock   = 1\n        system_failure = 2.\n    CASE sy-subrc.\n      WHEN 1.\n        APPEND VALUE #( BoID = ls_key-BoID ) TO failed-complexbo.\n      WHEN 2.\n        APPEND VALUE #( BoID = ls_key-BoID ) TO failed-complexbo.\n    ENDCASE.\n  ENDLOOP.\nENDMETHOD.\n\nMETHOD unlock FOR UNLOCK\n  IMPORTING keys TO UNLOCK ComplexBO.\n  LOOP AT keys INTO DATA(ls_key).\n    CALL FUNCTION 'DEQUEUE_EZ_COMPLEXBO'\n      EXPORTING mode_zcomplexbo = 'E'\n                 mandt = sy-mandt\n                 boid  = ls_key-BoID.\n  ENDLOOP.\nENDMETHOD.",
+      "adversarialResponse": {
+        "challenge": "\"Our custom locking in unmanaged RAP is causing frequent timeouts. Users report 'Object locked by user XYZ' even when that user's session ended hours ago.\"",
+        "badResponse": "\"Increase the lock timeout parameter.\" (treats symptom, not cause)",
+        "goodResponse": "\"Lock timeouts from stale locks indicate the enqueue was never released. This is a classic lock leak pattern. In unmanaged RAP, you must explicitly release locks via DEQUEUE calls — the framework does not auto-release them like managed scenario. The three most common causes: (1) The lock is acquired in the MODIFY method but not released in the error path. If an exception occurs after ENQUEUE but before SAVE, the DEQUEUE never runs. Wrap ENQUEUE calls in TRY/CATCH with CLEANUP block that calls DEQUEUE. (2) The user's ABAP session terminated abnormally (program dump, network disconnect). SAP's enqueue server has a 'lock timeout' (enque/delay_roll, default 60s) that cleans up locks from terminated sessions — but this only works if the enqueue entry has the correct _scope parameter. Ensure _scope = '1' (rollback release) not '2' (manual release). (3) You're using SAP standard lock objects but the lock module ENQUEUE_EZ_* requires a RFC destination that's unavailable. Check SM12 for orphaned lock entries and implement a cleanup job that runs every 5 minutes to release locks older than 30 minutes.\"",
+        "pattern": "root-cause-triage — identify specific failure modes (error-path leaks, session termination, lock scope) with precise SAP parameter references, and provide both immediate cleanup and long-term prevention strategies."
+      }
+    },
+    {
+      "title": "Transaction Control",
+      "description": [
+        {
+          "type": "svg",
+          "value": "<div style=\"margin:20px 0;display:flex;justify-content:center\"><svg viewBox=\"0 0 700 300\" xmlns=\"http://www.w3.org/2000/svg\"><style>.b{fill:var(--bg-secondary);stroke:var(--brand-primary);stroke-width:2;rx:8}.s{fill:var(--bg-secondary);stroke:var(--text-primary);stroke-width:2;rx:6}.t{fill:var(--bg-secondary);stroke:var(--border-default);stroke-width:1.5;rx:5}.l{fill:var(--text-primary);font-family:system-ui;font-size:11px;font-weight:600;text-anchor:middle}.u{fill:var(--text-primary);font-family:system-ui;font-size:9px;text-anchor:middle}.f{stroke:var(--brand-primary);stroke-width:2;fill:none;marker-end:url(#a)}.d{stroke:var(--border-default);stroke-width:1.5;fill:none;stroke-dasharray:4;animation:flow-dash .8s linear infinite}.g{animation:svg-glow 2s ease-in-out infinite}.p{animation:node-pop .3s ease-out}<defs><marker id=\"a\" markerWidth=\"8\" markerHeight=\"6\" refX=\"8\" refY=\"3\" orient=\"auto\"><path d=\"M0,0 L8,3 L0,6Z\" fill=\"var(--brand-primary)\"/></marker></defs><text class=\"l\" x=\"350\" y=\"20\">Transaction Control — SAVE Sequence</text><rect class=\"b\" x=\"15\" y=\"40\" width=\"160\" height=\"50\"/><text class=\"l\" x=\"95\" y=\"62\">EARLY SAVE</text><text class=\"u\" x=\"95\" y=\"82\">Pre-save cleanup</text><line x1=\"175\" y1=\"65\" x2=\"220\" y2=\"65\" class=\"f\"/><rect class=\"s\" x=\"220\" y=\"40\" width=\"160\" height=\"50\"/><text class=\"l\" x=\"300\" y=\"62\">SAVE</text><text class=\"u\" x=\"300\" y=\"82\">Flush DB / Validate</text><line x1=\"380\" y1=\"65\" x2=\"425\" y2=\"65\" class=\"f\"/><rect class=\"t\" x=\"425\" y=\"40\" width=\"160\" height=\"50\"/><text class=\"l\" x=\"505\" y=\"62\">COMMIT WORK</text><text class=\"u\" x=\"505\" y=\"82\">Framework managed</text><line x1=\"585\" y1=\"65\" x2=\"620\" y2=\"65\" class=\"f\"/><rect class=\"s\" x=\"620\" y=\"40\" width=\"70\" height=\"50\" rx=\"25\"/><text class=\"l\" x=\"655\" y=\"62\">FINALIZE</text><text class=\"u\" x=\"655\" y=\"82\">Post-commit</text><path d=\"M505,90\" stroke=\"var(--svg-error-stroke)\" stroke-width=\"2\" fill=\"none\" class=\"d\"/><text class=\"u\" x=\"300\" y=\"115\">Validation fails → Report via FAILED / reported</text><text class=\"u\" x=\"505\" y=\"115\">Framework ROLLBACK on failure</text><text class=\"l\" x=\"350\" y=\"160\">LUW: MODIFY → SAVE → COMMIT (atomic)</text><rect class=\"s\" x=\"100\" y=\"180\" width=\"500\" height=\"60\"/><text class=\"u\" x=\"350\" y=\"200\">Cannot call COMMIT outside SAVE method</text><text class=\"u\" x=\"350\" y=\"220\">BAPI_TRANSACTION_COMMIT in SAVE → prevent double-commit</text></svg></div>"
+        },
+        {
+          "type": "text",
+          "value": "<p>Transaction control is where unmanaged scenario differs most dramatically from managed. In managed scenario, the framework controls the transaction boundary — you never call COMMIT WORK or ROLLBACK WORK. In unmanaged scenario, you must implement the <code>save</code> method and explicitly control the database commit.</p><p><b>The SAVE Sequence:</b> The framework calls your <code>save</code> method when the user triggers the SAVE operation. This is where you: (1) Write all CREATE/UPDATE/DELETE changes to the database. (2) Call COMMIT WORK (or let the framework do it for you). (3) Handle any database exceptions. The framework provides two SAVE methods: <code>save</code> (called with the collected changes) and <code>finalize_save</code> (called after successful commit to update the buffer state).</p><p><b>LUW Boundaries:</b> A LUW (Logical Unit of Work) in unmanaged RAP spans from the first MODIFY call to the final SAVE/COMMIT. Within this boundary, all changes are atomic — either all succeed or all fail. You can intervene at the SAVE point to validate cross-entity constraints before committing. If validation fails, you raise an error via <code>FAILED</code> and the commit is prevented.</p><p><b>Important Constraint:</b> You cannot call COMMIT WORK directly in your behavior pool methods (CREATE, UPDATE, DELETE) — only in the <code>save</code> method. The framework enforces this to prevent partial commits. If you need to commit intermediate work (e.g., calling a BAPI that does its own commit), you must handle this with special care — typically by wrapping the BAPI call in an RFC with destination 'NONE' to isolate the transaction.</p>"
+        },
+        {
+          "type": "code",
+          "language": "abap",
+          "value": "CLASS zbp_rap_unmanaged IMPLEMENTATION.\n\n  METHOD save FOR SAVE\n    IMPORTING keys TO SAVE ComplexBO.\n\n    \" The SAVE sequence:\n    \" 1. The framework has already called create/update/delete\n    \" 2. Now it calls save() to persist the changes\n    \" 3. You must flush your changes to the database here\n    \" 4. Then the framework calls COMMIT WORK\n\n    DATA: lt_db_updates TYPE TABLE OF zcomplexbo.\n\n    \" Example: Do any final validation before commit\n    LOOP AT keys INTO DATA(ls_key).\n      SELECT SINGLE * FROM zcomplexbo\n        WHERE boid = @ls_key-BoID\n        INTO @DATA(ls_db).\n\n      IF ls_db-amount > ls_db-credit_limit.\n        APPEND VALUE #( BoID = ls_key-BoID ) TO failed-complexbo.\n        APPEND VALUE #(\n          %tky = ls_key-%tky\n          %msg = new_message_with_text(\n            severity = if_abap_behv_message=>severity-error\n            text     = |Amount exceeds credit limit| )\n        ) TO reported-complexbo.\n      ENDIF.\n    ENDLOOP.\n\n    \" If no failures, the framework proceeds to COMMIT.\n    \" If failures exist, the framework ROLLBACKs.\n\n  ENDMETHOD.\n\n\n  METHOD finalize_save FOR FINALIZE SAVE\n    IMPORTING keys TO FINALIZE ComplexBO.\n\n    \" Called AFTER successful COMMIT.\n    \" Use this to update cache, send notifications, etc.\n    \" At this point, data is committed to database.\n\n    LOOP AT keys INTO DATA(ls_key).\n      \" Send confirmation email, update cache, etc.\n      \" Do NOT modify database here!\n    ENDLOOP.\n\n  ENDMETHOD.\n\n\n  METHOD early_save FOR EARLY SAVE\n    IMPORTING keys OF STRUCTURE ComplexBO.\n\n    \" Called before the main SAVE sequence.\n    \" Use for pre-save cleanup or preparatory work.\n    \" If this fails, the entire save sequence is aborted.\n\n  ENDMETHOD.\n\nENDCLASS."
+        }
+      ],
+      "codeBlock": "\" SAVE method — final validation before COMMIT\nMETHOD save FOR SAVE\n  IMPORTING keys TO SAVE ComplexBO.\n  LOOP AT keys INTO DATA(ls_key).\n    SELECT SINGLE * FROM zcomplexbo\n      WHERE boid = @ls_key-BoID INTO @DATA(ls_db).\n    IF ls_db-amount > ls_db-credit_limit.\n      APPEND VALUE #( BoID = ls_key-BoID ) TO failed-complexbo.\n      APPEND VALUE #(\n        %tky = ls_key-%tky\n        %msg = new_message_with_text(\n          severity = if_abap_behv_message=>severity-error\n          text = |Amount exceeds credit limit| )\n      ) TO reported-complexbo.\n    ENDIF.\n  ENDLOOP.\nENDMETHOD.\n\nMETHOD finalize_save FOR FINALIZE SAVE\n  IMPORTING keys TO FINALIZE ComplexBO.\n  \" Called AFTER successful COMMIT\n  \" Send notification, update cache — do NOT modify DB here\nENDMETHOD.\n\nMETHOD early_save FOR EARLY SAVE\n  IMPORTING keys OF STRUCTURE ComplexBO.\n  \" Pre-save cleanup — abort saves if this fails\nENDMETHOD.",
+      "quantifiedTradeoff": {
+        "title": "Transaction Control — Framework-Managed vs Custom LUW Boundary",
+        "variables": [
+          {
+            "name": "Transaction complexity",
+            "value": "5 entities per save (1 parent + 4 children)",
+            "source": "Business object composition depth"
+          },
+          {
+            "name": "External system calls",
+            "value": "2 BAPI calls per save",
+            "source": "Legacy BAPI integration in create/update"
+          },
+          {
+            "name": "Concurrent saves",
+            "value": "50 saves/minute",
+            "source": "Peak transaction load"
+          }
+        ],
+        "calculation": {
+          "formula": "LUWCost = (BAPITime + ABAPTime + DBTime) × TransactionCount",
+          "managed_luw": {
+            "writeLatency": "~50ms total per transaction",
+            "monthlyPenalty": "$0 — Framework-managed LUW: auto-commit, auto-rollback, auto-buffering. 0 development cost for transaction control. Cannot integrate BAPIs that commit independently."
+          },
+          "unmanaged_luw": {
+            "writeLatency": "~150ms (custom save sequence)",
+            "monthlyPenalty": "$2,400 — Unmanaged: 50ms BAPI time + 50ms ABAP processing + 50ms DB commit = 150ms per save. Development cost: ~$12K for save/finalize_save/early_save implementation."
+          },
+          "breakeven": "Managed is always cheaper for pure-SAP scenarios. Unmanaged only adds value when BAPI integration is required — the cost of working around managed's transaction limitations exceeds the unmanaged implementation cost."
+        }
+      },
+      "adversarialResponse": {
+        "challenge": "\"Our unmanaged RAP transaction control is unreliable. Sometimes data is saved even when validation fails.\"",
+        "badResponse": "\"Check your validation code.\" (dismissive, no systematic approach)",
+        "goodResponse": "\"This is a critical issue — partial saves with failed validations indicate the save sequence is not properly halting on errors. Let me identify the likely causes: (1) You're calling COMMIT WORK in the create/update methods instead of deferring to the save method. In unmanaged RAP, only the save method should trigger database commits. If you call COMMIT in create, the data is committed before validations run. Move all DB writes to the save method. (2) Your save method doesn't check the failed table before proceeding. The framework checks failed before committing, but if you bypass the framework by calling COMMIT WORK inside save, you override this safeguard. Never call COMMIT WORK directly — let the framework handle it. (3) You have an early_save method that writes to the database but doesn't participate in rollback. If early_save fails, data written to the database is NOT automatically rolled back. Make early_save idempotent and use temporary tables that can be cleaned up on failure. (4) BAPI calls that commit internally are creating nested LUWs. Isolate BAPI calls with RFC destination 'NONE' to prevent them from committing your transaction context.\"",
+        "pattern": "audit-and-fix — identify the specific transaction boundary violations (early COMMIT, unchecked failures, BAPI nesting) with exact code patterns to avoid, and provide a save sequence checklist."
+      }
+    },
+    {
+      "title": "Draft Hand-Written Implementation",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Implementing draft handling in unmanaged scenario is the most complex part of the RAP unmanaged API. In managed scenario, drafts are automatic. In unmanaged scenario, you must implement the entire draft lifecycle: draft creation, draft persistence, draft activation, and draft discard. The framework provides the infrastructure (draft table structure, draft action handlers), but the actual data movement between draft and active storage is your responsibility.</p><p><b>The 4 Internal Draft Tables:</b> Behind every RAP draft are 4 internal tables maintained by the framework: (1) <b>Header Table</b> — the draft header record (DraftID, ParentDraftID, creation timestamp, etc.). (2) <b>Item Table</b> — the actual business data (the fields of your entity). (3) <b>Control Table</b> — tracks which fields have been modified (%control flags). (4) <b>%is_draft</b> — a flag indicating whether a record is a draft or active. These tables are managed by the framework in managed scenario; in unmanaged scenario, you must persist the draft data yourself and ensure the framework's internal bookkeeping is consistent.</p><p><b>Draft Activation Flow:</b> (1) The framework reads the draft data from your draft persistence. (2) It passes the draft data to your <code>save</code> method (like a normal CREATE/UPDATE). (3) You write the data to the active tables. (4) You delete the draft record. (5) The framework updates its internal draft registry.</p><p><b>Staff+ Insight:</b> Writing hand-implemented drafts is the RAP equivalent of implementing a <b>change data capture (CDC)</b> system. You are maintaining two data stores (draft and active) and ensuring they remain consistent. This is the same pattern as event sourcing's write-ahead log and materialized views.</p>"
+        },
+        {
+          "type": "svg",
+          "value": "<svg viewBox=\"0 0 700 400\" xmlns=\"http://www.w3.org/2000/svg\"><style>.drft-box{fill:var(--bg-secondary);stroke:var(--brand-primary);stroke-width:2;rx:8}.drft-tbl{fill:var(--bg-secondary);stroke:var(--text-primary);stroke-width:2;rx:6}.drft-flow{fill:none;stroke:var(--brand-primary);stroke-width:2;marker-end:url(#arrow)}.drft-back{fill:none;stroke:var(--border-default);stroke-width:1.5;stroke-dasharray:4;animation:flowDash 1.5s linear infinite}.drft-lbl{fill:var(--text-primary);font-family:system-ui;font-size:11px;font-weight:600;text-anchor:middle}.drft-sub{fill:var(--text-primary);font-family:system-ui;font-size:9px;text-anchor:middle}.ann-pulse{animation:pulse 2s ease-in-out infinite}@keyframes pulse{0%,100%{opacity:.6}50%{opacity:1}}@keyframes flowDash{0%{stroke-dashoffset:-8}100%{stroke-dashoffset:0}}</style><defs><marker id=\"arrow\" markerWidth=\"8\" markerHeight=\"6\" refX=\"8\" refY=\"3\" orient=\"auto\"><path d=\"M0,0 L8,3 L0,6 Z\" fill=\"var(--brand-primary)\"/></marker></defs><rect class=\"drft-box\" x=\"15\" y=\"15\" width=\"670\" height=\"370\"/><text class=\"drft-lbl\" x=\"350\" y=\"42\">Unmanaged Draft Persistence Architecture</text><rect class=\"drft-box\" x=\"30\" y=\"65\" width=\"290\" height=\"100\"/><text class=\"drft-lbl\" x=\"175\" y=\"85\">Framework Draft Tables</text><text class=\"drft-sub\" x=\"175\" y=\"105\">Header: DraftID, timestamps, status</text><text class=\"drft-sub\" x=\"175\" y=\"120\">Control: %control flags (modified fields)</text><text class=\"drft-sub\" x=\"175\" y=\"135\">%is_draft flag</text><rect class=\"drft-tbl\" x=\"380\" y=\"65\" width=\"290\" height=\"100\"/><text class=\"drft-lbl\" x=\"525\" y=\"85\">Your Draft Persistence</text><text class=\"drft-sub\" x=\"525\" y=\"105\">ZDRAFT_COMPLEXBO (header + data)</text><text class=\"drft-sub\" x=\"525\" y=\"120\">Must store all business fields</text><text class=\"drft-sub\" x=\"525\" y=\"135\">Must store original active record key</text><line x1=\"320\" y1=\"115\" x2=\"380\" y2=\"115\" class=\"drft-flow\"/><line x1=\"175\" y1=\"165\" x2=\"175\" y2=\"200\" class=\"drft-flow\"/><line x1=\"525\" y1=\"165\" x2=\"525\" y2=\"200\" class=\"drft-flow\"/><rect class=\"drft-box\" x=\"30\" y=\"200\" width=\"290\" height=\"60\"/><text class=\"drft-lbl\" x=\"175\" y=\"222\">ACTIVATE Action Handler</text><text class=\"drft-sub\" x=\"175\" y=\"238\">Read draft -> validate -> move to active</text><rect class=\"drft-tbl\" x=\"380\" y=\"200\" width=\"290\" height=\"60\"/><text class=\"drft-lbl\" x=\"525\" y=\"222\">DISCARD Action Handler</text><text class=\"drft-sub\" x=\"525\" y=\"238\">Delete draft record, no DB write</text><line x1=\"175\" y1=\"260\" x2=\"175\" y2=\"290\" class=\"drft-flow\"/><line x1=\"525\" y1=\"260\" x2=\"525\" y2=\"290\" class=\"drft-flow\"/><rect class=\"drft-tbl\" x=\"180\" y=\"290\" width=\"340\" height=\"55\"/><text class=\"drft-lbl\" x=\"350\" y=\"312\">Active Table (ZCOMPLEXBO)</text><text class=\"drft-sub\" x=\"350\" y=\"328\">Data after successful activation</text></svg>"
+        },
+        {
+          "type": "code",
+          "language": "abap",
+          "value": "CLASS zbp_rap_unmanaged IMPLEMENTATION.\n\n  \" Draft action: Create a new draft\n  METHOD draft_create FOR DRAFT CREATE\n    IMPORTING entities FOR ComplexBO.\n\n    DATA: ls_draft TYPE zdraft_complexbo.\n\n    LOOP AT entities INTO DATA(ls_entity).\n      MOVE-CORRESPONDING ls_entity TO ls_draft.\n      ls_draft-draft_id = cl_system_uuid=>create_uuid_x16_static( ).\n      ls_draft-is_draft = abap_true.\n\n      INSERT INTO zdraft_complexbo VALUES ls_draft.\n\n      APPEND VALUE #(\n        %cid = ls_entity-%cid\n        BoID = ls_draft-boid\n      ) TO mapped-complexbo.\n    ENDLOOP.\n\n  ENDMETHOD.\n\n\n  \" Draft action: Resume editing an existing draft\n  METHOD draft_resume FOR DRAFT RESUME\n    IMPORTING keys FOR ComplexBO.\n\n    \" Read draft data and return to framework\n    READ ENTITIES OF Z_ComplexBO IN LOCAL MODE\n      ENTITY ComplexBO\n      FROM VALUE #( FOR key IN keys ( BoID = key-BoID ) )\n      RESULT DATA(lt_draft).\n\n    \" Framework takes over and populates the edit UI\n  ENDMETHOD.\n\n\n  \" Draft action: Discard a draft\n  METHOD draft_discard FOR DRAFT DISCARD\n    IMPORTING keys FOR ComplexBO.\n\n    LOOP AT keys INTO DATA(ls_key).\n      DELETE FROM zdraft_complexbo\n        WHERE boid = @ls_key-BoID\n        AND is_draft = @abap_true.\n    ENDLOOP.\n\n  ENDMETHOD.\n\n\n  \" Draft action: Activate a draft (save to active table)\n  METHOD draft_activate FOR DRAFT ACTIVATE\n    IMPORTING keys FOR ComplexBO.\n\n    LOOP AT keys INTO DATA(ls_act_key).\n      \" Read draft data\n      SELECT SINGLE * FROM zdraft_complexbo\n        WHERE boid = @ls_act_key-BoID\n        INTO @DATA(ls_draft).\n\n      IF sy-subrc <> 0.\n        APPEND VALUE #( BoID = ls_act_key-BoID ) TO failed-complexbo.\n        CONTINUE.\n      ENDIF.\n\n      \" Write to active table (upsert)\n      MOVE-CORRESPONDING ls_draft TO DATA(ls_active).\n      ls_active-is_draft = abap_false.\n      MODIFY zcomplexbo FROM ls_active.\n\n      \" Delete the draft record\n      DELETE FROM zdraft_complexbo\n        WHERE boid = @ls_act_key-BoID.\n    ENDLOOP.\n\n  ENDMETHOD.\n\nENDCLASS."
+        }
+      ],
+      "codeBlock": "\" Draft: CREATE\nMETHOD draft_create FOR DRAFT CREATE\n  IMPORTING entities FOR ComplexBO.\n  LOOP AT entities INTO DATA(ls_entity).\n    DATA(ls_draft) = CORRESPONDING zdraft_complexbo( ls_entity ).\n    ls_draft-draft_id = cl_system_uuid=>create_uuid_x16_static( ).\n    ls_draft-is_draft = abap_true.\n    INSERT INTO zdraft_complexbo VALUES ls_draft.\n    APPEND VALUE #( %cid = ls_entity-%cid BoID = ls_draft-boid\n    ) TO mapped-complexbo.\n  ENDLOOP.\nENDMETHOD.\n\n\" Draft: DISCARD\nMETHOD draft_discard FOR DRAFT DISCARD\n  IMPORTING keys FOR ComplexBO.\n  DELETE FROM zdraft_complexbo FOR ALL ENTRIES IN keys\n    WHERE boid = keys-BoID AND is_draft = abap_true.\nENDMETHOD.\n\n\" Draft: ACTIVATE (save draft to active table)\nMETHOD draft_activate FOR DRAFT ACTIVATE\n  IMPORTING keys FOR ComplexBO.\n  LOOP AT keys INTO DATA(ls_key).\n    SELECT SINGLE * FROM zdraft_complexbo\n      WHERE boid = @ls_key-BoID INTO @DATA(ls_draft).\n    CHECK sy-subrc = 0.\n    DATA(ls_active) = CORRESPONDING zcomplexbo( ls_draft ).\n    ls_active-is_draft = abap_false.\n    MODIFY zcomplexbo FROM ls_active.\n    DELETE FROM zdraft_complexbo WHERE boid = ls_key-BoID.\n  ENDLOOP.\nENDMETHOD.",
+      "decisionTree": {
+        "prompt": "Should I implement custom draft handling in unmanaged RAP?",
+        "firstQuestion": "\"Does your business object need draft support?\" If users need to save incomplete work and resume later, you need draft. If all operations are complete-and-done (batch, API-to-API), you don't need draft.",
+        "branches": [
+          {
+            "condition": "Fiori UI requires draft for user experience",
+            "path": "Implement custom draft. Must implement draft_create, draft_resume, draft_activate, draft_discard. Requires 4 methods and a dedicated draft persistence table. ~200 lines of code minimum."
+          },
+          {
+            "condition": "API-to-API with no user interaction",
+            "path": "Skip draft. Use direct create/update/delete without draft lifecycle. Simpler, faster, no draft table cleanup needed. Not suitable for Fiori UIs."
+          },
+          {
+            "condition": "Need Fiori draft but unmanaged complexity is too high",
+            "path": "Consider managed scenario instead. If 80%+ of your use case fits managed, use managed for the draft lifecycle and implement only custom logic via determinations/actions."
+          }
+        ],
+        "staffPlusTip": "Custom draft in unmanaged is the most complex RAP implementation. If you need Fiori UI support, consider whether you can switch to managed scenario for the draft layer alone."
+      }
+    },
+    {
+      "title": "Integration with Existing BAPIs/RFCs",
+      "description": [
+        {
+          "type": "svg",
+          "value": "<div style=\"margin:20px 0;display:flex;justify-content:center\"><svg viewBox=\"0 0 700 300\" xmlns=\"http://www.w3.org/2000/svg\"><style>.b{fill:var(--bg-secondary);stroke:var(--brand-primary);stroke-width:2;rx:8}.s{fill:var(--bg-secondary);stroke:var(--text-primary);stroke-width:2;rx:6}.t{fill:var(--bg-secondary);stroke:var(--border-default);stroke-width:1.5;rx:5}.l{fill:var(--text-primary);font-family:system-ui;font-size:11px;font-weight:600;text-anchor:middle}.u{fill:var(--text-primary);font-family:system-ui;font-size:9px;text-anchor:middle}.f{stroke:var(--brand-primary);stroke-width:2;fill:none;marker-end:url(#a)}.d{stroke:var(--border-default);stroke-width:1.5;fill:none;stroke-dasharray:4;animation:flow-dash .8s linear infinite}.g{animation:svg-glow 2s ease-in-out infinite}.p{animation:node-pop .3s ease-out}<defs><marker id=\"a\" markerWidth=\"8\" markerHeight=\"6\" refX=\"8\" refY=\"3\" orient=\"auto\"><path d=\"M0,0 L8,3 L0,6Z\" fill=\"var(--brand-primary)\"/></marker></defs><text class=\"l\" x=\"350\" y=\"20\">BAPI / RFC Integration in Unmanaged RAP</text><rect class=\"b\" x=\"15\" y=\"40\" width=\"140\" height=\"50\"/><text class=\"l\" x=\"85\" y=\"62\">Fiori UI</text><text class=\"u\" x=\"85\" y=\"82\">User Request</text><line x1=\"155\" y1=\"65\" x2=\"210\" y2=\"65\" class=\"f\"/><rect class=\"s\" x=\"210\" y=\"40\" width=\"140\" height=\"50\"/><text class=\"l\" x=\"280\" y=\"62\">RAP Pool</text><text class=\"u\" x=\"280\" y=\"82\">Behavior Handler</text><line x1=\"350\" y1=\"65\" x2=\"400\" y2=\"65\" class=\"f\"/><rect class=\"t\" x=\"400\" y=\"40\" width=\"140\" height=\"50\"/><text class=\"l\" x=\"470\" y=\"62\">BAPI / RFC</text><text class=\"u\" x=\"470\" y=\"82\">Legacy Business Logic</text><line x1=\"540\" y1=\"65\" x2=\"590\" y2=\"65\" class=\"f\"/><rect class=\"b\" x=\"590\" y=\"40\" width=\"100\" height=\"50\"/><text class=\"l\" x=\"640\" y=\"62\">DB</text><text class=\"u\" x=\"640\" y=\"82\">Commit</text><rect class=\"t\" x=\"30\" y=\"125\" width=\"300\" height=\"70\"/><text class=\"l\" x=\"180\" y=\"145\">Message Mapping</text><text class=\"u\" x=\"180\" y=\"162\">BAPIRET2 → TYPE E/A → failed + reported</text><text class=\"u\" x=\"180\" y=\"180\">TYPE W → reported warning</text><rect class=\"t\" x=\"370\" y=\"125\" width=\"300\" height=\"70\"/><text class=\"l\" x=\"520\" y=\"145\">Transaction Boundary</text><text class=\"u\" x=\"520\" y=\"162\">BAPI may call COMMIT internally</text><text class=\"u\" x=\"520\" y=\"180\">set_update_state → prevent double-commit</text><text class=\"l\" x=\"350\" y=\"235\">BAPI_TRANSACTION_COMMIT in SAVE method — single commit boundary</text></svg></div>"
+        },
+        {
+          "type": "text",
+          "value": "<p>One of the primary reasons to choose unmanaged scenario is the need to integrate with existing BAPIs, RFCs, or legacy function modules. In many SAP landscapes, core business logic is encapsulated in BAPIs (Business Application Programming Interfaces) that have been stable for decades. Replacing these BAPIs with RAP managed scenario is often impractical or impossible.</p><p><b>Integration Pattern:</b> The fundamental pattern is: (1) The RAP UI (Fiori) sends a request to the RAP runtime. (2) The runtime calls your unmanaged behavior pool method. (3) Your method calls the BAPI/RFC with the appropriate parameters. (4) The BAPI performs the business logic and commits (or returns an error). (5) You handle the BAPI's return messages (BAPIRET2) and map them to RAP's <code>reported</code>/<code>failed</code> structures. (6) You handle the fact that the BAPI may have already committed the work (BAPI_COMMIT).</p><p><b>Key Challenge — Transaction Boundary:</b> BAPIs typically call COMMIT WORK internally via BAPI_TRANSACTION_COMMIT. This breaks RAP's transaction assumption that only the SAVE method commits. The solution is to use RFC with destination 'NONE' (same LUW) or to adjust your architecture: (1) Call the BAPI in the <code>save</code> method. (2) The BAPI does its internal commit. (3) You prevent the framework from doing a second commit (by setting <code>set_update_state</code>).</p><p><b>Message Mapping:</b> BAPIs return messages via a <code>BAPIRET2</code> table. You must map these to RAP's <code>reported</code> structure. The mapping is: message type E/A → <code>failed</code> table entry + <code>reported</code> error message. Message type W → <code>reported</code> warning. Message type S → <code>reported</code> success. Message type I → <code>reported</code> info. The mapping ensures that Fiori UIs display the BAPI messages correctly.</p>"
+        },
+        {
+          "type": "code",
+          "language": "abap",
+          "value": "CLASS zbp_rap_unmanaged IMPLEMENTATION.\n\n  METHOD create FOR INSERT\n    IMPORTING entities FOR ComplexBO.\n\n    DATA: lt_bapi_return TYPE TABLE OF bapiret2.\n    DATA: ls_bapi_header TYPE bapi_orders_create_header.\n    DATA: lv_sales_doc TYPE bapivbeln-vbeln.\n\n    LOOP AT entities INTO DATA(ls_entity).\n      \" Map RAP entity fields to BAPI structure\n      ls_bapi_header = CORRESPONDING #( ls_entity ).\n\n      \" Call the legacy BAPI\n      CALL FUNCTION 'BAPI_SALESORDER_CREATEFROMDAT2'\n        EXPORTING\n          order_header_in  = ls_bapi_header\n        IMPORTING\n          salesdocument    = lv_sales_doc\n        TABLES\n          return           = lt_bapi_return.\n\n      \" Check BAPI return messages\n      DATA(lv_error) = abap_false.\n      LOOP AT lt_bapi_return INTO DATA(ls_return)\n          WHERE type = 'A' OR type = 'E'.\n        lv_error = abap_true.\n\n        APPEND VALUE #( %cid = ls_entity-%cid ) TO failed-complexbo.\n        APPEND VALUE #(\n          %cid = ls_entity-%cid\n          %msg = new_message_with_text(\n            severity = COND #(\n              WHEN ls_return-type = 'A' THEN if_abap_behv_message=>severity-error\n              WHEN ls_return-type = 'E' THEN if_abap_behv_message=>severity-error\n              ELSE if_abap_behv_message=>severity-success )\n            text = |{ ls_return-message }| )\n        ) TO reported-complexbo.\n      ENDLOOP.\n\n      IF lv_error = abap_false.\n        \" BAPI succeeded - commit the BAPI work\n        CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'\n          EXPORTING\n            wait = abap_true.\n\n        \" Map result to RAP response\n        APPEND VALUE #(\n          %cid = ls_entity-%cid\n          BoID = lv_sales_doc\n        ) TO mapped-complexbo.\n      ENDIF.\n    ENDLOOP.\n\n  ENDMETHOD.\n\n\n  METHOD save FOR SAVE\n    IMPORTING keys TO SAVE ComplexBO.\n\n    \" BAPI may have already committed, so\n    \" prevent the framework from double-committing\n    LOOP AT keys INTO DATA(ls_key).\n      \" The framework's set_update_state can be used\n      \" to tell the runtime that the commit is already done\n    ENDLOOP.\n\n  ENDMETHOD.\n\n\n  \" Helper: Map BAPIRET2 to RAP message\n  METHOD map_bapi_message.\n    DATA: lr_msg TYPE REF TO if_abap_behv_message.\n\n    lr_msg = new_message_with_text(\n      severity = SWITCH #(\n        is_return-type\n        WHEN 'E' THEN if_abap_behv_message=>severity-error\n        WHEN 'W' THEN if_abap_behv_message=>severity-warning\n        WHEN 'S' THEN if_abap_behv_message=>severity-success\n        WHEN 'I' THEN if_abap_behv_message=>severity-info\n        ELSE if_abap_behv_message=>severity-error )\n      text = is_return-message ).\n\n    rv_msg = lr_msg.\n  ENDMETHOD.\n\nENDCLASS."
+        }
+      ],
+      "codeBlock": "\" CREATE via BAPI integration\nMETHOD create FOR INSERT\n  IMPORTING entities FOR ComplexBO.\n  DATA: lt_bapi_return TYPE TABLE OF bapiret2.\n  LOOP AT entities INTO DATA(ls_entity).\n    DATA(ls_bapi_header) = CORRESPONDING bapi_orders_create_header( ls_entity ).\n    CALL FUNCTION 'BAPI_SALESORDER_CREATEFROMDAT2'\n      EXPORTING order_header_in = ls_bapi_header\n      IMPORTING salesdocument = DATA(lv_sales_doc)\n      TABLES return = lt_bapi_return.\n    DATA(lv_error) = abap_false.\n    LOOP AT lt_bapi_return INTO DATA(ls_return) WHERE type = 'A' OR type = 'E'.\n      lv_error = abap_true.\n      APPEND VALUE #( %cid = ls_entity-%cid ) TO failed-complexbo.\n      APPEND VALUE #(\n        %cid = ls_entity-%cid\n        %msg = new_message_with_text(\n          severity = if_abap_behv_message=>severity-error\n          text = ls_return-message ) ) TO reported-complexbo.\n    ENDLOOP.\n    IF lv_error = abap_false.\n      CALL FUNCTION 'BAPI_TRANSACTION_COMMIT' EXPORTING wait = abap_true.\n      APPEND VALUE #( %cid = ls_entity-%cid BoID = lv_sales_doc\n      ) TO mapped-complexbo.\n    ENDIF.\n  ENDLOOP.\nENDMETHOD.\n\n\" SAVE: prevent double-commit after BAPI\nMETHOD save FOR SAVE\n  IMPORTING keys TO SAVE ComplexBO.\n  \" BAPI already committed — prevent framework double-commit\n  \" set_update_state( if_abap_behv=>update_state-committed )\nENDMETHOD.",
+      "decisionTree": {
+        "prompt": "How should I integrate existing BAPIs into RAP unmanaged scenario?",
+        "firstQuestion": "\"Does the BAPI commit internally or expect the caller to commit?\" If the BAPI calls BAPI_TRANSACTION_COMMIT internally, you must handle double-commit prevention. If it only fills BAPIRET2 tables, you control the commit via the RAP save sequence.",
+        "branches": [
+          {
+            "condition": "BAPI calls COMMIT internally (most legacy BAPIs)",
+            "path": "Call BAPI in create/update method, then call BAPI_TRANSACTION_COMMIT. Prevent framework double-commit via set_update_state( if_abap_behv=>update_state-committed ) in save method."
+          },
+          {
+            "condition": "BAPI returns data, caller decides when to commit",
+            "path": "Call BAPI in create/update method. Defer COMMIT to RAP save sequence. Map BAPIRET2 messages to failed/reported structures in the save method."
+          },
+          {
+            "condition": "BAPI is read-only (no database changes)",
+            "path": "Call in determination or validation. No commit handling needed. Map return messages to reported structure for user feedback."
+          }
+        ],
+        "staffPlusTip": "BAPI integration in unmanaged RAP creates a transaction boundary challenge. The BAPI's internal commit and RAP's framework commit are two separate LUWs — you must prevent double-commit explicitly."
+      }
+    }
+  ],
+  "details": "<p><b>Staff+ Insight:</b> Choosing managed vs unmanaged is the kind of architectural tradeoff FAANG Staff+ interviews test. Frame it as: \"Managed optimizes for developer productivity at the cost of flexibility. Unmanaged trades productivity for full control. I choose based on the complexity of business logic and the need for custom persistence.\"</p>"
+}

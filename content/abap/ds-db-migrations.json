@@ -1,0 +1,62 @@
+{
+  "id": "ds-db-migrations",
+  "title": "Database Migrations at Scale",
+  "category": "Distributed Systems",
+  "subcategory": "Data",
+  "language": "text",
+  "description": "<p>Migrating databases at scale — schema changes, data backfills, index rebuilds, and full platform migrations — without downtime is one of the hardest engineering challenges. This file covers Online DDL strategies (gh-ost, pt-online-schema-change), expand-contract (migration) pattern, backward-compatible schema evolution, data backfill strategies, rollback planning, and how SAP's transport and upgrade workflows compare to modern continuous database delivery.</p>",
+  "tags": ["FAANG", "Staff+", "Database", "Migration", "Online DDL", "Schema", "Zero Downtime"],
+  "sections": [
+    {
+      "title": "The Expand-Contract Pattern",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>The expand-contract pattern (also called the migration pattern or parallel change) is the fundamental technique for making schema changes without downtime. It decouples the schema change from the application deployment into three phases.</p><p><b>Phase 1 — Expand:</b> Add the new schema element (column, table, index) alongside the existing one. The old schema element remains in use. The new element is nullable or has a default value. Both old and new code paths work. Example: adding a `phone_number_varchar` column while `phone_number_char` still exists. The application writes to both columns during this phase.</p><p><b>Phase 2 — Migrate:</b> Backfill the new schema element with data from the old one. This can run as a background job (for large tables) or be done in application code during writes (for small tables). The migration is verifiable — you can compare old and new values for consistency.</p><p><b>Phase 3 — Contract:</b> Remove the old schema element once all code has been migrated to the new element. This requires: (a) no running code references the old element, (b) no background jobs read the old element, (c) no external systems depend on the old element. If any of these are true, the contract phase is blocked.</p><p><b>SAP Bridge:</b> The expand-contract pattern is conceptually similar to SAP's 'move field' approach in ABAP Dictionary. When you add a new field to a table, old programs still compile because the field is nullable. But SAP's transport system bundles schema + code changes together — making rollback harder. At FAANG, schema and code changes are always deployed independently with backward compatibility as a hard requirement.</p>"
+        },
+        {
+          "type": "svg",
+          "value": "<svg viewBox=\"0 0 700 200\" xmlns=\"http://www.w3.org/2000/svg\"><style>.m-box{fill:var(--bg-secondary);stroke:var(--brand-primary);stroke-width:2;rx:8}.m-ph{fill:var(--bg-secondary);stroke:var(--text-primary);stroke-width:2;rx:6}.m-lbl{fill:var(--text-primary);font-family:system-ui;font-size:11px;font-weight:600;text-anchor:middle}.m-sub{fill:var(--text-primary);font-family:system-ui;font-size:9px;text-anchor:middle}.m-ed{stroke:var(--brand-primary);stroke-width:2;fill:none;marker-end:url(#ma)}</style><defs><marker id=\"ma\" markerWidth=\"8\" markerHeight=\"6\" refX=\"8\" refY=\"3\" orient=\"auto\"><path d=\"M0,0 L8,3 L0,6Z\" fill=\"var(--brand-primary)\"/></marker></defs><rect class=\"m-box\" x=\"15\" y=\"15\" width=\"670\" height=\"170\"/><text class=\"m-lbl\" x=\"350\" y=\"38\">Expand-Contract Migration Pattern</text><rect class=\"m-ph\" x=\"25\" y=\"55\" width=\"200\" height=\"60\" stroke=\"var(--svg-success-stroke)\"/><text class=\"m-lbl\" x=\"125\" y=\"78\">Phase 1: Expand</text><text class=\"m-sub\" x=\"125\" y=\"98\">Add new column (nullable)</text><path d=\"M225,85 L250,85\" class=\"m-ed\"/><rect class=\"m-ph\" x=\"250\" y=\"55\" width=\"200\" height=\"60\" stroke=\"var(--svg-warning-stroke)\"/><text class=\"m-lbl\" x=\"350\" y=\"78\">Phase 2: Migrate</text><text class=\"m-sub\" x=\"350\" y=\"98\">Backfill + verify</text><path d=\"M450,85 L475,85\" class=\"m-ed\"/><rect class=\"m-ph\" x=\"475\" y=\"55\" width=\"200\" height=\"60\"/><text class=\"m-lbl\" x=\"575\" y=\"78\">Phase 3: Contract</text><text class=\"m-sub\" x=\"575\" y=\"98\">Drop old column</text></svg>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "gh-ost: Triggerless Online Schema Migration",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>gh-ost (GitHub's Online Schema Transition) is the gold standard for MySQL/MariaDB schema migrations at scale. It was developed at GitHub to replace Percona's pt-online-schema-change (which uses triggers) because triggers cause replication lag and deadlocks under high write loads.</p><p><b>How gh-ost works:</b> (1) Creates a shadow table (`_table_gho`) with the new schema. (2) Starts reading the original table's rows in chunks (rows copied per iteration). (3) Listens to the binary log for row changes on the original table — applies those changes to the shadow table in real-time (via a binlog listener/copy application). (4) When row copy is complete, renames the original table to `_table_del`, then renames the shadow table to the original name. The rename is atomic (MySQL metadata lock). (5) Drops the `_table_del` table.</p><p><b>Key advantages over trigger-based migration:</b> (1) No triggers — no trigger overhead on every write, no deadlock risk from trigger-induced lock contention. (2) Pausable — gh-ost can be paused mid-migration (suspends row copy, binlog applier continues). (3) Throttleable — can throttle based on replication lag, CPU load, or custom metrics. (4) Testable — has a 'test' mode that exercises the migration without actually renaming tables. (5) Auditable — writes progress to the binlog, so you can replay the migration.</p><p><b>When NOT to use gh-ost:</b> (1) Tables with no unique key (gh-ost requires a unique key for row identification). (2) Tables with foreign key references (gh-ost does not handle FK constraints automatically — you must disable FK checks). (3) Tables > 2TB (row copy takes too long; the binlog backlog becomes unmanageable). For these cases, consider pt-online-schema-change (triggers) or manual expand-contract with application-level double-writes.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Data Backfill Strategies",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Backfilling existing data into a new schema element is often the most time-consuming and risk-prone part of a migration. Three strategies exist, chosen based on data volume and consistency requirements.</p><p><b>1. Lazy backfill (on-read):</b> When data is read in the old format, the application migrates it to the new format on-the-fly and writes it back. <b>Pros:</b> no background job needed, spreads load over time. <b>Cons:</b> first read of each record is slow (migration penalty), records never read are never migrated. <b>Used when:</b> most records are accessed regularly, and a small number of stale records is acceptable.</p><p><b>2. Batch backfill (background job):</b> A batch process reads the old data in chunks, transforms it, and writes the new format. <b>Pros:</b> complete migration within known time bounds, can be throttled. <b>Cons:</b> consumes DB resources (IOPS, CPU), must handle concurrent writes (new data arriving during backfill). <b>Used when:</b> large datasets need guaranteed migration by a deadline. <b>Concurrency strategy:</b> use a cursor (WHERE id > last_id ORDER BY id LIMIT 1000) with the new data check: only backfill records where the new column IS NULL.</p><p><b>3. Dual-write with verification:</b> The application writes to both old and new formats simultaneously. A verification job compares old and new values for consistency. <b>Pros:</b> the backfill is built into the write path, detect inconsistencies early. <b>Cons:</b> more complex application code, verification job is needed. <b>Used when:</b> data consistency is critical, and the migration is long-running (weeks to months).</p>"
+        }
+      ],
+      "codeBlock": "",
+      "adversarialResponse": {
+        "challenge": "\"We have a 5 TB MySQL table that needs a new column. We can't use gh-ost because the row copy would take 2 weeks and the binlog backlog would crash the server. What do we do?\"",
+        "badResponse": "\"Use pt-online-schema-change with a longer chunk time.\" (doesn't address the root problem — any trigger/threshold tool will struggle with 5 TB)",
+        "goodResponse": "\"For 5 TB tables, online schema change tools (gh-ost, pt-osc) are not the right answer. Here's my approach: <b>Phase 1 — Schema add:</b> Add the new column as nullable with a default of NULL using INSTANT DDL (MySQL 8.0.29+). This is a metadata-only operation — takes milliseconds, no table copy. <b>Phase 2 — Application change:</b> Deploy application code that writes to the new column while using the old column for reads (dual-read). <b>Phase 3 — Lazy backfill:</b> On each read, if the new column is NULL, compute it and update in-place. This spreads the 5 TB migration over normal read traffic. <b>Phase 4 — Column enforcement:</b> Once 99%+ of rows have been backfilled, run a batch job on the remaining NULLs. Then alter the column to NOT NULL. If INSTANT DDL is not available (older MySQL), use a tiered approach: migrate hot partitions first (last 30 days), then warm (last 90 days), then cold (everything older). Cold partitions can be migrated offline and swapped in.\"",
+        "pattern": "When a standard tool doesn't fit, the Staff+ engineer designs a custom strategy using database-specific features (INSTANT DDL, partitioning) and a phased approach. Never force a tool that doesn't fit — you will break production."
+      }
+    },
+    {
+      "title": "Rollback Planning — The Daily Question",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Every migration must have a tested rollback plan. The rollback is not simply 'undo the change' — it must restore the data to a consistent state without data loss or extended downtime. The Staff+ engineer designs the rollback before the forward migration is executed.</p><p><b>Rollback strategies by migration type:</b></p><p><b>Schema addition (new column):</b> Rollback = revert the application code that writes to the new column. The schema change itself does not need to be reverted — the column can remain nullable and unused until the next release removes it. <b>Risk:</b> none — adding a nullable column is backward-compatible.</p><p><b>Schema change (ALTER column type):</b> Rollback = reverse the ALTER (e.g., VARCHAR(255) → VARCHAR(100) can be rolled back by ALTERing back to VARCHAR(255)). <b>Risk:</b> if data was written that exceeds the old column limits, the reverse ALTER will fail. <b>Mitigation:</b> add constraints at the application layer before the schema change, not after.</p><p><b>Table rename (gh-ost final cutover):</b> gh-ost's rename is atomic — the original table is renamed to `_table_del` and the shadow table takes the original name. <b>Rollback:</b> within the one-minute window before gh-ost drops `_table_del`, you can interrupt gh-ost and rename `_table_del` back to the original name. <b>Risk:</b> data written to the new table between cutover and rollback is lost. <b>Mitigation:</b> keep the application in 'read-only' mode during cutover, or write to both tables during the cutover window.</p>"
+        }
+      ],
+      "codeBlock": ""
+    }
+  ],
+  "details": "<p><b>FAANG Interview Tip:</b> Database migration questions appear in system design interviews more often than most candidates expect. The Staff+ signal is: (1) You discuss backward compatibility before implementation. (2) You design the rollback plan before the forward plan. (3) You quantify the migration window based on data volume and write throughput. (4) You reference specific tools (gh-ost, pt-osc) and when NOT to use them. Most candidates know 'expand-contract pattern.' Staff+ candidates know when it fails.</p>"
+}

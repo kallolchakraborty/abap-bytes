@@ -1,0 +1,52 @@
+{
+  "id": "sd-design-search-autocomplete",
+  "title": "Design Search Autocomplete (Typeahead)",
+  "category": "System Design",
+  "subcategory": "FAANG Whiteboarding",
+  "language": "text",
+  "description": "<p>Design a search autocomplete/typeahead system that suggests completions as the user types. Covers trie data structure and its variants (compressed trie, suffix tree), top-K suggestions using a min-heap per node, prefix caching, personalization, real-time trending updates, and how SAP's Fiori value help and search help (SH) provide a conceptual bridge.</p>",
+  "tags": ["FAANG", "Staff+", "System Design", "Autocomplete", "Typeahead", "Trie", "Search"],
+  "sections": [
+    {
+      "title": "Functional Requirements & Scale",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>Functional requirements:</b> (1) Given a user's prefix input (e.g., 'ap'), return the top K suggestions (e.g., 'apple', 'app download', 'app store', 'api', 'apache'). (2) Suggestions must be returned in < 100ms (after each keystroke). (3) Suggestions must be relevant — ordered by popularity (search frequency) and user context (location, history). (4) Handle misspellings — suggest corrections for near-matches.</p><p><b>Non-functional requirements:</b> (1) 5B+ daily searches, 100K+ queries per second at peak. (2) 10M+ unique prefixes served per second. (3) 99.99% availability — search suggestions must never fail. (4) Freshness — trending topics (news, viral stories) must appear in suggestions within 5 minutes.</p><p><b>SAP Bridge:</b> SAP's Fiori value help and search help (transaction SH) provide a list of valid values for a field based on the user's input. The concept is the same: type 'MAT' → suggest materials starting with 'MAT'. The difference: SAP's search help returns at most 500 matches from a DB table (SELECT * FROM mara WHERE matnr LIKE 'MAT%'). Search autocomplete at Google scale returns the top 10 from billions of queries in milliseconds.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Trie Data Structure for Prefix Search",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>The trie (prefix tree) is the foundational data structure for autocomplete. Each node in the trie represents a character. A path from root to leaf represents a string. All strings with the same prefix share the same path up to the divergence point.</p><p><b>Standard trie — space problem:</b> A trie for 10M strings with average length 20 characters has ~200M nodes. Each node stores: character (1 byte), pointers to children (up to 26 for a-z, more for Unicode), is_end_of_word flag, and frequency counter. This can exceed 10 GB — too large for memory on a single machine.</p><p><b>Compressed trie (radix tree / Patricia trie):</b> Nodes with a single child are merged into the parent. 'apple' and 'app' share the prefix 'app' — the compressed trie merges the 'a', 'p', 'p' nodes into one node labeled 'app', then splits to 'le' (for 'apple') and the end marker (for 'app'). This reduces node count by 60-80%.</p><p><b>Top-K suggestions per node:</b> Each trie node stores a min-heap of the top K (typically 10 most frequent) completions that start with that prefix. <b>Query execution:</b> traverse the trie from root following the user's input characters. At the final node, return the min-heap contents (the top K suggestions). This is O(l) where l = prefix length — constant time per query (ignoring trie traversal).</p><p><b>Building the min-heap:</b> After constructing the trie from search log data (MapReduce or Spark job), for each node, collect all completions from descendant nodes and their frequencies. Maintain a min-heap of size K at each node. When a completion's frequency is greater than the min-heap's minimum, replace the minimum. After processing all descendants, the min-heap contains the top K completions for that node's prefix.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Distribution & Caching",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>A single-machine trie cannot serve 100K+ QPS. The trie must be distributed and cached.</p><p><b>Sharding by prefix:</b> Split the trie by prefix range. Example: 'a-f' → shard 1, 'g-l' → shard 2, 'm-r' → shard 3, 's-z' → shard 4. The query router determines which shard(s) to query based on the prefix's first character. For prefix 'ap', query shard 1. <b>Pros:</b> each shard has a manageable trie size (~2.5M strings per shard for 10M total). <b>Cons:</b> hot prefixes ('a' has more strings than 'z') cause uneven load. Mitigation: analyze query distribution and adjust shard boundaries to equalize query load, not prefix count.</p><p><b>Replication for read throughput:</b> Each shard is replicated across N servers (typically 3-5). A load balancer distributes queries across replicas. Replication provides: (1) Read throughput — N replicas can serve N× the queries. (2) Fault tolerance — if one replica fails, others continue.</p><p><b>Caching at the edge:</b> Popular prefixes are cached at CDN edge nodes or in a distributed cache (Redis/Memcached). Cache key: the prefix (e.g., 'ap'). Cache value: the top K suggestions (serialized JSON, ~500 bytes). A prefix like 'ap' is queried millions of times per day — caching it eliminates 99%+ of trie queries for popular prefixes. Cache TTL: 5-60 seconds for freshness. Cold prefixes (queried rarely) are served from the trie — no cache overhead.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Real-Time Trending Updates",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>The autocomplete system must handle trending topics — terms that suddenly spike in popularity (breaking news, viral moments). The static trie (built from yesterday's search logs) won't include today's trending terms.</p><p><b>Trending overlay:</b> A separate 'trending trie' or in-memory map stores high-frequency queries from the last 5-30 minutes. The trending data is computed from recent search logs using a sliding window counter (Redis sorted sets: ZINCRBY trending_terms 1 'daily-show'). When the user types a prefix, the query engine: (1) Queries the static trie for stable suggestions. (2) Queries the trending overlay for recent popular terms with the same prefix. (3) Merges the two results — trending terms are boosted by a recency multiplier (a term trending in the last 5 minutes gets 10x frequency boost). (4) Returns the top K merged results.</p><p><b>Trending trie rebuild interval:</b> The static trie is rebuilt every 24 hours from the previous day's search logs. The trending overlay is updated every 1-5 minutes from the real-time log stream (Kafka). A Spark streaming job reads query logs from Kafka, computes top queries per prefix window, and writes to the trending overlay (Redis hash per prefix).</p>"
+        }
+      ],
+      "codeBlock": ""
+    }
+  ],
+  "details": "<p><b>FAANG Interview Tip:</b> The autocomplete/typeahead question tests: (1) Your understanding of trie data structures and their memory-efficient variants (compressed trie, radix tree). (2) Your ability to scale a data-structure-heavy system across multiple machines (sharding, replication, caching). (3) Your awareness of the 'trending topics' challenge (real-time updates, recency boosting). The SAP engineer can bridge from Fiori value help: 'SAP search help returns results from a database query with LIKE. At Google scale, LIKE queries would take seconds. The trie provides the same prefix-matching behavior in microseconds.'</p>"
+}

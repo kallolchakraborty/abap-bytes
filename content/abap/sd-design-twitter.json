@@ -1,0 +1,46 @@
+{
+  "id": "sd-design-twitter",
+  "title": "Design Twitter — Social Feed at Scale",
+  "category": "System Design",
+  "subcategory": "FAANG Whiteboarding",
+  "language": "text",
+  "description": "<p>Design a social media platform with real-time feeds, tweets, and follower graphs. Covers fan-out (push vs pull), timeline construction, tweet ranking and relevance, hashtag and search indexing, rate limiting, celebrity follower handling, and how SAP's event publish-subscribe and workflow routing provide a conceptual bridge to understanding push-based distribution at scale.</p>",
+  "tags": ["FAANG", "Staff+", "System Design", "Twitter", "Social Feed", "Fan-Out", "Timeline"],
+  "sections": [
+    {
+      "title": "Core Problem — Timeline Fan-Out",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>The fundamental technical challenge of Twitter is: when User A posts a tweet, how does it appear in the timelines of all of their followers? For a user with 100K followers, this means the tweet must be distributed to 100K timelines. For a celebrity with 100M followers (like @elonmusk), this means 100M timeline updates for a single tweet — in near real-time.</p><p><b>Three fan-out approaches:</b></p><p><b>1. Push (write fan-out):</b> When User A tweets, pre-insert the tweet into all followers' timelines. <b>Pros:</b> timeline read is O(1) — just fetch and display. <b>Cons:</b> write amplification — one tweet becomes N timeline writes (N = follower count). A celebrity tweet causes 100M writes. Twitter initially used pure push and had consistent issues with celebrity tweets timing out.</p><p><b>2. Pull (read fan-out):</b> When User B opens their timeline, fetch all tweets from followed users, merge and rank them. <b>Pros:</b> no write amplification — one tweet = one write. <b>Cons:</b> read is O(M) where M = number of followed users. For a user following 1000 accounts, the timeline query must fetch tweets from all 1000 accounts. This becomes slow at scale.</p><p><b>3. Hybrid (most common at scale):</b> Push for regular users, pull for celebrities. Most users (< 10K followers) get push-based timeline update. A celebrity tweet triggers a fan-out only to 'online followers' (currently active). For huge celebs (> 10M followers), the tweet is NOT pre-inserted into timelines. Instead, the timeline server fetches the celebrity's recent tweets on-demand at read time. This is what Twitter does: 'timeline fanout for online users only, with pull for large accounts.'</p><p><b>SAP Bridge:</b> SAP's event distribution (Event Mesh) uses the push model — when a business event occurs (order created), the event is pushed to all subscribers. But SAP events typically have few subscribers (2-5 integration flows). Twitter's problem is the same pattern (event → multiple consumers) but at 100M-factor scale. The SAP engineer can bridge: 'I designed event distribution for order processing at SAP. Twitter's fan-out is the same problem, with follower counts instead of integration recipients, and real-time latency requirements instead of seconds-to-minutes.'</p>"
+        },
+        {
+          "type": "svg",
+          "value": "<svg viewBox=\"0 0 700 220\" xmlns=\"http://www.w3.org/2000/svg\"><style>.tw-box{fill:var(--bg-secondary);stroke:var(--brand-primary);stroke-width:2;rx:8}.tw-st{fill:var(--bg-secondary);stroke:var(--text-primary);stroke-width:2;rx:6}.tw-lbl{fill:var(--text-primary);font-family:system-ui;font-size:11px;font-weight:600;text-anchor:middle}.tw-sub{fill:var(--text-primary);font-family:system-ui;font-size:9px;text-anchor:middle}</style><rect class=\"tw-box\" x=\"15\" y=\"15\" width=\"670\" height=\"190\"/><text class=\"tw-lbl\" x=\"350\" y=\"38\">Fan-Out Strategy Selection</text><rect class=\"tw-st\" x=\"25\" y=\"55\" width=\"200\" height=\"60\" stroke=\"var(--svg-success-stroke)\"/><text class=\"tw-lbl\" x=\"125\" y=\"78\">Push (write fan-out)</text><text class=\"tw-sub\" x=\"125\" y=\"98\">Users with <10K followers</text><rect class=\"tw-st\" x=\"250\" y=\"55\" width=\"200\" height=\"60\" stroke=\"var(--svg-warning-stroke)\"/><text class=\"tw-lbl\" x=\"350\" y=\"78\">Hybrid (push + pull)</text><text class=\"tw-sub\" x=\"350\" y=\"98\">10K-10M followers, online-only fanout</text><rect class=\"tw-st\" x=\"475\" y=\"55\" width=\"200\" height=\"60\"/><text class=\"tw-lbl\" x=\"575\" y=\"78\">Pull (on-demand)</text><text class=\"tw-sub\" x=\"575\" y=\"98\">10M+ followers (celebrities)</text><rect class=\"tw-box\" x=\"25\" y=\"135\" width=\"650\" height=\"40\"/><text class=\"tw-lbl\" x=\"350\" y=\"160\">Most tweets use push; celebrity tweets use pull — hybrid optimizes both</text></svg>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Timeline Storage & Ranking",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>The timeline is the core read data structure. Each user has a timeline (a list of tweet IDs to display). The timeline must be built efficiently on write (push) and read (fetch + rank).</p><p><b>Timeline store (Redis sorted sets per user):</b> Each user's timeline is a Redis sorted set. The member is the tweet ID (8 bytes). The score is the tweet timestamp (milliseconds since epoch, 8 bytes). A timeline entry is ~16 bytes. A user's timeline stores ~500 tweet IDs (the number of tweets visible in the feed). 500M active users × 500 tweets × 16 bytes = ~4 TB for all timelines (manageable in Redis cluster with sharding).</p><p><b>Timeline construction flow:</b> (1) User posts tweet → tweet service stores tweet content (Cassandra, sharded by tweet ID). (2) Tweet service publishes 'tweet.posted' event to Kafka. (3) Fan-out service consumes the event and determines: is this a push or pull account? (4) For push accounts: insert tweet ID into followers' timeline Redis sets (batch writes — 1000 inserts per batch, async). (5) For pull accounts: update celebrity's 'recent tweets' in Redis (list of last 200 tweets).</p><p><b>Timeline ranking (beyond reverse-chronological):</b> Twitter's 'top tweets first' algorithm scores each tweet and reorders the timeline. Scoring factors: (1) Recency — tweets from the last 4 hours get a boost. (2) Engagement — likes, retweets, replies on the tweet. (3) User relationship — tweets from frequently interacted-with users get higher scores. (4) Media — tweets with images/video get a boost. (5) User preferences — topics the user has shown interest in. The scoring model is a linear regression or gradient-boosted tree, trained on user engagement data.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Celebrity Follower Handling",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>When @elonmusk (100M+ followers) tweets, the system cannot pre-insert the tweet into 100M timelines. The write amplification would be: 1 tweet × 100M followers / 500 tweets per timeline = 200K Redis writes/second sustained for minutes. This would saturate the Redis cluster and block all other timeline operations.</p><p><b>Twitter's pull-based approach for celebs:</b> (1) @elonmusk tweets → the tweet is stored in Cassandra. (2) The tweet ID is added to a Redis list 'celebrity_ID:recent_tweets' (last 200 tweets). (3) When a follower opens their timeline, the timeline service: (a) Fetches the follower's push timeline (regular users' tweets from Redis). (b) For each followed celebrity, fetches their recent tweets from Redis. (c) Merges the push and pull results, removes duplicates, ranks them. (d) Returns the merged timeline.</p><p><b>Optimization — online follower fanout:</b> Even for celebrity tweets, a limited push can be beneficial. Twitter determines which followers are 'online' (connected via WebSocket in the last 5 minutes) and inserts the celebrity tweet into only those followers' timelines. Online followers get the tweet instantly (push). Offline followers fetch on next app open (pull). Online follower ratio is typically 5-10% of total followers, reducing fan-out by 90-95%.</p><p><b>Rate limiting for celebrities:</b> A verified system account (notifications, server heartbeats) might tweet 1000 times/second. A human celebrity tweets at most a few times per day. The system rate-limits suspicious tweet patterns from any account — if a celebrity account tweets 10+ times in 2 seconds, the fan-out is deferred and processed as a batch.</p>"
+        }
+      ],
+      "codeBlock": ""
+    }
+  ],
+  "details": "<p><b>FAANG Interview Tip:</b> The Twitter/feed question tests: (1) Your understanding of the push vs pull tradeoff and ability to design a hybrid system. (2) Your ability to handle the 'celebrity problem' — a small number of accounts cause a disproportionate write load. (3) Your understanding of timeline ranking and relevance. The fan-out problem is one of the most common system design interview topics because it tests system design fundamentals (write vs read optimization) and your ability to reason about tradeoffs at extreme scale. The SAP bridge is effective: 'I designed event distribution for SAP — 1000 events/second to 10 subscribers. Twitter does the same with 100K events/second to 100M subscribers.'</p>"
+}

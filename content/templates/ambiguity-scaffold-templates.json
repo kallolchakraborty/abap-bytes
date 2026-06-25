@@ -1,0 +1,80 @@
+[
+  {
+    "id": "design-erp-system",
+    "title": "Design an ERP Platform — First 60 Seconds",
+    "first60seconds": "\"Before I draw anything, I need to scope this. Three clarifying questions: (1) What modules are in scope — Finance, Supply Chain, HCM? (2) Is this replacing existing SAP ECC or building greenfield? (3) Do we need multi-GAAP and multi-currency? While you answer those, I will start with the data model — it's the hardest constraint and everything else follows.\"",
+    "assumptions": [
+      "50 legal entities across 30 countries (if different, partition scheme changes)",
+      "Multi-GAAP required (US GAAP + IFRS + local GAAP per entity)",
+      "20M transactions/day peak (Friday close event)",
+      "Existing SAP ECC systems exist — we are migrating, not greenfield",
+      "99.95% uptime SLA (no more than 21 minutes downtime/month)"
+    ],
+    "deferred": "I am deferring HCM and Procurement modules to keep this focused. If we have time, I will sketch their integration points. My initial design addresses Finance and Supply Chain — the hardest constraints."
+  },
+  {
+    "id": "design-payment-system",
+    "title": "Design a Payment Reconciliation System — First 60 Seconds",
+    "first60seconds": "\"Let me scope the problem first. Key questions: (1) How many payment gateways? (2) What is the volume per day? (3) What is the reconciliation SLA? (4) Is this card payments, ACH, wire transfers, or all of them? My assumption: 10M+ transactions/day across 15+ gateways with 4-hour reconciliation SLA. I will start with the data pipeline because ingestion at this scale is the primary bottleneck.\"",
+    "assumptions": [
+      "15 payment gateways with different file formats and timing",
+      "10M transactions/day = ~116 TPS average, 500 TPS peak",
+      "4-hour reconciliation SLA from batch completion",
+      "Idempotency key = payment_id + date to handle duplicate webhooks",
+      "Gateway failures are common — dead letter queues are non-negotiable"
+    ],
+    "deferred": "I am deferring the dispute/chargeback flow and fraud detection. These are important but secondary. The primary function is reconciliation accuracy and SLA compliance."
+  },
+  {
+    "id": "design-real-time-system",
+    "title": "Design a Real-Time Inventory Visibility System — First 60 Seconds",
+    "first60seconds": "\"Let me clarify scope. (1) Is this real-time visibility for customers on the website, or for internal warehouse operators? (2) How many SKUs? (3) How many warehouses? (4) What is the acceptable staleness? My assumption: 10M SKUs across 500 warehouses, 100ms staleness for customer-facing, 5-second staleness for internal. I will design for the customer-facing case because it has the hardest SLA.\"",
+    "assumptions": [
+      "10M SKUs across 500 warehouses globally",
+      "100ms read staleness for customer-facing (product page shows 'In Stock')",
+      "1M inventory updates/hour during restocking (277 TPS average)",
+      "Strong consistency NOT required — losing a 'In Stock' flag for 5 seconds is OK",
+      "Cache-first architecture with eventual consistency to database"
+    ],
+    "deferred": "I am deferring the warehouse management system (WMS) integration details and the inventory forecasting/prediction layer. Focus on real-time read path and write path throughput."
+  },
+  {
+    "id": "design-data-pipeline",
+    "title": "Design a Data Pipeline — First 60 Seconds",
+    "first60seconds": "\"Let me bound the problem. (1) What are the data sources? SAP, SaaS APIs, flat files? (2) What is the volume and frequency? (3) What is the destination — data warehouse, data lake, real-time dashboard? (4) What transformations are needed? I will assume: 50+ source systems, 10 TB/day, 2-hour processing SLA, target is Snowflake/Redshift. I will start with the ingestion layer because source diversity is the hardest constraint.\"",
+    "assumptions": [
+      "50+ source systems with different schemas and update frequencies",
+      "10 TB raw data ingested per day, compressed to 2 TB",
+      "2-hour batch SLA for daily reconciliation",
+      "CDC preferred where possible (minimizes load on source systems)",
+      "Schema-on-read for flexibility, schema-on-write for performance-critical paths"
+    ],
+    "deferred": "I am deferring the real-time streaming path and the data quality monitoring framework. Focus on batch pipeline reliability and SLA guarantees."
+  },
+  {
+    "id": "design-load-balancer",
+    "title": "Design a Load Balancer — First 60 Seconds",
+    "first60seconds": "\"Let me scope. (1) Layer 4 (TCP) or Layer 7 (HTTP/HTTPS)? (2) What is the throughput expectation? (3) Geographic distribution or single region? (4) Do we need TLS termination? My assumption: L7 load balancer, 100K requests/sec, single region with multi-AZ, TLS termination required. I will start with the data plane because packet processing is the primary throughput constraint.\"",
+    "assumptions": [
+      "100K requests/second, growing to 500K within 12 months",
+      "Single region with 3 availability zones",
+      "TLS termination at load balancer (not pass-through)",
+      "Sticky sessions required for stateful backends",
+      "Health check interval: 5 seconds, unhealthy threshold: 2 failures"
+    ],
+    "deferred": "I am deferring the global load balancing (DNS-based routing to multiple regions) and DDoS protection details. Focus on single-region L7 load balancing architecture."
+  },
+  {
+    "id": "design-caching-layer",
+    "title": "Design a Caching Layer — First 60 Seconds",
+    "first60seconds": "\"Scope questions: (1) What is the cache hit ratio target? (2) What is the data size? (3) Is this a local cache (in-process) or distributed (Redis/Memcached)? (4) Write-through or write-behind? My assumption: 90%+ hit ratio target, 50 GB working set, distributed Redis cluster. Let me start with cache sizing: at 50 GB with 3 replicas, I need ~200 GB total cluster memory.\"",
+    "assumptions": [
+      "Read-heavy workload with 90%+ target cache hit ratio",
+      "50 GB working set fits in memory (~$1,000/month on AWS cache.r6g.4xlarge)",
+      "Distributed cache required (5+ application nodes)",
+      "Mutable data requires invalidation strategy",
+      "Cache-aside pattern: read-through on miss, TTL-based expiration"
+    ],
+    "deferred": "I am deferring the cache warming strategy and the local L1 cache (application-level) design. Focus on the distributed L2 cache (Redis cluster) architecture."
+  }
+]
