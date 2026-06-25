@@ -4,7 +4,7 @@ A comprehensive static knowledge base for SAP ABAP engineers targeting Staff+ (L
 
 **Site URL:** [abap-bytes.vercel.app](https://abap-bytes.vercel.app) (or your deployed domain)
 
-**Content count:** 133 articles across 16 categories  
+**Content count:** 141 articles across 16 categories  
 **Total scope:** SAP ABAP architecture, distributed systems, system design, FAANG interview prep, Staff+ engineering culture, bridge content, and interactive tools
 
 ---
@@ -58,7 +58,7 @@ abap-bytes/
 │
 ├── content/
 │   └── abap/
-│       ├── *.json              # 133 content files (see inventory below)
+│       ├── *.json              # 141 content files (see inventory below)
 │       └── [all articles]
 │
 ├── assets/
@@ -144,7 +144,7 @@ Interactive calculation widget. Properties: `id`, `title`, `variables[]` (each w
 
 ## Content Categories
 
-The 133 articles are organized into 16 categories that map to the sidebar structure:
+The 141 articles are organized into 16 categories that map to the sidebar structure:
 
 | # | Category | Description | Article Count |
 |---|----------|-------------|---------------|
@@ -165,7 +165,7 @@ The 133 articles are organized into 16 categories that map to the sidebar struct
 | 15 | Communication & Leadership | Strategic communication, managing up, stakeholder management, working with PMs, career narrative | 5 |
 | 16 | Career Growth & Metrics | Ladder nuances, promo case studies, brand, compensation, perf reviews, promotions, project selection, tech debt, mentoring, reorgs, technical vision, decision frameworks, cross-team execution | 13 |
 
-**Total: 133 articles**
+**Total: 141 articles**
 
 ---
 
@@ -396,7 +396,7 @@ Maps URL hash fragments to JSON file paths:
 window.__ROUTE_MAP = {
   "#start-here": "content/abap/start-here.json",
   "#faang-mindset": "content/abap/faang-mindset.json",
-  // ... 133 entries total
+  // ... 141 entries total
 };
 ```
 
@@ -405,7 +405,7 @@ Full-text search index with title, description, category, sections, and tags:
 ```js
 window.__SEARCH_INDEX = [
   {"title":"Start Here — ...", "category":"Getting Started", "url":"docs.html#start-here", "tags":[...], "description":"...", "sections":[...]},
-  // ... 133 entries total
+  // ... 141 entries total
 ];
 ```
 
@@ -538,19 +538,22 @@ Challenges → Migration → Exit / Next Chapter
 | FAANG culture fit | ✓ Complete | Day in life, on-call, ambiguity, conflict, writing culture, metrics, working with PMs |
 | Career growth | ✓ Complete | Ladder nuances, promo case studies, brand building, compensation, perf reviews, career narrative |
 | Wellbeing & resilience | ✓ Complete | Blind spots, wellbeing, rejection recovery, layoff survival |
-| Role-specific guides | ✓ Complete | Tech lead, interviewer guide, working with PMs, code review culture |
-| Time management | ✓ Complete | Time/calendar architecture, deep work, meeting hygiene |
-| Transitions | ✓ Complete | Migration strategy (SAP→FAANG), exit strategy (FAANG→next), layoff survival |
+| Role-specific guides | ✓ Complete | Tech lead, interviewer guide, working with PMs, code review culture, design partnership, art of saying no |
+| Time management | ✓ Complete | Time/calendar architecture, deep work, meeting hygiene, effective 1:1s |
+| Transitions | ✓ Complete | Migration strategy (SAP→FAANG), exit strategy, layoff survival, L5→L6 transition, interviewing while employed |
+| Data-driven culture | ✓ Complete | Data experimentation & A/B testing, metrics-driven engineering |
+| Planning & execution | ✓ Complete | Quarterly planning & OKRs, roadmap execution, project selection |
+| External influence | ✓ Complete | Public speaking, tech talks, conference strategy, technical writing, brand building |
 
 ### Known Gaps (Not Currently Planned)
 
-The following topics are not covered but could be added for completeness:
-- **FAANG Staff+ cross-company mobility** (detailed guide on moving between Google, Meta, Amazon, Apple)
+The following topics remain as the only known gaps:
+- **FAANG Staff+ cross-company mobility** (moving between Google, Meta, Amazon, Apple)
 - **FAANG Staff+ managing difficult personalities** (brilliant jerks, toxic behavior)
-- **FAANG Staff+ AI/ML integration** (working with ML engineers, AI infrastructure)
-- **FAANG Staff+ managing geographically distributed teams** (remote collaboration, time zones)
+- **FAANG Staff+ AI/ML integration** (working with ML engineers, AI infrastructure at Staff+ level)
+- **FAANG Staff+ managing geographically distributed teams** (remote collaboration, time zone async)
 
-These are enhancement topics — the site is functionally complete for the core FAANG Staff+ preparation and career journey.
+These are low-priority enhancements — the site is comprehensive across the full FAANG Staff+ preparation and career journey with **141 articles** across **16 categories**.
 
 ---
 

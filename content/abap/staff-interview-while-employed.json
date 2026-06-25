@@ -1,0 +1,72 @@
+{
+  "id": "staff-interview-while-employed",
+  "title": "Interviewing While Employed at FAANG",
+  "category": "Engineering Culture",
+  "subcategory": "Career Growth",
+  "language": "text",
+  "description": "<p>Interviewing while holding a Staff+ role at a FAANG company requires ruthless discretion, strategic scheduling, and emotional discipline. Unlike at SAP — where internal mobility is convoluted and external interviewing is less common — FAANG culture normalizes job switches, but the process is higher stakes. This article covers the logistics, ethics, and negotiation leverage of the discreet FAANG-to-FAANG transition.</p>",
+  "tags": ["FAANG", "Staff+", "Interview", "Job Search", "Career", "Transition", "Discreet"],
+  "sections": [
+    {
+      "title": "The Discreet Job Search — Maintaining Privacy While Interviewing",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>FAANG companies are small worlds. Your manager might be former coworkers with the hiring manager you're interviewing with. One Slack message can expose your search. <b>Discretion is non-negotiable.</b></p><p><b>Operational security:</b></p><ul><li><b>Use a personal device.</b> Never schedule interviews, update your resume, or answer recruiter emails on your work machine. FAANG devices are monitored — your employer owns everything on them.</li><li><b>Keep LinkedIn set to \"off.\"</b> Turn off the \"Open to Work\" setting and the green \"#OpenToWork\" frame. Instead, manually message recruiters you trust.</li><li><b>Use a burner calendar.</b> Create a personal Google Calendar for interview slots. Never add interview events to your work calendar — even if you label them \"doctor's appointment.\"</li><li><b>Close Slack and email before interviews.</b> Status indicators (green/away) can betray you. Block your calendar as \"focus time\" on your work calendar.</li></ul><p>SAP engineers are used to a slower recruitment pipeline with less surveillance. FAANG companies actively monitor employee engagement signals. Treat every step as if your current employer is watching — because they might be.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "PTO & Scheduling Strategy — Managing Interview Logistics",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>A Staff+ loop at FAANG involves 5–7 interviews spread across 3–4 weeks (phone screen + onsite virtual). Scheduling around your current job is a logistics puzzle.</p><p><b>Strategy:</b></p><ul><li><b>Cluster interviews.</b> Ask the recruiter to schedule your on-site (virtual) interviews within 1–2 days. This minimizes PTO usage and reduces detection risk.</li><li><b>Use half-day PTO strategically.</b> Morning interviews? Take the morning off. Afternoon interviews? Take the afternoon off. Full-day PTO is suspicious if used weekly.</li><li><b>Block recurring focus time.</b> Many Staff+ engineers have \"deep work\" blocks (Tue/Thu mornings). Use these for interviews — they look normal.</li><li><b>Beware of time zones.</b> If interviewing for a different FAANG in a different time zone, account for the difference. A 9 AM PT interview is noon ET — that's a lunch break, not a morning block.</li></ul><p>SAP engineers often don't think about this level of scheduling discipline because SAP interview loops are shorter (2–3 rounds) and less intense. A FAANG Staff+ loop requires military-grade calendar management.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Reference Management — Who to Ask and What They'll Say",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>FAANG companies take references seriously, especially for Staff+ roles. They will call your listed references and may also call <b>backchannel references</b> — people they know who know you.</p><p><b>Reference strategy:</b></p><ul><li><b>Choose managers who saw your impact.</b> A former manager who can speak to your technical vision, cross-team execution, and project selection is gold. Do not ask a peer who can only speak to your coding ability.</li><li><b>Prepare your references.</b> Tell them what role you're targeting and what themes to emphasize. \"Please highlight my work on the migration project and my mentoring.\"</li><li><b>Do not list your current manager.</b> Ever. Recruiters understand this. If they insist, say \"My current manager doesn't know I'm interviewing. I can provide a former manager instead.\"</li><li><b>Control backchannels.</b> If you've worked with people who now work at the target company, let your recruiter know: \"I'd prefer you not contact X at this stage.\" Most recruiters will honor this.</li></ul><p>SAP's reference network is smaller and less interconnected. FAANG's engineering community is incestuous — everyone knows everyone. Be deliberate about who knows you're looking.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Offer Timelines & Leverage — Coordinating Multiple Offers",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>The best negotiating position is <b>competing offers</b>. But coordinating offers while employed requires careful timing.</p><p><b>Leverage mechanics:</b></p><ul><li><b>Stagger your start dates.</b> Don't let all companies finish their loops the same week. Tell recruiter A: \"I'm in final stages with another company. Can we complete this week?\" This creates urgency.</li><li><b>Use the standard exploding offer.</b> FAANG offers typically expire in 5–10 business days. Ask for an extension if you're waiting on another result. Most recruiters will give you 1 week.</li><li><b>Don't reveal your current comp until they show theirs.</b> In California and Washington, employers can't ask for your current salary. Let them anchor first. If your current FAANG comp is high (and it probably is as Staff+), you can always say \"I'd expect a meaningful increase.\"</li><li><b>Negotiate total comp, not just base.</b> FAANG compensation is base + bonus + RSUs. The lever is usually RSUs and sign-on bonus. Don't fixate on base salary — FAANG base caps around $250K for Staff+ anyway.</li></ul><p>SAP engineers often approach negotiation from a position of scarcity — in the SAP ecosystem, offers are lower and fewer. At FAANG level, you have leverage. Use it.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Managing Team Relationships During the Search — Ethics and Optics",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Interviewing while employed raises ethical questions. You're planning to leave a team that depends on you. How do you handle this with integrity?</p><p><b>Guidelines:</b></p><ul><li><b>Do not use company resources.</b> No printing resumes, no taking recruiter calls from a conference room, no using your work laptop for interview prep. This isn't just ethics — it's policy violation and can get you fired.</li><li><b>Do not take interviews during work hours without covering them.</b> If you block focus time and interview then, that's defensible. If you skip stand-ups or cancel on teammates, it's noticeable and unfair.</li><li><b>Do not tell coworkers.</b> Even your work bestie. Secrets at FAANG travel fast. A teammate once mentioned my interview prep in stand-up as a joke — in front of my manager.</li><li><b>Maintain delivery.</b> Keep shipping. If you slack off while interviewing, you damage your reputation permanently. FAANG is a small world — you'll work with these people again.</li></ul><p>SAP culture is more relationship-stable; people stay for decades. FAANG culture expects turnover. No one will be shocked you're leaving. But how you leave will define your network for the next decade.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Exit Timing & Transition — Two Weeks, Knowledge Transfer, Bridges",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>When you accept the offer, the exit begins. FAANG companies handle departures professionally, but how you manage the transition determines whether people will want to work with you again.</p><p><b>Exit checklist:</b></p><ul><li><b>Give standard notice.</b> Two weeks is the norm, sometimes three for Staff+ level if you're mid-critical project. Do not give four weeks unless your team is in crisis — more time creates awkwardness, not goodwill.</li><li><b>Write a knowledge transfer doc.</b> Include: current project status, architectural decisions, known issues, ongoing investigations, stakeholder contacts. This is your legacy.</li><li><b>Offer to meet with your replacement.</b> If your team is hiring, offer two 1-hour handoff sessions. This is remembered.</li><li><b>Do not coast during notice period.</b> Ship your remaining tasks. Answer PRs. Attend stand-ups. The last two weeks are your final impression.</li><li><b>Write a genuine goodbye message.</b> In Slack or email. Thank specific people. Mention what you learned. Do not complain. Do not gloat about your new role.</li></ul><p>SAP engineers often stay through entire implementation cycles before leaving — multi-month notice is sometimes contractual. At FAANG, two weeks is standard. Make them count.</p>"
+        }
+      ],
+      "codeBlock": ""
+    }
+  ],
+  "details": "<p><b>Staff+ Insight:</b> Interviewing while employed is a negotiation superpower. You negotiate from strength, not desperation. But it requires discipline — one accidental Slack message can derail your search. Treat the process with the same rigor you'd treat a production deployment.</p>"
+}

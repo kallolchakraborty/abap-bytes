@@ -1,0 +1,72 @@
+{
+  "id": "staff-design-partnership",
+  "title": "Working with Design/UX Partners at FAANG",
+  "category": "Engineering Culture",
+  "subcategory": "Operational Excellence",
+  "language": "text",
+  "description": "<p>At SAP, most engineers never interact with a product designer — UX is owned by SAP Fiori guidelines or technical configuration screens. At FAANG, designers are core partners on every product team, and your ability to collaborate on UX decisions is a Staff+ competency. This article bridges the gap from zero-design culture to design-partnership culture.</p>",
+  "tags": ["FAANG", "Staff+", "Design", "UX", "Product Design", "Partnership", "Collaboration"],
+  "sections": [
+    {
+      "title": "The PM/Design/Eng Triad — How FAANG Product Teams Work",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>FAANG product teams operate as a <b>triad</b>: Product Manager (PM), Product Designer, and Engineering Lead (you). Decisions require alignment across all three roles. No single role can unilaterally ship a feature.</p><p>In contrast, at SAP a functional specification from a business analyst or solution architect defines requirements, and engineering builds to spec. Design input is minimal — the UI is defined by Fiori design guidelines or even Excel mockups. The designer role often doesn't exist.</p><p>At FAANG, the designer brings <b>user research</b>, <b>prototypes</b>, and <b>usability testing</b>. Your job as Staff+ is to understand the design rationale and push back when feasibility, performance, or complexity is a concern — but you must respect the designer's expertise on user behavior.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Design Review Culture — Giving and Receiving Design Feedback",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Every week (or sprint), the team holds a <b>design review</b>. The designer presents mocks or prototypes. PM, engineers, and other designers critique. It's high-intensity: feedback is direct, specific, and visual.</p><p>From SAP, this feels jarring. SAP engineers review functional specs and code reviews, not visual layouts. You may be tempted to stay silent during design reviews — <b>don't</b>. Your technical input (load times, caching, offline support, error states) is critical and valued.</p><p>Rules of design reviews at FAANG:</p><ul><li><b>Focus on user outcomes</b>, not personal taste</li><li><b>Use data</b> — \u201cthis pattern increases cognitive load\u201d beats \u201cI don't like it\u201d</li><li><b>Propose alternatives</b>, not just problems</li><li><b>Assume good intent</b> — the designer spent days on those mocks</li></ul>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "UX Research and Engineering — How Research Informs Technical Decisions",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>FAANG invests heavily in <b>UX research</b> (UXR). Researchers run moderated studies, A/B tests, surveys, and field studies. Findings directly shape product requirements and technical architecture.</p><p>Example: A researcher discovers that users abandon a flow after 3 seconds of loading time. This becomes a <b>hard latency budget</b> — your team must optimize or restructure the feature. At SAP, performance requirements are typically contractual (SLA-based) or derived from platform constraints, not user behavior research.</p><p>As a Staff+ engineer, you should:</p><ul><li><b>Attend research sessions</b> when possible — watching users struggle is humbling and clarifying</li><li><b>Translate research insights into system requirements</b> — slowness isn't a bug, it's a UX failure</li><li><b>Advocate for engineering-inclusive research</b> — ask researchers to test technical workflows (error states, loading indicators, empty states)</li></ul>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Technical Feasibility Partnership — Working with Designers on What's Possible",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>The most productive Staff+ engineers are <b>designers' favorite engineers</b>. Why? Because they say \"yes, and here's how\" instead of \"no, that's impossible.\"</p><p>FAANG designers push boundaries. They propose animations, real-time collaboration, offline sync, camera-based features, and integrations that SAP engineers would dismiss as scope creep. Your job is to:</p><ul><li><b>Explore feasibility early</b> — run quick technical spikes before design is finalized</li><li><b>Offer trade-offs</b> — \"we can't do real-time sync, but we can do optimistic updates\"</li><li><b>Build design-forward engineering cultures</b> — respect pixel-perfect implementation as engineering craft</li></ul><p>In the SAP world, the question \"can it be done?\" is rarely asked because the UI platform (SAP Fiori, SAPUI5) is fixed. At FAANG, you choose the stack, and designers expect you to push it.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Design Systems and Engineering Infrastructure — Building Design Components",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Every FAANG company has an internal <b>design system</b>: Google's Material Design, Meta's Design System, Apple's HIG. As a Staff+ engineer, you will likely contribute to or maintain the engineering side of the design system.</p><p>This means:</p><ul><li><b>Building reusable components</b> that match design tokens (colors, typography, spacing, motion)</li><li><b>Ensuring accessibility (a11y)</b> — not optional at FAANG, unlike SAP where Fiori handles it</li><li><b>Performance testing components</b> — a button library shouldn't add 50KB to bundle size</li><li><b>Versioning</b> and <b>backward compatibility</b> — designers release new components quarterly</li></ul><p>SAP engineers often underinvest in design systems because ABAP doesn't have a component model. At FAANG, the design system is <b>infrastructure</b> — and maintaining it is a Staff+ level responsibility.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "The SAP Engineer's Design Partnership Adjustment — No Design Culture in SAP",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>The hardest adjustment for SAP engineers transitioning to FAANG is the <b>absence of design culture in the SAP ecosystem</b>. Consider these contrasts:</p><ul><li><b>SAP:</b> UI is defined by configuration tables, extension fields, and Fiori floorplans. The \"designer\" is a business analyst who configures UI5. <b>FAANG:</b> Designers have deep UX research backgrounds, run usability tests, and obsess over micro-interactions.</li><li><b>SAP:</b> Engineers never question the UI. The spec says what to build. <b>FAANG:</b> Engineers are expected to question <i>everything</i> — including whether a feature should exist at all.</li><li><b>SAP:</b> Visual polish is low priority. Enterprise customers tolerate ugly interfaces. <b>FAANG:</b> Consumer-grade UX expectations apply even to internal tools.</li></ul><p><b>Your action plan:</b> Before your FAANG start date, read a UX design book (Don Norman's <i>Design of Everyday Things</i> is standard). Practice giving feedback on Dribbble or Material Design case studies. Attend design talks at your new company. Treat the design partnership as seriously as your PM partnership — your design counterpart will become one of your strongest allies.</p>"
+        }
+      ],
+      "codeBlock": ""
+    }
+  ],
+  "details": "<p><b>Staff+ Insight:</b> SAP engineers have never worked with product designers. At FAANG, the designer is as important as the PM. Your willingness to collaborate on UX decisions — rather than treating them as UI decoration — will define your early reputation.</p>"
+}

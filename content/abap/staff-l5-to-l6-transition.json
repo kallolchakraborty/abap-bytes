@@ -1,0 +1,233 @@
+{
+  "id": "staff-l5-to-l6-transition",
+  "title": "Senior to Staff+ Transition Guide (L5→L6 / E5→E6)",
+  "category": "Engineering Culture",
+  "subcategory": "Operational Excellence",
+  "language": "text",
+  "description": "<p>The jump from Senior Engineer (L5/E5) to Staff Engineer (L6/E6) is the hardest promotion in the FAANG engineering ladder. It is also the most misunderstood. At SAP, the equivalent transition (Senior Developer to Architect) is about technical breadth and formal authority. At FAANG, L5→L6 is about impact multiplication, organizational leverage, and shifting from execution to enablement. This guide walks through every dimension of the transition: the mindset shift, scope expansion, visibility mechanics, common traps, timeline, and how SAP architects can translate their title to the FAANG context.</p>",
+  "tags": ["FAANG", "Staff+", "L5", "L6", "Transition", "Promotion", "Career", "Senior"],
+  "sections": [
+    {
+      "title": "What Changes at L6/E6 — Impact, Scope, Visibility",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>At L5 (Senior Engineer), your job is to take a well-defined problem and execute it excellently. You design systems, write high-quality code, review peers, and deliver features on time. Your impact is roughly proportional to your individual output. At L6 (Staff Engineer), your job is to identify problems worth solving, define the approach, and enable multiple teams to execute. Your impact is measured by how much you amplify the output of others, not by how much code you write.</p><p>This is the fundamental change: <b>impact vs. execution</b>. At L5, you are paid for what you build. At L6, you are paid for what you enable. Your knowledge of how to design systems is table stakes — everyone at L6 is a strong engineer. The differentiator is your ability to navigate organizational complexity, build consensus, and drive outcomes across team boundaries. In SAP, the Architect title is granted based on technical expertise and years of experience. At FAANG, L6 is granted based on demonstrated organizational impact.</p><p>Three things change concretely at L6. First, <b>scope</b>: at L5, you own a feature or a service. At L6, you own a problem domain across multiple services and teams. Second, <b>visibility</b>: at L5, your reputation is known within your team. At L6, you are known across the org and potentially the company. People outside your immediate team cite your designs and seek your opinion. Third, <b>expectations</b>: at L5, you are expected to execute. At L6, you are expected to define what good looks like and raise the bar for everyone around you.</p><p>For SAP engineers, the most disorienting change is the loss of the direct output feedback loop. At SAP, you can point to a module you built or a system you architected as evidence of your contribution. At FAANG L6, your achievements are less visible because they are mediated through others. The project that succeeded because you unblocked a dependency, mentored a junior engineer, or changed the team's technical direction — these are harder to measure but more valuable. You need to develop a new language for describing your impact.</p>"
+        },
+        {
+          "type": "svg",
+          "value": "<svg viewBox=\"0 0 800 350\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"800\" height=\"350\" fill=\"#f8f9fa\" rx=\"10\"/><text x=\"20\" y=\"30\" font-family=\"Arial\" font-size=\"14\" font-weight=\"bold\" fill=\"#333\">L5 vs L6 Expectation Comparison</text><rect x=\"30\" y=\"60\" width=\"220\" height=\"40\" rx=\"6\" fill=\"#e3f2fd\" stroke=\"#1565c0\" stroke-width=\"1.5\"/><text x=\"140\" y=\"85\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"12\" font-weight=\"bold\" fill=\"#1565c0\">L5: Senior Engineer</text><rect x=\"270\" y=\"60\" width=\"220\" height=\"40\" rx=\"6\" fill=\"#fce4ec\" stroke=\"#c62828\" stroke-width=\"1.5\"/><text x=\"380\" y=\"85\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"12\" font-weight=\"bold\" fill=\"#c62828\">L6: Staff Engineer</text><text x=\"20\" y=\"145\" font-family=\"Arial\" font-size=\"12\" font-weight=\"bold\" fill=\"#333\">Scope</text><rect x=\"30\" y=\"155\" width=\"220\" height=\"55\" rx=\"4\" fill=\"#f5f5f5\"/><text x=\"140\" y=\"175\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"11\" fill=\"#555\">Single feature or service</text><text x=\"140\" y=\"195\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"11\" fill=\"#555\">Well-defined problem</text><rect x=\"270\" y=\"155\" width=\"220\" height=\"55\" rx=\"4\" fill=\"#f5f5f5\"/><text x=\"380\" y=\"175\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"11\" fill=\"#555\">Problem domain, multi-team</text><text x=\"380\" y=\"195\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"11\" fill=\"#555\">Ambiguous, define it yourself</text><text x=\"20\" y=\"245\" font-family=\"Arial\" font-size=\"12\" font-weight=\"bold\" fill=\"#333\">Output</text><rect x=\"30\" y=\"255\" width=\"220\" height=\"55\" rx=\"4\" fill=\"#f5f5f5\"/><text x=\"140\" y=\"275\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"11\" fill=\"#555\">Individual execution</text><text x=\"140\" y=\"295\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"11\" fill=\"#555\">Code, designs, reviews</text><rect x=\"270\" y=\"255\" width=\"220\" height=\"55\" rx=\"4\" fill=\"#f5f5f5\"/><text x=\"380\" y=\"275\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"11\" fill=\"#555\">Amplify others</text><text x=\"380\" y=\"295\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"11\" fill=\"#555\">Mentoring, strategy, influence</text><text x=\"520\" y=\"145\" font-family=\"Arial\" font-size=\"12\" font-weight=\"bold\" fill=\"#333\">Impact Horizon</text><rect x=\"520\" y=\"155\" width=\"250\" height=\"55\" rx=\"4\" fill=\"#f5f5f5\"/><text x=\"645\" y=\"175\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"11\" fill=\"#555\">Weeks to months</text><text x=\"645\" y=\"195\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"11\" fill=\"#555\">Your own output</text><rect x=\"520\" y=\"255\" width=\"250\" height=\"55\" rx=\"4\" fill=\"#f5f5f5\"/><text x=\"645\" y=\"275\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"11\" fill=\"#555\">Quarters to years</text><text x=\"645\" y=\"295\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"11\" fill=\"#555\">Org-wide improvement</text></svg>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Impact vs Execution — The Fundamental Shift",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>If you take one thing from this guide, let it be this: <b>L5 is about execution. L6 is about impact through others.</b> This sounds simple, but it is the hardest shift to internalize because it requires you to stop doing the work that made you successful at L5. Every instinct you developed as a top-performing senior engineer — own the hardest problem, write the most elegant code, be the person who always delivers — can become a liability at L6.</p><p>Consider a concrete scenario. Your team is building a critical new service. At L5, you would volunteer to build the core component, design the architecture, implement it, and make sure it ships. Your impact is clear and measurable: the service exists because of your work. At L6, your response should be different. You should identify the engineering talent on the team, mentor a mid-level engineer to design and build the core component, set up the technical review process, ensure the interfaces are clean, and manage the cross-team dependencies. The service ships, but you did not write a line of its code. Your impact is invisible — unless you learn to articulate it.</p><p>This invisible impact is the crux of the L5→L6 promotion challenge. At L5, your promotion packet is full of features you built, systems you designed, and bugs you fixed. At L6, your packet is full of projects that succeeded because of your leadership, engineers who grew because of your mentorship, and organizational changes that happened because of your influence. The artifacts are different: design documents, cross-team collaboration threads, mentoring feedback, OKR records, and testimonial quotes from peers and stakeholders.</p><p>For SAP engineers, this shift is particularly hard because SAP's promotion criteria are heavily weighted toward technical depth and individual contribution. The SAP Architect title is earned by demonstrating deep technical expertise in a domain. At FAANG, deep technical expertise is necessary but not sufficient for L6. You also need breadth — organizational awareness, strategic thinking, and the ability to influence without authority. The mindset shift: stop asking \"What can I build?\" and start asking \"What can I enable?\"</p>"
+        },
+        {
+          "type": "quantifiedTradeoff",
+          "value": {
+            "title": "Impact vs Execution: L5 vs L6",
+            "description": "How the nature of your contribution changes between the two levels.",
+            "rows": [
+              {
+                "label": "Primary Mode",
+                "option1": "Design and build systems",
+                "option2": "Enable others to build systems",
+                "option3": "Raise the bar org-wide"
+              },
+              {
+                "label": "Success Measure",
+                "option1": "Code quality, shipped features",
+                "option2": "Team output, org velocity",
+                "option3": "Technical strategy evolution"
+              },
+              {
+                "label": "Time Horizon",
+                "option1": "Weeks to months",
+                "option2": "Quarters to years",
+                "option3": "Multi-year technical vision"
+              },
+              {
+                "label": "Failure Mode",
+                "option1": "Wrong design, late delivery",
+                "option2": "Team dependent on you",
+                "option3": "Org not growing engineers"
+              }
+            ]
+          }
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Scope Expansion — From Your Team to the Org",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>At L5, your scope is your team's codebase and your immediate projects. At L6, your scope expands to include the broader organization — multiple teams, cross-cutting concerns, and strategic technical decisions that affect the whole org. This scope expansion is both the greatest opportunity and the greatest source of discomfort in the transition.</p><p>The first dimension of scope expansion is <b>problem selection</b>. At L5, problems are assigned to you. At L6, you identify the problems that matter most. You look across the org and ask: What patterns are causing friction? What technical debt is slowing everyone down? What capability is missing that would unlock the next phase of growth? This requires a broader perspective than most SAP engineers are used to. In SAP, the problem space is defined by product management and architecture boards. At FAANG, Staff+ engineers proactively identify and prioritize problems.</p><p>The second dimension is <b>cross-team influence</b>. At L5, you influence people on your team through code reviews and design discussions. At L6, you influence people on other teams through technical vision documents, architecture reviews, and cross-team working groups. You need to build credibility with engineers who do not report to you and who have no reason to listen to you except that your ideas are good. This requires strong writing, clear thinking, and the patience to build alignment over weeks and months.</p><p>The third dimension is <b>organizational leverage</b>. At L6, you should be working on things that, if you succeed, improve the productivity of many teams, not just your own. Examples: improving the CI/CD pipeline, establishing testing standards, building shared libraries, defining API conventions, or leading a migration that reduces operational complexity. One good L6 project can save the org hundreds of engineering hours per quarter. Finding and executing these leveraged projects is the core of the Staff+ role.</p><p>For SAP engineers, the biggest adjustment is learning to operate at this scale. In SAP, you can spend your entire career on a single module and be considered a top performer. At FAANG, that narrow focus is a career ceiling. You need to constantly expand your context: learn what other teams are doing, understand the business goals, read the leadership's strategic communications, and actively look for problems that cross team boundaries. The question to ask yourself weekly: <b>\"Am I working on something that only I can do, that makes everything else easier?\"</b></p>"
+        },
+        {
+          "type": "checklist",
+          "value": {
+            "title": "Are You Operating at L6 Scope?",
+            "items": [
+              {
+                "label": "I regularly identify problems that affect multiple teams",
+                "checked": false
+              },
+              {
+                "label": "I have influence on decisions outside my direct team",
+                "checked": false
+              },
+              {
+                "label": "My projects improve org-wide productivity, not just my team's",
+                "checked": false
+              },
+              {
+                "label": "I am sought out for technical guidance by engineers on other teams",
+                "checked": false
+              },
+              {
+                "label": "I spend at least 30% of my time on cross-team activities",
+                "checked": false
+              }
+            ]
+          }
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "The Visibility Game — Writing, Presenting, Influencing",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>One of the hardest truths about the L5→L6 transition: excellent work is not enough. You also need to be visible. At SAP, visibility is largely passive — your contributions are recognized through the formal hierarchy. At FAANG, visibility is active. You need to ensure that the right people know about your impact, not because you boast, but because you communicate strategically. This is not politics — it is the practical reality of operating at scale where decision-makers cannot observe your work directly.</p><p><b>Writing</b> is the primary visibility vehicle at FAANG. Amazon has written narratives. Google has design docs. Meta has posts. In every FAANG company, the written word carries more weight than the spoken word. As an L6 candidate, you need to write documents that are read by people outside your team: technical vision docs, migration plans, postmortems, and OKR proposals. These documents are your portfolio. When promotion committees evaluate you, they read your documents. They do not watch you code.</p><p>Your documents at L6 need to be different from your documents at L5. At L5, a good design doc describes a solution to a well-defined problem. At L6, a good document motivates <i>why</i> the problem matters, explores multiple solution paths, addresses tradeoffs, and includes a rollout plan with risk mitigation. It is written for a broader audience: your manager, their peers, other Staff+ engineers, and sometimes directors. It anticipates questions and addresses them before they are asked.</p><p><b>Presenting</b> is the second visibility lever. You need to present at team meetings, org-wide tech talks, and cross-team reviews. Your goal is not just to inform, but to persuade and align. The best L6 engineers use presentations to build consensus, not just to share information. A presentation where everyone agrees and has no questions is usually a sign that no one was listening or that the topic was too safe. The best presentations provoke productive debate.</p><p><b>Influencing</b> is the third visibility lever. This includes participating in architecture reviews, contributing to cross-team discussions, mentoring engineers outside your team, and being a resource that others seek out. Influence is built one interaction at a time. Every thoughtful code review comment, every helpful Slack response, and every well-asked question in a design review is an investment in your reputation. Over months and years, these investments compound into the kind of recognition that makes promotion straightforward.</p><p>For SAP engineers, the visibility game feels unnatural. SAP culture values humility and reserved behavior. Visibility-seeking is viewed negatively. At FAANG, visibility is not about ego — it is about effectiveness. If the right people do not know what you are working on, your projects will not get the support they need, and your promotion packet will lack the evidence required to clear the bar. The adjustment: learn to talk about your work without bragging, and learn to write about your impact without exaggeration.</p>"
+        },
+        {
+          "type": "adversarialResponse",
+          "value": {
+            "title": "Your Manager Says Your Impact Is Not Visible Enough",
+            "scenario": "During a mid-year check-in, your manager says your L6 promotion case is not strong enough because people outside your team do not know about your contributions.",
+            "bad": {
+              "label": "SAP Engineer Approach",
+              "text": "Gets defensive. Points to all the code written and features shipped. Argues that the work should speak for itself. Does not change behavior."
+            },
+            "good": {
+              "label": "FAANG Staff+ Approach",
+              "text": "Asks for specific examples of what visibility looks like. Creates a plan: write a technical vision doc, present at the next org-wide meeting, and proactively seek cross-team collaboration opportunities."
+            }
+          }
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Common L5→L6 Traps — Over-Coding, Under-Communicating, Scope Creep",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>Every engineer who attempts the L5→L6 transition falls into at least one of these traps. Being aware of them is the first step to avoiding them. These traps are especially dangerous for SAP engineers because they align with behaviors that are rewarded in SAP culture.</p><p><b>Trap 1: Over-Coding.</b> You keep writing code because it is what you are good at and it gives you a sense of progress. Meanwhile, your team is directionless because no one is providing technical leadership. The trap feels productive, but it is the fastest way to stall your promotion. Fix: set a hard limit on how much code you write per week. Start at 50% of what you used to write, then reduce to 25%. Use the reclaimed time for design reviews, mentoring, and cross-team communication. The code you write at L6 should be the code that nobody else can write — not the code that is most satisfying.</p><p><b>Trap 2: Under-Communicating.</b> You assume that your impact is visible because you are working hard. You do not write docs, you do not present at reviews, and you do not proactively share your progress. Then promotion time comes and your packet is thin. Fix: adopt a rule of one written artifact per week. A design doc, a postmortem, a proposal, or a thoughtful comment on someone else's document. Writing is thinking made visible. If you are not writing, you are not leading.</p><p><b>Trap 3: Scope Creep.</b> You say yes to every cross-team request because you want to demonstrate L6 scope. You end up spread across five initiatives, none of which you can drive to completion. Your impact is diluted and your execution is shallow. Fix: be ruthless about prioritization. Before taking on a new initiative, ask: <b>\"Is this the most leveraged thing I can do for the org?\"</b> If the answer is not a clear yes, say no or defer. One deeply impactful initiative is worth more than five superficially touched ones.</p><p><b>Trap 4: The Hero Complex.</b> You believe that you need to save every project, fix every emergency, and be the person everyone depends on. This creates a single point of failure and prevents others from developing their own expertise. Fix: the next time someone brings you a problem, do not solve it yourself. Ask: <b>\"Who on the team can own this? What support do they need?\"</b> Your job is to build a team that does not need you, not to be indispensable.</p><p><b>Trap 5: Neglecting Your Promotion Packet.</b> You assume that your manager is tracking your achievements and will build the case for you. At FAANG, the promotion packet is your responsibility. You need to document your impact in real time, collect feedback, and curate the evidence. Fix: keep a brag doc. Every week, add one bullet point about a significant contribution, a piece of positive feedback, or an outcome you enabled. At promotion time, this doc becomes the raw material for your packet.</p>"
+        },
+        {
+          "type": "checklist",
+          "value": {
+            "title": "L5→L6 Transition Trap Checklist",
+            "items": [
+              {
+                "label": "I write code only when no one else can — not because I enjoy it",
+                "checked": false
+              },
+              {
+                "label": "I produce at least one written artifact per week",
+                "checked": false
+              },
+              {
+                "label": "I decline low-leverage requests regularly",
+                "checked": false
+              },
+              {
+                "label": "I redirect problems to team members instead of solving them myself",
+                "checked": false
+              },
+              {
+                "label": "I maintain a brag doc with weekly updates on my impact",
+                "checked": false
+              }
+            ]
+          }
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Timeline & Milestones — What a Realistic L5→L6 Path Looks Like",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>How long does L5→L6 take? The honest answer: 2-4 years for most engineers at FAANG. Some make it in 18 months; others take 5 years. The timeline depends on your starting point, the scope of your projects, the quality of your manager and mentors, and your ability to adapt. For SAP engineers joining FAANG with a Senior Developer or Architect title, the timeline is typically 2-3 years — not because you lack the technical skills, but because you need to learn a completely new way of operating.</p><p>Here is a realistic milestone timeline:</p><p><b>Months 0-6: Learning the new operating model.</b> You are still being evaluated as an L5-equivalent during this period. Your goal is to learn how FAANG works: the planning cycle, the communication norms, the promotion process. Ship a few solid projects to build credibility. Start building relationships outside your team. In SAP terms, this is the \"orientation\" period — but it is longer and more intensive than any SAP onboarding.</p><p><b>Months 6-12: First cross-team impact.</b> You should have at least one project that touches another team by month 12. Write a technical vision doc that influences direction beyond your immediate team. Start mentoring one or two junior engineers. Begin collecting evidence for your promotion packet. This is the point where you should be operating at L6 scope at least 50% of the time.</p><p><b>Months 12-24: Sustained L6-level impact.</b> You are consistently operating at L6 scope. Your documents are read org-wide. You are sought out for technical guidance. You have mentored multiple engineers who can attest to your impact. Your promotion packet should have at least 2-3 strong artifacts (projects, documents, or outcomes) that clearly demonstrate L6-level impact.</p><p><b>Months 24-36: Promotion case and committee.</b> Your manager submits your promotion packet. The committee reviews it. There may be a calibration cycle where your packet is compared against other candidates. Expect the process to take 1-2 quarters from submission to decision. If your packet is rejected, address the feedback and re-submit in 6 months. Most successful L6 promotions happen on the second or third attempt.</p><p>The single most important thing you can do to accelerate this timeline: find a mentor who has already made the L5→L6 transition. They can help you calibrate your scope, identify the right projects, and navigate the political subtleties of the promotion process. Your manager is an advocate, but your mentor is a guide. Both are essential.</p>"
+        },
+        {
+          "type": "svg",
+          "value": "<svg viewBox=\"0 0 800 280\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"800\" height=\"280\" fill=\"#f8f9fa\" rx=\"10\"/><text x=\"20\" y=\"30\" font-family=\"Arial\" font-size=\"14\" font-weight=\"bold\" fill=\"#333\">L5 to L6 Typical Timeline (2-3 Years for SAP Transitions)</text><rect x=\"30\" y=\"60\" width=\"160\" height=\"60\" rx=\"6\" fill=\"#e3f2fd\" stroke=\"#1565c0\" stroke-width=\"1.5\"/><text x=\"110\" y=\"82\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"11\" font-weight=\"bold\" fill=\"#1565c0\">Months 0-6</text><text x=\"110\" y=\"102\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"10\" fill=\"#333\">Learn operating model</text><text x=\"110\" y=\"114\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"10\" fill=\"#333\">Ship first projects</text><rect x=\"210\" y=\"60\" width=\"160\" height=\"60\" rx=\"6\" fill=\"#e8f5e9\" stroke=\"#2e7d32\" stroke-width=\"1.5\"/><text x=\"290\" y=\"82\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"11\" font-weight=\"bold\" fill=\"#2e7d32\">Months 6-12</text><text x=\"290\" y=\"102\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"10\" fill=\"#333\">Cross-team impact</text><text x=\"290\" y=\"114\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"10\" fill=\"#333\">Start mentoring</text><rect x=\"390\" y=\"60\" width=\"180\" height=\"60\" rx=\"6\" fill=\"#fff3e0\" stroke=\"#e65100\" stroke-width=\"1.5\"/><text x=\"480\" y=\"82\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"11\" font-weight=\"bold\" fill=\"#e65100\">Months 12-24</text><text x=\"480\" y=\"102\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"10\" fill=\"#333\">Sustained L6-level impact</text><text x=\"480\" y=\"114\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"10\" fill=\"#333\">Build promo artifacts</text><rect x=\"590\" y=\"60\" width=\"180\" height=\"60\" rx=\"6\" fill=\"#fce4ec\" stroke=\"#c62828\" stroke-width=\"1.5\"/><text x=\"680\" y=\"82\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"11\" font-weight=\"bold\" fill=\"#c62828\">Months 24-36</text><text x=\"680\" y=\"102\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"10\" fill=\"#333\">Packet submission</text><text x=\"680\" y=\"114\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"10\" fill=\"#333\">Committee review</text><line x1=\"190\" y1=\"90\" x2=\"208\" y2=\"90\" stroke=\"#999\" stroke-width=\"2\"/><line x1=\"370\" y1=\"90\" x2=\"388\" y2=\"90\" stroke=\"#999\" stroke-width=\"2\"/><line x1=\"570\" y1=\"90\" x2=\"588\" y2=\"90\" stroke=\"#999\" stroke-width=\"2\"/><text x=\"30\" y=\"175\" font-family=\"Arial\" font-size=\"12\" font-weight=\"bold\" fill=\"#333\">Key Truths About the Timeline</text><text x=\"30\" y=\"198\" font-family=\"Arial\" font-size=\"11\" fill=\"#555\">• Most successful L6 promotions happen on the 2nd or 3rd submission attempt</text><text x=\"30\" y=\"218\" font-family=\"Arial\" font-size=\"11\" fill=\"#555\">• Having a mentor who has made this transition halves the learning curve</text><text x=\"30\" y=\"238\" font-family=\"Arial\" font-size=\"11\" fill=\"#555\">• Your manager submits the packet but YOU build it — start your brag doc on day 1</text><text x=\"30\" y=\"258\" font-family=\"Arial\" font-size=\"11\" fill=\"#555\">• SAP-title holders (Architect, Sr. Developer) are often at L5, not L6 — recalibrate</text></svg>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "SAP Architect to Staff+ at FAANG — Direct Translation for SAP Title Holders",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p>If you hold an SAP Architect or Senior Developer title, the L5→L6 transition is complicated by title mismatch. Many SAP engineers join FAANG expecting to be hired at L6 based on their SAP title, only to be placed at L5 after the interview process. This is not a judgment on your abilities — it is a reflection of the different expectations at the two companies. Understanding this gap is critical to setting realistic expectations and planning your transition.</p><p>At SAP, an Architect is typically: a deeply technical individual contributor with 10-15+ years of experience, broad knowledge of the SAP ecosystem, formal authority over technical decisions in their domain, and responsibility for a specific product or module. At FAANG, L6 Staff Engineer is: a technical leader who operates across teams, influences without formal authority, mentors multiple engineers, shapes org-wide technical strategy, and drives outcomes through others. The overlap is technical depth. The gap is everything else.</p><p>Here is how your SAP skills translate:</p><p><b>Technical depth</b> — Excellent. Your deep SAP domain knowledge is rare and valuable. FAANG companies increasingly need engineers who understand enterprise software complexities. However, your technical depth in ABAP or SAP-specific technologies may not transfer to FAANG's technology stacks. You will need to build breadth in distributed systems, cloud infrastructure, and modern software engineering practices. Plan on a 6-12 month technical ramp-up.</p><p><b>System design</b> — Good, with limitations. SAP Architects are skilled at designing modular, extensible systems within the SAP ecosystem. FAANG system design expects you to reason about distributed systems at scale: consistency models, partitioning, replication, monitoring, and failure modes. Your design skills are transferable, but you need to learn new patterns and vocabulary. Study DDIA (Designing Data-Intensive Applications) and practice FAANG-style system design interviews.</p><p><b>Cross-team coordination</b> — Different. At SAP, cross-team coordination happens through formal processes. At FAANG, it happens through relationships and influence. Your experience navigating SAP's matrix organization is valuable, but you need to learn to operate without formal authority. The skills are the same — building consensus, managing stakeholders, communicating clearly — but the context is fundamentally different.</p><p><b>Mentoring and growing others</b> — Varies. Some SAP Architects mentor junior developers; many do not. At FAANG, growing the next generation of engineers is a core L6 responsibility, not a nice-to-have. If you have not actively mentored engineers to promotion, this is an area to develop immediately. Start by mentoring one engineer for 30 minutes per week. Within six months, the feedback from that relationship will be one of the strongest artifacts in your promotion packet.</p><p><b>Strategic impact</b> — The biggest gap. SAP Architects typically execute within a product roadmap defined by others. At FAANG, L6 engineers help define the roadmap itself. You need to develop the skill of looking at the business holistically and identifying technical investments that create leverage for the entire organization. This is not something you practiced at SAP unless you were in a senior architecture role with product input.</p><p>The bottom line: do not expect your SAP Architect title to translate to L6 at FAANG. Expect L5 or E5, and plan a 2-3 year path to L6. The title gap is not an insult — it is the reality of different systems. Your SAP experience gives you a strong foundation, but the FAANG ladder demands a different kind of impact. The good news: once you learn the new operating model, your enterprise software experience becomes a differentiating strength. Few FAANG engineers understand the complexity of enterprise-grade systems the way you do.</p>"
+        },
+        {
+          "type": "quantifiedTradeoff",
+          "value": {
+            "title": "SAP Architect Skills vs FAANG L6 Requirements",
+            "description": "Direct translation of your SAP skills to the FAANG context.",
+            "rows": [
+              {
+                "label": "Technical Depth",
+                "option1": "Deep SAP/ABAP expertise",
+                "option2": "Distributed systems breadth",
+                "option3": "6-12 month ramp needed"
+              },
+              {
+                "label": "System Design",
+                "option1": "SAP ecosystem patterns",
+                "option2": "Scale, consistency, partitioning",
+                "option3": "Study DDIA, practice mocks"
+              },
+              {
+                "label": "Cross-team Influence",
+                "option1": "Formal authority / escalation",
+                "option2": "Relationship-based persuasion",
+                "option3": "Learn to influence without authority"
+              },
+              {
+                "label": "Mentoring",
+                "option1": "Often informal, not tracked",
+                "option2": "Explicit promotion requirement",
+                "option3": "Start mentoring immediately"
+              },
+              {
+                "label": "Strategy",
+                "option1": "Execute product roadmap",
+                "option2": "Shape org technical strategy",
+                "option3": "Develop business context"
+              }
+            ]
+          }
+        }
+      ],
+      "codeBlock": ""
+    }
+  ],
+  "details": "<p><b>Staff+ Insight:</b> The hardest part of L5→L6 is realizing that doing excellent work is no longer enough. You need to amplify your impact through others. If you are the best coder on your team but nobody else gets better, you are doing L5 work, not L6 work.</p>"
+}
