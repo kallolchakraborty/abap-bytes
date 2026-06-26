@@ -1,0 +1,42 @@
+{
+  "id": "sd-design-content-moderation",
+  "title": "Design Content Moderation System (Meta/YouTube-Style)",
+  "category": "System Design",
+  "subcategory": "FAANG Whiteboarding",
+  "language": "text",
+  "description": "<p>Design a content moderation system for a UGC (user-generated content) platform — detecting and actioning harmful content at scale. Covers multi-stage detection (ML classifiers, hash matching, rule-based), human review queues, tiered response (remove, flag, age-restrict), appeal workflows, and how SAP's compliance and audit frameworks provide a conceptual bridge.</p>",
+  "tags": ["FAANG", "Staff+", "System Design", "Content Moderation", "Safety", "ML", "UGC", "Trust & Safety"],
+  "sections": [
+    {
+      "title": "Tiered Detection Pipeline",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>The scale problem:</b> YouTube processes 500+ hours of video uploaded per minute. Facebook processes billions of posts per day. Every piece of content must be checked for policy violations before (or within seconds of) being published. A single ML model running on all content is too slow, too expensive, and not sufficiently accurate for all violation types.</p><p><b>Tier 1: Deterministic blocking (microseconds per item):</b> Before any ML model runs, content is checked against deterministic rules: (1) Hash matching — content hash (MD5, SHA-256) is compared against a database of known-violation content hashes (CSAM hashes from the National Center for Missing & Exploited Children, terrorist content hashes from the Global Internet Forum to Counter Terrorism). Exact hash match → immediate block and report. (2) Regex patterns — email addresses, phone numbers, credit card patterns for sensitive data. (3) Domain allow/block lists — links to known malicious domains. Tier 1 blocks 99% of known-violation content with zero ML cost.</p><p><b>Tier 2: ML classifier (milliseconds per item):</b> Content that passes Tier 1 is scored by ML classifiers. Different classifiers for different violation types: (1) Image/video classifiers — trained on labeled content for nudity, violence, hate symbols, graphic content. These are deep neural networks fine-tuned on policy-specific data (ResNet, EfficientNet for images; VideoMA, I3D for video). (2) Text classifiers — Transformer models (BERT, RoBERTa) fine-tuned for hate speech, harassment, spam, misinformation. (3) Audio classifiers — speech-to-text → text classifier, or direct audio analysis for 'hateful speech' tone detection. Each classifier outputs a score (0-1) for each violation category. If any score exceeds a threshold (e.g., 0.95), the content is automatically actioned. If the score is in a gray zone (0.7-0.95), it's sent to human review.</p><p><b>Tier 3: Human review (seconds to minutes per item):</b> Content in the gray zone is queued for human moderators. The moderation queue is prioritized by: (1) Severity — CSAM and violent extremism are reviewed first. (2) Viral potential — content that is rapidly gaining views is prioritized. (3) Platform risk — content involving high-profile users or sensitive events. Human moderators review the content and select a disposition: remove, keep, age-restrict, flag for additional review, or escalate to policy team. The moderator's decision is used as training data for the ML classifiers — improving accuracy over time.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Content Hash Matching & Media Fingerprinting",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>Exact hash matching (known bad):</b> A database of SHA-256 hashes of known CSAM and terrorist content is maintained. Every uploaded image/video is hashed and checked against this database. If any hash matches, the content is blocked immediately and reported to the relevant authorities (NCMEC, law enforcement). The database is distributed to all FAANG companies via shared industry databases.</p><p><b>Perceptual hashing (similar content):</b> Exact hashes cannot detect re-encoded, resized, or cropped versions of known-violation content. Perceptual hashing (pHash, PDQ, TMK+PDQF) generates a 'fingerprint' of the content that is robust to transformations. Two similar images produce similar hashes. The moderation system stores a database of known-violation perceptual hashes. When new content is uploaded, its perceptual hash is compared against the database using approximate nearest neighbor search (ANNS) — if the distance to any known-violation hash is below a threshold, the content is flagged for review.</p><p><b>Video fingerprinting (YouTube Content ID):</b> For copyrighted content (DMCA), YouTube's Content ID creates a fingerprint database from reference videos uploaded by copyright holders. Each uploaded video is fingerprinted and compared against the database. If a match is found, the copyright holder chooses: block the video, monetize it (run ads and collect revenue), or track its views (for analytics). Content ID handles 1000+ years of video uploaded daily — the matching pipeline must run in near-real-time (within minutes of upload).</p><p><b>SAP Bridge:</b> SAP's compliance framework (GDPR, SOX, audit logging) uses a similar tiered approach: automated controls (deterministic checks), risk scoring (ML-like rules), and manual audit (human review). The hash matching concept maps to SAP's digital signatures and document fingerprinting — ensuring document integrity and detecting tampering.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Appeal Workflow & Enforcement Accuracy",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>Removal vs flagging:</b> Not all policy violations require removal. The moderation system supports tiered enforcement: (1) Remove — content is deleted and the creator receives a strike. Three strikes → channel/account termination. (2) Age-restrict — content is hidden from users under 18. (3) Demonetize — content remains visible but ads are removed (the creator cannot earn revenue from it). (4) Flag — content gets a warning label added (e.g., 'misleading information' or 'graphic content'). (5) Reduce distribution — content remains visible but is not recommended by the algorithm.</p><p><b>Appeal workflow:</b> Creators can appeal moderation decisions. The appeal process: (1) Creator submits an appeal with a justification. (2) The content is re-checked by a different set of ML models and human reviewers. (3) If the appeal is granted, the content is restored. If denied, the creator can appeal again (second level review by the policy team). (4) Appeal decisions are tracked for accuracy metrics: the fraction of appeals that are granted measures the moderation system's false positive rate. A high appeal grant rate (> 30%) indicates the ML models are too aggressive. FAANGs target < 15% appeal grant rate for automated decisions.</p><p><b>Accuracy metrics:</b> (1) Precision — of the content the system flagged, how much actually violated policy? High precision means few false positives. (2) Recall — of the content that actually violated policy, how much did the system detect? High recall means few harmful items slip through. There is a direct tradeoff: increasing recall increases false positives (more content incorrectly flagged). The moderation system's thresholds are tuned to balance these metrics. The business cost of false positives (creator frustration, appeals workload) must be balanced against the cost of false negatives (user safety risk, regulatory risk, PR risk).</p>"
+        }
+      ],
+      "codeBlock": ""
+    }
+  ],
+  "details": "<p><b>FAANG Interview Tip:</b> Content moderation design is common at Meta (E6+), YouTube (L6+), and TikTok. The key signals: (1) Multi-tier detection — most candidates suggest 'an ML model,' but Staff+ candidates describe a tiered pipeline (deterministic → ML → human). (2) Hash matching for known-violation content — shows awareness of the legal/regulatory framework (NCMEC, GIFT). (3) The appeal workflow and precision/recall tradeoff — shows systems thinking beyond the technical implementation. SAP engineers with compliance/audit experience should frame this as: 'enterprise compliance automation at scale — same problem, different content type.'</p>"
+}

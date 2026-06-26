@@ -1,0 +1,42 @@
+{
+  "id": "staff-archetypes",
+  "title": "Staff+ Engineer Archetypes — The Tech Lead, Architect, Solver & Right Hand",
+  "category": "Leadership",
+  "subcategory": "Staff+ Career",
+  "language": "text",
+  "description": "<p>Will Larson's Staff+ engineer archetypes — the four distinct ways to operate at the Staff+ level. Covers each archetype's strengths, weaknesses, career trajectory, and how to identify which archetype fits your natural style. Includes how SAP architects naturally map to the Architect archetype and how to expand your range across archetypes.</p>",
+  "tags": ["FAANG", "Staff+", "Archetypes", "Career", "Tech Lead", "Architect", "Solver", "Right Hand"],
+  "sections": [
+    {
+      "title": "The Tech Lead Archetype",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>Who they are:</b> The Tech Lead is the most common Staff+ archetype — a senior engineer who leads a team (or multiple teams) while remaining deeply technical. They sit at the intersection of code, architecture, and people. The Tech Lead is responsible for: (1) The team's technical direction and decision-making. (2) Design reviews, code reviews, and architecture discussions. (3) Unblocking team members — removing technical obstacles, making decisions when the team is stuck. (4) Representing the team in cross-team technical discussions. (5) Usually still writing code — but 20-40% of their time, not 80-100%.</p><p><b>Counter-stereotype:</b> Not a 'lead architect' who dictates from above. The Tech Lead is embedded in the team, writes code alongside team members, and is the first person to turn to when there's a hard technical problem. They are NOT the team's manager — the Engineering Manager handles people issues; the Tech Lead handles technical leadership.</p><p><b>Strengths:</b> Deep technical skills, strong team relationships, immediate impact on team velocity. <b>Weaknesses:</b> Limited scope (1-2 teams), may struggle with broad organizational influence, risk of burnout from being the 'single point of failure' for technical decisions. <b>Career trajectory:</b> Tech Lead → Senior Tech Lead (multiple teams) → Principal Engineer (org-wide). <b>SAP mapping:</b> The SAP lead developer who handles the hardest technical tasks and guides the team's ABAP architecture decisions.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "The Architect Archetype",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>Who they are:</b> The Architect focuses on technical strategy across multiple teams or the entire organization. They design systems, write design docs, and set technical direction. Key activities: (1) Writing technical vision documents (6-12 month horizons). (2) Leading design reviews for multiple teams. (3) Creating and maintaining architecture decision records (ADRs). (4) Running cross-team architecture working groups. (5) Evaluating technology choices and setting standards. (6) May write code very rarely — primarily for proof-of-concepts, critical infrastructure, or to unblock a team.</p><p><b>Counter-stereotype:</b> Not an 'ivory tower architect' who designs in isolation and throws designs over the wall. Effective Architects are deeply embedded in the organization, understand the teams' constraints, and get feedback on their designs before they are finalized. They represent the 'voice of architecture' in planning meetings and prioritize long-term sustainability over short-term velocity.</p><p><b>Strengths:</b> Consistent technical direction, reduced duplication, long-term thinking. <b>Weaknesses:</b> Can lose touch with operational reality, may be viewed as 'not coding' (FAANG culture values code). Risk of designing solutions that don't match the organization's execution capacity. <b>Career trajectory:</b> Team Architect → Org Architect → Company-wide Architect (Distinguished Engineer). <b>SAP mapping:</b> The SAP solution architect who designs the enterprise landscape — which systems integrate where, clean core strategy, migration roadmap. This is the most natural archetype for SAP engineers transitioning to FAANG.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "The Solver & Right Hand Archetypes",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>The Solver (also called 'Fixer' or 'Explorer'):</b> The Solver is brought in to fix the hardest, most ambiguous, most critical problems in the organization. Key activities: (1) Debugging and fixing the system that no one else can fix. (2) Investigating an area with no clear ownership or understanding. (3) Prototyping a solution to a problem that the organization has been stuck on for months. (4) Working on 'unfunded mandates' — problems that everyone knows are important but no one owns. (5) Operating across the entire codebase, diving deep into whatever needs attention.</p><p><b>Key traits:</b> (1) Breadth of knowledge — The Solver needs to be productive in any part of the codebase. (2) High autonomy — works with minimal supervision. (3) No ego — fixes problems without needing ownership or credit. (4) Tolerance for ambiguity — the Solver's projects often have unclear scope and success criteria. Risk: The Solver can become a 'firefighter' — always solving crises instead of preventing them. The organization must protect the Solver's time for proactive work.</p><p><b>The Right Hand (also called 'Deputy' or 'Staff to the Director'):</b> The Right Hand works directly with a Director, VP, or CTO to amplify their technical leadership. Key activities: (1) Running the organization's technical processes (design reviews, tech talks, on-call reviews). (2) Drafting technical communications from the leader. (3) Representing the leader in meetings they can't attend. (4) Investigating and reporting on organizational technical health. (5) Taking on projects that the leader would do if they had time.</p><p><b>Key traits:</b> (1) Excellent communication and writing skills — the Right Hand must write for executive audiences. (2) Trustworthiness — works with sensitive information. (3) Organizational awareness — knows who to talk to, how to get things done. (4) Can separate signal from noise — the leader doesn't have time for everything, so the Right Hand prioritizes what matters. Risk: The Right Hand can become too dependent on their leader's authority — when the leader changes roles, the Right Hand's influence may disappear.</p><p><b>Which archetype is right for you?</b> (1) Do you love coding and leading a small team? → Tech Lead. (2) Do you love designing systems and influencing across teams? → Architect. (3) Do you love fixing hard problems and diving deep into unfamiliar code? → Solver. (4) Do you love organizational dynamics and working with executives? → Right Hand. Most Staff+ engineers combine 2+ archetypes (e.g., Tech Lead + Architect, or Solver + Right Hand). The key is to know your primary archetype and develop secondary skills.</p>"
+        }
+      ],
+      "codeBlock": ""
+    }
+  ],
+  "details": "<p><b>FAANG Interview Tip:</b> The archetypes framework comes from Will Larson's 'Staff Engineer: Leadership beyond the management track.' This is essential reading for any Staff+ aspirant. In interviews: (1) When asked 'What kind of Staff+ engineer do you want to be?', reference these archetypes. (2) Frame your past work in the context of the archetype — 'I operated as an Architect, designing the integration strategy across 5 teams.' (3) Show awareness of multiple archetypes — 'I'm primarily a Tech Lead, but I'm developing Architect skills through cross-team design reviews.' SAP solution architects naturally map to the Architect archetype — frame your experience as designing and setting technical direction for large-scale enterprise systems.</p>"
+}

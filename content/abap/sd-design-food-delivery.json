@@ -1,0 +1,42 @@
+{
+  "id": "sd-design-food-delivery",
+  "title": "Design Food Delivery / Logistics System (DoorDash/UberEats-Style)",
+  "category": "System Design",
+  "subcategory": "FAANG Whiteboarding",
+  "language": "text",
+  "description": "<p>Design a food delivery platform connecting customers, restaurants, and drivers in real-time. Covers geospatial indexing for driver discovery, dispatch algorithms (batched, binned, auction-based), ETA prediction, order tracking, dynamic pricing (surge), and how SAP's Logistics Execution (LE) and Transportation Management (TM) provide a familiar conceptual bridge.</p>",
+  "tags": ["FAANG", "Staff+", "System Design", "Food Delivery", "Logistics", "DoorDash", "UberEats", "Dispatch"],
+  "sections": [
+    {
+      "title": "Geospatial Indexing — Finding Nearby Drivers",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>The problem:</b> When a customer places an order, the system must find available drivers within a 10-15 minute radius of the restaurant. With 10K+ active drivers in a city and 100+ orders per minute, scanning all driver locations is O(n) and too slow.</p><p><b>Geospatial indexing approaches:</b> (1) GeoHash — encode lat/lng into a string, index by prefix. Nearby drivers share a GeoHash prefix. Query: 'all drivers with GeoHash prefix matching the restaurant's quadrant.' Fast but has edge cases at GeoHash boundary lines (a driver 5 meters away but in a different GeoHash tile won't be found — solved by querying 8 neighboring tiles). (2) Google S2 — subdivides the Earth into a hierarchy of cells (like a quadtree). Each cell has a unique 64-bit ID. Query by cell level: 'find all drivers in cell level-15 covering this restaurant.' S2 handles the boundary problem better than GeoHash. (3) Uber's H3 — hexagonal hierarchical grid. Unlike squares, hexagons have uniform distance from center to edge, eliminating boundary distortion. Used by Uber for both rider matching and surge pricing zones.</p><p><b>Real-time location updates:</b> Drivers send their location every 3-5 seconds via the mobile app. These updates flow through: (1) Mobile app → WebSocket connection to the location service. (2) Location service updates the driver's current position in an in-memory grid (Redis sorted set by GeoHash + driver_id). (3) The dispatch service queries the in-memory grid for candidate drivers. (4) Candidate drivers are ranked by: distance to restaurant, current direction of travel, estimated time to restaurant, past acceptance rate, and current order load (max 2 concurrent orders per driver for food delivery).</p><p><b>SAP Bridge:</b> SAP's Logistics Execution (LE) manages warehouse operations and transportation. The concept of 'wave picking' (grouping orders by location for efficient picking) maps to the dispatch algorithm's batching strategy. SAP TM (Transportation Management) plans routes and schedules carriers — the same optimization problem but at enterprise scale (trucks and pallets vs scooters and bags). The key difference: SAP plans routes in advance (batch); food delivery dispatches in real-time (streaming).</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Dispatch Algorithms — Matching Drivers to Orders",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>Single-order dispatch (naive):</b> When an order comes in, find the nearest available driver and dispatch immediately. This seems optimal per order but is globally suboptimal — the nearest driver might be better matched to a future higher-value order, and today's order could wait 30 seconds for a slightly farther driver. This is a 'greedy per-order' vs 'optimal global matching' tradeoff.</p><p><b>Batched dispatch (DoorDash approach):</b> Orders are batched for a short window (1-3 seconds) before dispatch. During the batch window: (1) All orders in the batch are considered together. (2) All available drivers within the relevant area are considered. (3) The system solves an assignment problem (minimum-cost bipartite matching) to match orders to drivers optimally. Cost = (estimated driver travel time to restaurant + estimated wait time at restaurant). (4) Batched dispatch increases system efficiency by 5-15% vs per-order dispatch but adds latency (1-3 seconds of waiting).</p><p><b>Dasher (driver) batching:</b> A single driver can accept multiple orders from the same or nearby restaurants. The dispatch algorithm considers: (1) 'Add order to existing dasher's route' — if a dasher is already going to Restaurant A, does it make sense to add an order from Restaurant B (nearby) with the same delivery area? (2) The routing problem is a variant of the Traveling Salesman Problem (TSP) for each driver's stacked orders. (3) Drivers are capped at 2-3 stacked orders to maintain delivery quality.</p><p><b>Driver auction (UberEats approach):</b> Instead of assigning orders, UberEats broadcasts an order to nearby drivers, and the first driver to accept gets it. The order includes estimated earnings, distance, and delivery time. Drivers self-select based on their preferences. This reduces system complexity but introduces unpredictability — the system can't guarantee coverage in all areas. UberEats uses a hybrid: 'ping the top 3-5 candidate drivers; if none accepts in 15 seconds, expand the search' — plus surge pricing to incentivize coverage.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "ETA Prediction & Order Tracking",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>ETA prediction (multi-stage):</b> (1) 'Order placed to food ready' ETA — based on historical restaurant prep times (per restaurant, per time of day, per day of week, adjusted for current order queue). Uses a time-series model or gradient boosted trees. Features: day, hour, current orders in queue, historical prep time P50/P90. (2) 'Driver to restaurant' ETA — standard navigation ETA (distance / historical road speed by time of day) with real-time traffic adjustment (from map service API). (3) 'Driver to customer' ETA — same as above, from restaurant to customer location. (4) Composite ETA — the sum of the relevant stages, with confidence intervals (P50 estimated delivery, P90 latest delivery). The P90 promise is what's shown to the customer to set expectations.</p><p><b>Order lifecycle state machine:</b> Each order transitions through states: ORDERED → RESTAURANT_CONFIRMED → PREPARING → READY_FOR_PICKUP → DRIVER_ASSIGNED → DRIVER_ARRIVED → PICKED_UP → IN_TRANSIT → DELIVERED. State transitions emit events that: (1) Update the customer's tracking UI (real-time map). (2) Trigger push notifications. (3) Update the driver's app. (4) Record timestamps for analytics. The state machine is stored in a transactional database (PostgreSQL, sharded by region), and events are produced to Kafka for downstream consumers (analytics, alerts, driver pay calculations).</p><p><b>Real-time tracking:</b> The customer sees the driver's location on a map. This uses the same location infrastructure as driver discovery — the location service publishes location updates to the customer's WebSocket via a topic matching the order_id. The update frequency drops as the driver gets closer: updates every 5 seconds when driver is > 5 min away, every 2 seconds when < 2 min away, every 1 second at arrival.</p>"
+        }
+      ],
+      "codeBlock": ""
+    }
+  ],
+  "details": "<p><b>FAANG Interview Tip:</b> The food delivery system design question is common at Uber (Staff), DoorDash (Staff), and Amazon (L6 Logistics). The key signals: (1) Understanding the global vs per-order optimization — batched dispatch shows Staff+ thinking. (2) Multi-stage ETA prediction with confidence intervals — distinguish between P50 and P90 estimates. (3) Real-time tracking architecture — WebSocket pub/sub per order. SAP LE/TM engineers have a massive advantage: you understand logistics optimization problems. Frame your dispatch experience as: 'I've solved these optimization problems at enterprise scale with trucks and containers; let me now solve them at consumer scale with scooters and bags.'</p>"
+}

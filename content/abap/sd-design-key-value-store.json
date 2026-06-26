@@ -1,0 +1,52 @@
+{
+  "id": "sd-design-key-value-store",
+  "title": "Design Distributed Key-Value Store (DynamoDB-Style)",
+  "category": "System Design",
+  "subcategory": "FAANG Whiteboarding",
+  "language": "text",
+  "description": "<p>Design a distributed key-value store like Amazon DynamoDB — a fully managed NoSQL database that provides single-digit millisecond latency, strong consistency options, and automatic scaling. Covers consistent hashing, gossip-based membership, vector clocks, hinted handoff, Merkle trees, and how SAP's buffer tables and shared memory provide a conceptual bridge.</p>",
+  "tags": ["FAANG", "Staff+", "System Design", "Key-Value Store", "DynamoDB", "NoSQL", "Distributed Storage"],
+  "sections": [
+    {
+      "title": "Requirements & Design Goals",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>Functional requirements:</b> (1) get(key) — retrieve the value associated with a key. (2) put(key, value) — store a value under a key. (3) delete(key) — remove a key-value pair. (4) scan — iterate over all keys (optional, for admin use). (5) Multi-value support — store multiple versions of a value (for eventual consistency reconciliation).</p><p><b>Non-functional requirements (the Dynamo design goals):</b> (1) Always-writable — the system must accept writes even during network partitions (AP from CAP theorem). (2) Eventual consistency — reads may return stale data, but all replicas converge. (3) Single-digit millisecond latency at P99 (for both read and write). (4) Automatic scaling — nodes can be added/removed without manual rebalancing. (5) Decentralized — no single point of failure, no master node. (6) Symmetry — every node has identical responsibilities.</p><p><b>SAP Bridge:</b> SAP's shared memory buffers (like the table buffer) are conceptually a distributed key-value cache: a table key maps to a set of rows. The key difference is scope: SAP's buffer lives on a single application server instance, while DynamoDB distributes data across hundreds of nodes. The replication and conflict resolution mechanisms are new to SAP engineers — but the concept of a 'key → value' lookup with caching layers is familiar from ABAP's table buffer and shared memory objects (SHMA).</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Partitioning — Consistent Hashing",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>Problem:</b> How do you decide which node stores a given key? Traditional hash-based partitioning (hash(key) % N) breaks when a node is added or removed — N changes, and every key maps to a new node, requiring a full data shuffle.</p><p><b>Solution — Consistent hashing:</b> Both keys and nodes are hashed to positions on a virtual ring (0 to 2^64 - 1). A key is stored on the node whose hash is the first node hash encountered when moving clockwise from the key's hash position. When a node is added, only the keys between the new node's hash position and the previous node's hash position need to be remapped. Similarly, when a node is removed, only the keys that mapped to that node are redistributed to the next clockwise node.</p><p><b>Virtual nodes (vnodes):</b> Each physical node is represented by multiple virtual nodes (e.g., 150-200) at different positions on the ring. This solves two problems: (1) Hotspot prevention — a physical node that owns a hot key doesn't become a bottleneck because it also owns many other ranges that distribute load. (2) Heterogeneous hardware — a node with 2x capacity can be assigned 2x vnodes. DynamoDB (and Cassandra, Riak) uses vnodes extensively. With 200 vnodes per physical node and 10 nodes, the ring has 2000 positions — making rebalancing granular and smooth.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Replication — N, R, W & Quorum",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>Replication factor (N):</b> Each key is replicated on N nodes (default N=3). The 'preference list' for a key is the N nodes that follow the key's position clockwise on the ring. The first node in the preference list is the 'coordinator' for that key — it handles all reads and writes.</p><p><b>Read and write consistency (R, W):</b> (1) Write: the coordinator sends the write to N replicas and waits for W acknowledgments. (2) Read: the coordinator sends the read to N replicas and waits for R responses, returning the latest version (based on vector clocks). (3) Quorum: if R + W > N, reads are guaranteed to see the latest write (strong consistency). If R + W <= N, reads may return stale data (eventual consistency). Example: N=3, W=2, R=2 → quorum of 4 > 3, so strong consistency. N=3, W=1, R=1 → quorum of 2 < 3, so eventual consistency.</p><p><b>Hinted handoff:</b> When a replica node is temporarily unavailable (e.g., network partition), the coordinator stores the write locally with a hint ('this write belongs to node X'). When node X recovers, the coordinator forwards the hinted writes. This ensures: (1) Writes always succeed even when some replicas are down (always-writable). (2) Data eventually reaches all replicas. Hinted handoff data is stored in a separate 'hint' space on the coordinator — if the coordinator fails before forwarding, the hints are lost (another reason W > N/2 is important for durability).</p><p><b>SAP Bridge:</b> The concept of write quorum (W) and read quorum (R) maps well to SAP's enqueue architecture: the lock owner (coordinator), lock participants (replicas), and acknowledgment (quorum). The difference is that SAP locks are pessimistic (acquire before work) while DynamoDB's consistency is optimistic (check at read time).</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Conflict Resolution — Vector Clocks",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>Problem:</b> With eventual consistency and last-write-wins (LWW), concurrent writes can cause data loss. If two clients write the same key simultaneously to different replicas, which value is 'correct'?</p><p><b>Solution — Vector clocks:</b> Each value is stored with a vector clock — a list of (node, counter) pairs. Example: ([A,3], [B,2], [C,1]) means node A has incremented the counter to 3, node B to 2, node C to 1. When a write occurs: (1) The coordinator increments its own counter. (2) The new value is stored with the updated vector clock. When a read occurs: (1) The coordinator collects all versions from N replicas. (2) If all vector clocks are causally related (one is strictly greater than all others), the latest version is returned. (3) If vector clocks are concurrent (neither dominates), a conflict exists — the coordinator returns all conflicting versions and the application reconciles them.</p><p><b>Sloppy quorum and read repair:</b> Strict quorum guarantees consistency but reduces availability. DynamoDB uses 'sloppy quorum' — during a partition, the coordinator accepts writes from any W nodes, even if they are not in the preference list. After the partition heals, a background 'read repair' process compares replicas and propagates the latest version to stale replicas. This is the mechanism that ensures eventual convergence.</p><p><b>Merkle trees for anti-entropy:</b> To detect inconsistencies between replicas without transferring all data, each node maintains a Merkle tree over its keyspace. A Merkle tree is a binary hash tree where: (1) Leaf nodes are hashes of individual key-value pairs (or a group of pairs). (2) Each parent node is the hash of its children. (3) Two nodes can compare their Merkle tree roots — if the roots match, the replicas are consistent. If they differ, the nodes recursively traverse the tree to find the inconsistent subtree, then exchange only the differing range of keys. This reduces the data transfer for reconciliation from O(all data) to O(diff data) — critical for multi-TB datasets.</p>"
+        }
+      ],
+      "codeBlock": ""
+    }
+  ],
+  "details": "<p><b>FAANG Interview Tip:</b> The DynamoDB-style KV store is a classic AWS, Amazon, and distributed systems interview question. The key signals: (1) Deep understanding of consistent hashing with vnodes — most candidates know basic consistent hashing, fewer understand vnodes. (2) Quorum math (R + W > N) — show you understand the tradeoff space. (3) Vector clocks and reconciliation — demonstrate you've thought about concurrent writes. (4) Hinted handoff and read repair — show awareness of operational concerns. An SAP engineer with table buffer experience should frame this as: 'I've worked with distributed caching at SAP scale; now let me extend that to a fully distributed database.'</p>"
+}

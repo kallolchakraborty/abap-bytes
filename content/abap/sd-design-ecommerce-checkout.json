@@ -1,0 +1,42 @@
+{
+  "id": "sd-design-ecommerce-checkout",
+  "title": "Design E-Commerce Checkout Flow (Amazon-Style)",
+  "category": "System Design",
+  "subcategory": "FAANG Whiteboarding",
+  "language": "text",
+  "description": "<p>Design an e-commerce checkout flow handling millions of orders daily. Covers cart management, inventory reservation, pricing engine, payment orchestration, order state machine, fraud detection integration, and how SAP's SD (Sales & Distribution) order-to-cash process provides a direct conceptual bridge.</p>",
+  "tags": ["FAANG", "Staff+", "System Design", "E-Commerce", "Checkout", "Cart", "Order", "Amazon"],
+  "sections": [
+    {
+      "title": "Cart Management & Session Architecture",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>Cart data model:</b> A cart is a transient entity mapping a user to a list of (item_id, quantity, price_at_add_time, seller_id). The cart is not persisted to a transactional database on every keystroke — doing so would create enormous write load for abandoned carts (80%+ of carts are abandoned). Instead: (1) For signed-in users — cart is stored in Redis with a TTL of 30 days. On checkout, the cart is promoted to a persistent order. (2) For guest users — cart is stored in a cookie (for small carts) or Redis with a session ID stored in a cookie. (3) Cart merge — when a guest signs in, their guest cart is merged with their existing saved cart (item-level deduplication: same item → higher quantity wins; different items → union).</p><p><b>Price at add time vs price at checkout:</b> The price displayed in the cart might differ from the current price (flash sale ends, coupon expires). The checkout flow must: (1) Display the 'price at add time' with a warning if the price has changed. (2) At checkout time, re-fetch the current price from the pricing service. (3) If the price increased, the user must confirm (or the coupon must be re-applied). (4) If the price decreased, the lower price automatically applies. This is the 'price guarantee' policy — typically a 15-30 minute window from add-to-cart.</p><p><b>SAP Bridge:</b> SAP's SD (Sales & Distribution) module manages the order-to-cash process: inquiry → quotation → sales order → delivery → billing → payment. The cart maps to the quotation or sales order (VA01). Pricing in SAP (condition technique, VOFM) is more complex than FAANG's checkout pricing — SAP handles rebates, cumulative discounts, material substitution, and free goods. The FAANG checkout is simpler per-transaction but must handle 1000x more concurrent users.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Inventory Reservation & Concurrency",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>The inventory problem:</b> When a user adds an item to their cart, should inventory be reserved? If yes, abandoned carts lock inventory and reduce sales. If no, the item might sell out before the user checks out. The solution is a two-phase inventory reservation.</p><p><b>Phase 1 — Soft reservation (add-to-cart):</b> When a user adds an item to their cart, the inventory service decrements a 'pending' count for that item: available_inventory = total_inventory - pending_orders - confirmed_orders. The pending count is a Redis counter with a TTL (15 minutes per cart item, refreshed on each cart interaction). If pending_inventory + confirmed_inventory >= total_inventory, the item cannot be added to cart. Soft reservations are not durable — if Redis loses the pending counter, the inventory is slightly over-committed but corrects on the next full inventory sync.</p><p><b>Phase 2 — Hard reservation (checkout):</b> When the user clicks 'Place Order', the inventory service atomically decrements the confirmed inventory in the transactional database: UPDATE inventory SET confirmed = confirmed + 1 WHERE item_id = X AND confirmed + pending < total. If this fails (oversold), the order is rejected. The atomic decrement uses a database transaction with row-level locking (SELECT...FOR UPDATE on the inventory row). This ensures that two concurrent checkouts for the last item do not both succeed.</p><p><b>Oversell handling:</b> Despite best efforts, oversells happen (distributed race conditions, stale cache). The reconciliation pipeline runs every 5 minutes: (1) Fetch all confirmed orders for the current time window. (2) Compare against actual shipped inventory. (3) If oversold, the 'inventory allocation' system creates a backorder or cancels the most recent order (with customer notification and compensation). Amazon handles this with 'safety stock' — they intentionally hold back 1-2% of inventory as buffer against oversell.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Checkout State Machine & Order Orchestration",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>Checkout state machine:</b> The checkout flow follows a strict state machine: CART_VIEWED → SHIPPING_ADDRESS_ENTERED → PAYMENT_METHOD_SELECTED → ORDER_REVIEWED → ORDER_PLACED → PAYMENT_AUTHORIZED → INVENTORY_RESERVED → ORDER_CONFIRMED → FULFILLMENT_INITIATED. Each state transition is a microservice call (or event emission). The state machine is orchestrated by an order service that manages the order aggregate in a transactional database.</p><p><b>Order orchestration — the SAGA pattern:</b> Placing an order involves multiple services: (1) Order Service — create order record. (2) Payment Service — authorize payment. (3) Inventory Service — reserve inventory. (4) Shipping Service — create shipment. (5) Notification Service — send email confirmation. Each step can fail, requiring compensation: (1) If payment authorization fails → cancel order, release inventory. (2) If inventory reservation fails → cancel order, void payment authorization. (3) If shipping creation fails → cancel order, release inventory, void payment. This is the SAGA pattern with compensating transactions. The order service tracks the SAGA execution status and runs a compensation handler for each failed step.</p><p><b>Order ID generation:</b> Order IDs must be unique, sortable (for database index efficiency), and not sequential (to prevent order count leakage). Common approach: Snowflake-style ID (timestamp + worker_id + sequence) — 64-bit integer that is monotonically increasing. This provides: (1) Uniqueness across all order service instances. (2) Temporal ordering (orders with higher IDs were created later). (3) No central sequence generator needed.</p>"
+        }
+      ],
+      "codeBlock": ""
+    }
+  ],
+  "details": "<p><b>FAANG Interview Tip:</b> E-commerce checkout is a classic Amazon L6/L7 system design question — 'Design Amazon's checkout.' The key signals: (1) Understanding the two-phase inventory reservation — soft (cart) vs hard (checkout). (2) Price-at-add-time vs current-price handling — shows you've thought about edge cases. (3) The SAGA pattern for order orchestration — demonstrates Staff+ systems thinking. SAP SD engineers have a massive advantage here — you already understand the order-to-cash process end-to-end. Frame your experience as: 'I've designed this exact flow for SAP's enterprise e-commerce; now let me scale it 1000x for consumer traffic.'</p>"
+}

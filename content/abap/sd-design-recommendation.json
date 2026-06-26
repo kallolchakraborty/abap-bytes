@@ -1,0 +1,52 @@
+{
+  "id": "sd-design-recommendation",
+  "title": "Design Recommendation & Auction System (Meta/Amazon-Scale)",
+  "category": "System Design",
+  "subcategory": "FAANG Whiteboarding",
+  "language": "text",
+  "description": "<p>Design a personalized recommendation system (like Meta's feed or Amazon's product recommendations) and its close cousin — an ad auction system. Covers two-stage ranking (retrieval → ranking), collaborative filtering, embedding-based similarity, real-time feature serving, auction theory (GSP, VCG), and how SAP's material BOM and MRP provide a conceptual bridge.</p>",
+  "tags": ["FAANG", "Staff+", "System Design", "Recommendation", "Auction", "Ranking", "ML", "Ads"],
+  "sections": [
+    {
+      "title": "Two-Stage Ranking Architecture",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>The core problem:</b> You cannot run a complex ML model on every item in a catalog to produce personalized recommendations. For a catalog of 1 billion items, even a 10ms inference per item would take 115 days per user. The solution is a two-stage architecture: <b>retrieval</b> (reduce to hundreds) then <b>ranking</b> (sort those hundreds precisely).</p><p><b>Stage 1: Retrieval (candidate generation):</b> (1) Collaborative filtering — 'users who bought X also bought Y' using item-to-item similarity from purchase co-occurrence. (2) Content-based filtering — items with similar metadata (category, brand, color, price range). (3) Embedding-based retrieval — user and item embeddings are learned via matrix factorization or two-tower neural networks. The user's embedding is computed from their history; the nearest item embeddings in vector space (via approximate nearest neighbor search, ANNS) are returned. (4) Social graph — items liked/shared by friends or followed accounts. Each retrieval method generates 100-500 candidates; after deduplication, the retrieval stage produces 500-2000 candidates per user.</p><p><b>Stage 2: Ranking (precision scoring):</b> The ranking model takes the 500-2000 candidates and scores each one with a sophisticated ML model (gradient boosted trees or deep neural network). Features include: (1) User features (historical CTR, recency, engagement patterns). (2) Item features (popularity, freshness, seller quality). (3) Cross features (user-item interaction history, category affinity). (4) Contextual features (time of day, device type, session depth). The ranking model outputs a single score per item — typically the predicted probability of engagement (click, purchase, watch). Items are sorted by score, filtered (e.g., remove items the user already purchased, enforce diversity), and the top K are returned.</p><p><b>SAP Bridge:</b> SAP's material BOM (Bill of Materials) is a primitive recommendation system: 'if you need component A, you also need components B and C.' MRP (Material Requirements Planning) is retrieval + ranking: given a demand signal, retrieve the dependent components and rank them by lead time, availability, and cost. The difference is that FAANG recommendations are personalized per user, while SAP's BOM is deterministic per material — but the 'retrieve candidates → rank → filter' pipeline is identical.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Feature Store & Real-Time Inference",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>Feature pipeline:</b> The ranking model depends on features that change in real-time — user just clicked an item, item just went out of stock, trending items shift hourly. Features must be computed and served with millisecond latency. The architecture: (1) Batch features (computed hourly/daily in Spark) — user long-term embeddings, item popularity scores, category affinity. (2) Real-time features (streamed via Kafka) — user session clicks, page views, add-to-carts. (3) Feature store (e.g., Feast, Tecton) — central repository that serves both training and serving. Training features and serving features must come from the same source to prevent training-serving skew.</p><p><b>Real-time inference:</b> When a user opens their feed or visits a product page: (1) A feed request hits the recommendation service. (2) The service retrieves the user's features from the feature store (sub-millisecond via Redis-like cache). (3) Retrieval runs (10-50ms for ANNS). (4) Retrieved candidate IDs are fetched from the item database. (5) Ranking model runs on the retrieved candidates (50-200ms for 500-2000 items). (6) Final ranked list is returned to the client. Total P99 latency target: < 300ms.</p><p><b>Model freshness:</b> Recommendation models are retrained continuously: (1) Online training — the model updates its weights incrementally as new data arrives (streaming SGD). (2) Nearline training — every few hours, a fresh model is trained on the latest data and swapped in without downtime (shadow scoring → canary → rollout). (3) Full retraining — weekly, a completely new model is trained from scratch with new architecture/hyperparameters. This is analogous to SAP's material forecast: MRP runs nightly (batch), capacity leveling runs intra-day (nearline), and ATP checks run per-order (real-time).</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Ad Auction — The Monetization Layer",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>How ads integrate with recommendations:</b> In any feed (Facebook, Instagram, Amazon search), a certain percentage of slots (e.g., 1 in 5) are reserved for sponsored content. The ranking layer produces a combined list of organic and sponsored items, ranked by a blended score that accounts for both relevance and bid price.</p><p><b>Generalized Second Price (GSP) auction:</b> (1) Advertisers bid for ad slots (cost-per-click or cost-per-impression). (2) For each ad slot (position 1, 2, 3...), the system calculates an 'ad rank' score = bid_price × expected_CTR (estimated probability the user clicks). (3) The highest ad rank wins position 1, second highest wins position 2, etc. (4) The winner pays the price of the second-highest ad rank divided by their own expected CTR (second price). This incentivizes truthful bidding — bidding higher than your true value doesn't lower your price, it only increases your chance of winning.</p><p><b>VCG (Vickrey-Clarke-Groves) auction:</b> A more sophisticated auction used by Facebook and Google for display ads. VCG computes the social welfare (total value to all participants) with and without each bidder. Each bidder pays the 'externality' they impose on others. VCG is strategy-proof (truthful bidding is dominant) and efficient (maximizes social welfare). GSP is simpler but not fully strategy-proof — it can be gamed in some scenarios.</p><p><b>Real-time bidding infrastructure:</b> When a user loads a page: (1) The page sends an ad request to the ad server with user context. (2) The ad server runs the candidate retrieval (from the ad index — ads are indexed by targeting criteria). (3) The exchange sends a bid request to bidders (DSPs) with < 100ms timeout. (4) DSPs run their own ML models to decide bid price. (5) The exchange runs the auction (GSP or VCG) and returns the winner. (6) The winning ad is rendered. This entire flow completes in < 200ms.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Cold Start & Exploration-Exploitation",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>Cold start problem:</b> New users and new items have no interaction history. For new users: (1) Onboarding survey — ask about interests during signup (Netflix). (2) Popular items — recommend trending/most-viewed items. (3) Context-based — recommend based on signup source (e.g., user came from a fashion blog → fashion items). For new items: (1) Content-based — recommend based on item metadata (category, brand, description). (2) Random exploration — show to a small percentage of users to collect interaction data. (3) Seller/reputation boost — new items from high-quality sellers get an initial visibility boost.</p><p><b>Exploration vs exploitation (bandit problem):</b> Pure exploitation (always recommend the highest-scored item) creates filter bubbles and never discovers new user interests. Pure exploration (random recommendations) provides poor user experience. The solution is a multi-armed bandit approach: (1) ε-greedy — 90% of recommendations are exploitation (highest score), 10% are exploration (random). (2) Thompson sampling — for each candidate, sample from a Beta distribution of its expected CTR; rank by the sampled value. This naturally explores items with high uncertainty (new items) and exploits items with high certainty (popular items). (3) Upper Confidence Bound (UCB) — rank by score + confidence_interval; items with few impressions get a large confidence bonus (optimism in the face of uncertainty).</p>"
+        }
+      ],
+      "codeBlock": ""
+    }
+  ],
+  "details": "<p><b>FAANG Interview Tip:</b> The recommendation system design question is common at Meta (E6/E7 — 'design the Facebook feed'), Amazon (L6 — 'design product recommendations'), and Google (L6 — 'design YouTube recommendations'). The key signals: (1) Two-stage architecture — most candidates jump straight to ML models; Staff+ candidates describe the retrieval→ranking pipeline. (2) Real-time feature understanding — feature freshness and training-serving skew are the hardest operational problems. (3) Auction mechanics — for Meta/Google roles, understanding GSP vs VCG distinguishes you. SAP engineers should frame BOM and MRP as enterprise-scale recommendation systems — same pipeline, different domain.</p>"
+}

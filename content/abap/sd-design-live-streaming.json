@@ -1,0 +1,42 @@
+{
+  "id": "sd-design-live-streaming",
+  "title": "Design Live Streaming Platform (Twitch/YouTube Live-Style)",
+  "category": "System Design",
+  "subcategory": "FAANG Whiteboarding",
+  "language": "text",
+  "description": "<p>Design a live streaming platform supporting millions of concurrent viewers. Covers ingest architecture (RTMP, SRT, WebRTC), video transcoding pipeline (adaptive bitrate, HLS/DASH), CDN distribution, live-to-VOD recording, chat infrastructure, and how SAP's real-time data streaming (SLT, SAP Streaming) provides a conceptual bridge.</p>",
+  "tags": ["FAANG", "Staff+", "System Design", "Live Streaming", "Video", "CDN", "Twitch", "YouTube"],
+  "sections": [
+    {
+      "title": "Ingest Architecture — Getting Video to the Server",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>The ingest problem:</b> A streamer broadcasts video from their computer to the platform. The raw video is high bitrate (6-15 Mbps for 1080p) and must arrive at the server with low latency (< 5 seconds for interactive streams, < 30 seconds for standard).</p><p><b>Ingest protocols:</b> (1) RTMP (Real-Time Messaging Protocol) — the legacy standard used by OBS and streaming software. TCP-based, low latency (3-6 seconds), but inefficient for poor networks. (2) SRT (Secure Reliable Transport) — newer, UDP-based, designed for unreliable networks. Has built-in error correction and retransmission. Increasingly replacing RTMP. (3) WebRTC — used for sub-second latency streaming (live auctions, interactive betting). UDP-based, peer-to-peer architecture with SFU (Selective Forwarding Unit) for multi-viewer scaling.</p><p><b>Ingest edge network:</b> Streamers don't connect directly to a central server — they connect to the nearest edge ingest node (same CDN concept). The edge node forwards the video to the transcoding pipeline. Key design: (1) The ingest edge must accept the stream even if the transcoding pipeline is temporarily overloaded (buffer the stream to disk or S3). (2) The edge node runs a health check on the stream — if the streamer disconnects, the edge node creates a 'stream ended' marker. (3) For large events (Super Bowl, gaming tournament), the ingest edge capacity is pre-provisioned.</p><p><b>SAP Bridge:</b> SAP's SLT (SAP Landscape Transformation) is a real-time data replication tool that streams data from source systems to targets in near-real-time. The concept of a 'trigger-based capture → queue → apply' pipeline maps to the live streaming ingest → transcode → deliver pipeline. SAP Streaming Analytics applies a similar pattern for real-time event processing — the event is the video frame, the analytics is the transcoding.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Video Transcoding & Adaptive Bitrate",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>Transcoding pipeline:</b> The incoming stream (single bitrate, single resolution) must be transcoded into multiple renditions: 1080p@8Mbps, 720p@5Mbps, 480p@2.5Mbps, 360p@1Mbps, 160p@400Kbps. Each rendition is a separate video encode. The pipeline: (1) Video is segmented into small chunks (2-10 seconds each, configurable). (2) Each chunk is transcoded into all renditions in parallel. (3) A manifest file (HLS .m3u8 or DASH .mpd) lists all renditions and their chunk URLs. (4) The client (browser, app) selects the appropriate rendition based on network conditions (adaptive bitrate switching).</p><p><b>Transcoding compute:</b> Video encoding is CPU/GPU intensive. A single 1080p stream requires ~30 minutes of CPU time per minute of video (30x real-time factor) on software encoding (x264). With GPU encoding (NVENC, QuickSync), the factor drops to ~2x real-time. At scale: (1) Use a pool of GPU-equipped transcoding workers. (2) Workers are orchestrated by a job queue — each segment+rendition is a job. (3) Jobs are prioritized — live transcoding (must be < 30s latency) has priority over VOD transcoding. (4) Workers auto-scale based on queue depth — AWS Spot Instances for cost efficiency.</p><p><b>Latency vs quality tradeoff:</b> (1) Low latency (< 5s): use smaller segments (2 seconds), faster encoding preset (faster encode = lower compression = higher bitrate), WebRTC with UDP. (2) Standard latency (< 30s): use 6-second segments, slower encoding preset (better compression), HLS. (3) High latency (minutes): VOD-style batch transcoding for pre-recorded content that happens to be streamed. Each tier has its own transcoding pipeline configuration.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "CDN Distribution & Live-to-VOD",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>CDN distribution:</b> The transcoded segments are pushed to a CDN (CloudFront, Cloudflare, Fastly, or custom edge). The CDN caches segments at edge locations closer to viewers. For live streaming: (1) Segments are cacheable for their duration + a few seconds — a 6-second segment is valid for ~10 seconds. (2) The CDN must support 'origin shielding' — instead of every edge node fetching from the origin, one shield node fetches and other edges fetch from the shield. This reduces origin load by 10-100x. (3) For very large events (millions of viewers), the platform uses a custom CDN that handles the traffic surge (Twitch's own CDN, YouTube's Google Cloud CDN).</p><p><b>Live-to-VOD (recording):</b> Every live stream is automatically recorded for VOD (Video on Demand). The recording pipeline: (1) The transcoding pipeline also produces a single high-quality rendition that is stored in blob storage (S3) as a single MP4 file (or segmented format for streaming). (2) At the end of the stream, the VOD is processed: thumbnail generation, chapter/section detection (highlight moments), content moderation check (scan for copyright, NSFW), and metadata extraction. (3) The VOD is transcoded again into all renditions for VOD streaming (which can use slower, higher-quality encoding since it's not live).</p><p><b>Chat infrastructure:</b> Live streaming chat is architecturally similar to the chat system (WhatsApp design): WebSocket connections, fan-out per channel, rate limiting for spam, and persistent storage for replay. The unique challenge is scale — a single popular stream may have 100K+ concurrent chatters. Chat is sharded by channel_id, and each channel's chat is delivered via its own WebSocket pub/sub channel.</p>"
+        }
+      ],
+      "codeBlock": ""
+    }
+  ],
+  "details": "<p><b>FAANG Interview Tip:</b> The live streaming question is common at Google (YouTube L6), Meta (Facebook Live, Instagram Live), and Amazon (Twitch). The key signals: (1) Understanding the ingest vs deliver pipeline — most candidates focus on the CDN, but the ingest and transcoding pipeline is the harder engineering problem. (2) Adaptive bitrate — knowing how HLS/DASH works and the latency tradeoff. (3) Live-to-VOD pipeline — shows you think about the full lifecycle. SAP SLT/Streaming experience is a helpful analogy for the ingest pipeline — frame it as 'real-time data streaming at enterprise scale translates to video streaming.</p>"
+}

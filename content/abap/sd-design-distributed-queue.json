@@ -1,0 +1,42 @@
+{
+  "id": "sd-design-distributed-queue",
+  "title": "Design Distributed Queue (Kafka/SQS-Style)",
+  "category": "System Design",
+  "subcategory": "FAANG Whiteboarding",
+  "language": "text",
+  "description": "<p>Design a distributed message queue like Apache Kafka or Amazon SQS — handling billions of messages per day with durability, ordering guarantees, and at-least-once delivery. Covers topic-partition architecture, producer batching, consumer group rebalancing, offset management, exactly-once semantics, and how SAP's tRFC/qRFC and Event Mesh provide a direct conceptual bridge.</p>",
+  "tags": ["FAANG", "Staff+", "System Design", "Distributed Queue", "Kafka", "SQS", "Message Queue", "Event Streaming"],
+  "sections": [
+    {
+      "title": "Topic-Partition Architecture & Storage",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>Core abstraction:</b> A message queue stores and delivers messages between producers and consumers. The key abstractions: (1) Topic — a logical channel for messages of the same type (e.g., 'order.placed'). (2) Partition — a physical shard within a topic. Each partition is an ordered, immutable sequence of messages. (3) Message — a key-value pair with optional headers and timestamp. (4) Offset — an integer that uniquely identifies a message within a partition.</p><p><b>Storage architecture (Kafka model):</b> Each partition is stored as a set of segment files on disk. Every message is appended to the active segment file (sequential disk write — very fast, ~500 MB/s per disk). Messages are stored as: (key, value, timestamp, headers, offset). Producers are routed to partitions by key hash (keyed messages maintain order per key) or round-robin (unkeyed messages for load balancing). The commit log (segment file) is append-only — messages are never modified. Deletion is handled by segment expiration (delete segments older than retention.ms) or compaction (keep the latest message per key).</p><p><b>SAP Bridge:</b> SAP's transactional RFC (tRFC) and queued RFC (qRFC) provide exactly this abstraction: a message is sent from a producer, stored durably, and delivered to a consumer exactly once. tRFC stores the message in a database table (ARFCSSTATE), producer commits the LUW, and a background process delivers the message. This is identical to Kafka's 'producer sends → broker stores → consumer polls' model. The difference is throughput — SAP's tRFC processes thousands of messages per second; Kafka handles millions. The partitioning and consumer group rebalancing concepts are the new learning for SAP engineers.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Producers, Consumers & Delivery Guarantees",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>Producer architecture:</b> The producer batches messages before sending to the broker. Configuration: (1) batch.size — messages are accumulated in a buffer until the batch reaches this size (default 16KB) or linger.ms expires (default 0 — send immediately). Batching improves throughput by 10-100x by reducing network round-trips. (2) acks — 'acks=all' (wait for all in-sync replicas to acknowledge) provides the strongest durability guarantee. 'acks=1' (wait for leader only) is a performance/durability tradeoff. (3) compression — the producer compresses batches (gzip, snappy, lz4, zstd) before sending. Compression reduces network bandwidth by 50-80% at the cost of 10-20% additional producer CPU.</p><p><b>Consumer architecture (consumer groups):</b> Consumers in the same group share the partitions of a topic. Each partition is assigned to exactly one consumer in the group. This enables horizontal scaling of consumption. Assignment: (1) Range assignor — partitions are assigned contiguously (0-3 → consumer A, 4-7 → consumer B). (2) Round-robin — partitions are assigned in round-robin order. (3) Sticky assignor — minimizes partition movement during rebalancing (Kafka's default).</p><p><b>Offset management:</b> Each consumer tracks its current offset per partition. Offsets are committed to a Kafka topic (__consumer_offsets) or to a database. Commit strategies: (1) At-most-once — commit offset before processing the message. If the consumer crashes, the message is not reprocessed (messages can be lost). (2) At-least-once — process the message, then commit the offset. If the consumer crashes after processing but before committing, the message is reprocessed (duplicates possible). (3) Exactly-once — requires idempotent producers + transactional consumers. The consumer processes the message and commits the offset in a single transaction that also includes the output of the processing (e.g., a database write). This is Kafka's EOS (Exactly-Once Semantics) — the 'transactional outbox' pattern codified.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Rebalancing, Replication & Partition Discovery",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>Consumer group rebalancing:</b> When a consumer joins or leaves the group, partitions must be reassigned. A rebalance: (1) All consumers in the group stop consuming (stop-the-world). (2) A group coordinator (one of the Kafka brokers) computes the new partition assignment. (3) Each consumer receives its new assignment and resumes consuming. The stop-the-world phase is problematic — for large groups (100+ consumers), a rebalance can take 10-30 seconds. Kafka's 'cooperative rebalancing' (incremental rebalance) solves this: only the affected partitions are reassigned, and unaffected consumers continue processing.</p><p><b>Replication (partition HA):</b> Each partition has (1) A leader — handles all produce and consume requests. (2) In-sync replicas (ISR) — followers that are fully caught up with the leader. (3) The replication protocol: the leader appends the message to its log, then waits for all ISR followers to acknowledge. If a follower falls too far behind (replica.lag.time.max.ms), it is removed from the ISR. If the leader fails, a new leader is elected from the ISR. The min.insync.replicas configuration (typically 2) determines how many replicas must acknowledge for the write to succeed.</p><p><b>ZooKeeper vs KRaft:</b> Kafka originally used ZooKeeper for cluster metadata (which broker is alive, partition → leader mapping, consumer group offsets). ZooKeeper is a separate coordination service that adds operational complexity. Kafka 2.8+ introduced KRaft (Kafka Raft) — a built-in consensus protocol that replaces ZooKeeper. KRaft uses a Raft-based controller quorum for metadata management, eliminating the ZooKeeper dependency. As of Kafka 3.x, KRaft is production-ready and the recommended deployment model.</p>"
+        }
+      ],
+      "codeBlock": ""
+    }
+  ],
+  "details": "<p><b>FAANG Interview Tip:</b> Distributed queue design is a classic AWS/Confluent interview question and also appears at Uber, Netflix, and LinkedIn. The key signals: (1) Topic-partition architecture — the fundamental insight that parallelism comes from partitions. (2) Consumer group rebalancing — knows about cooperative rebalancing and the stop-the-world problem. (3) Exactly-once semantics — understanding the distinction between idempotent producers and transactional consumers. SAP engineers with tRFC/qRFC experience have a unique advantage — you already understand transactional message delivery. Frame your experience as: 'I've worked with reliable message delivery in SAP's transactional outbox pattern for 10 years; Kafka is the same pattern at internet scale.'</p>"
+}

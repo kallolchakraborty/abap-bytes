@@ -1,0 +1,42 @@
+{
+  "id": "sd-design-timeseries-db",
+  "title": "Design Time-Series Database (Prometheus/InfluxDB-Style)",
+  "category": "System Design",
+  "subcategory": "FAANG Whiteboarding",
+  "language": "text",
+  "description": "<p>Design a time-series database optimized for storing and querying millions of metrics per second. Covers LSM tree storage engine, downsampling/rollups, retention policies, continuous queries, tag-based indexing, query optimization (M3, Thanos, VictoriaMetrics), and how SAP's monitoring infrastructure (ST05, CCMS) provides a basic conceptual bridge.</p>",
+  "tags": ["FAANG", "Staff+", "System Design", "Time-Series", "Database", "Monitoring", "Prometheus", "Metrics"],
+  "sections": [
+    {
+      "title": "Data Model & Ingestion",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>Data model:</b> A time-series data point is a tuple: (metric_name, tags, timestamp, value). Metric_name is the measurement (cpu_usage, request_latency, memory_bytes). Tags are key-value pairs that identify the specific time series (host=web01, region=us-east-1, service=checkout). The combination of metric_name + all tags uniquely identifies a time series. A single data point is small (~50-100 bytes) but the volume is enormous — a cluster with 10K hosts each reporting 1000 metrics every 15 seconds produces 57M data points per second.</p><p><b>Write path:</b> (1) Metrics are pushed (agent→server via HTTP) or pulled (server scrapes agent via HTTP — this is Prometheus's model). (2) The server receives the write request and batches data points by time series. (3) Each batch is written to a Write-Ahead Log (WAL) for durability — the WAL is an append-only file on disk. (4) The batch is also written to an in-memory buffer for fast recent-data queries. (5) Periodically, the in-memory buffer is flushed to a sorted on-disk segment file (an LSM-tree SSTable). (6) The WAL is truncated up to the last flushed point.</p><p><b>Read path (recent data):</b> Recent data (last few hours) is served from the in-memory buffer — single-digit millisecond latency. Older data is served from on-disk segment files, potentially requiring merging across multiple segments. The query engine must handle: (1) Aggregation over time (avg of cpu_usage over the last 5 minutes). (2) Aggregation across series (avg of cpu_usage across all web01 hosts). (3) Downsampling (5-second resolution → 1-minute resolution → 1-hour resolution).</p><p><b>SAP Bridge:</b> SAP's monitoring tools (ST05 for SQL trace, CCMS for system monitoring, Solution Manager for centralized monitoring) collect time-series data about system performance. The data model (metric + dimensions + timestamp) is the same. The difference is volume — SAP's monitoring collects data for dozens of systems; a FAANG's monitoring collects data for millions of containers. The storage and query optimization techniques are where the real engineering challenge lies.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "LSM Tree Storage & Compression",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>Why LSM trees for time-series:</b> Time-series workloads are write-heavy (append-mostly) and read-recent (writes are recent data). LSM trees (Log-Structured Merge Trees) excel at: (1) Sequential writes to WAL + in-memory buffer — no random disk I/O. (2) Write amplification is acceptable because data has TTL and is eventually compacted away. (3) Range queries (scan data points for a metric over a time range) are efficient because data is stored sorted by (metric_name + tags + timestamp).</p><p><b>Segment file format (Prometheus TSDB):</b> Each on-disk segment file contains data points sorted by (metric_id, timestamp). The file format includes: (1) A header with the metric schema version and encoding type. (2) A series of (timestamp, value) pairs for each metric_id, encoded with delta-of-delta compression (Facebook's Gorilla paper). Timestamps are stored as differences from the previous timestamp — for 15-second scrape intervals, the delta is typically 15 (fits in 4 bits). Values are stored as XOR of the previous value (most values change only slightly between scrapes). Average compression: 1.3 bytes per data point (vs 16 bytes raw float64+int64). (3) An index section mapping metric_id → file offset range for fast lookup. (4) A footer with metadata.</p><p><b>Compaction:</b> Multiple small segment files are periodically merged into larger files. Compaction: (1) Merges overlapping time ranges — if segment A covers 10:00-10:15 and segment B covers 10:10-10:25, compaction produces a merged segment covering 10:00-10:25. (2) Drops deleted data — data that exceeds retention policy (e.g., > 30 days old) is dropped during compaction. (3) Rewrites data with optimal encoding — the Gorilla compression works better on larger blocks of contiguous data. (4) Building the index — the merged segment builds a fresh index for fast range queries.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Downsampling, Retention & Query Federation",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>Downsampling (rollups):</b> Storing full-resolution (15-second) data for all time is infeasible. Instead, data is automatically downsampled: (1) Raw data: 15-second resolution, retained for 7 days. (2) Hourly rollup: min, max, avg, count (sum/sum_of_squares) for each hour, retained for 30 days. (3) Daily rollup: same aggregates for each day, retained for 1 year. The rollup is computed during compaction — the compaction worker produces both the raw segment (for recent data) and the rollup segment (for historical data). Rollups are stored in the same segment file format but with the metric_id tagged with the resolution (e.g., cpu_usage_1h).</p><p><b>Retention policies:</b> Each metric can have a different retention policy. High-cardinality metrics (user_id in tags) are retained for shorter periods. Low-cardinality metrics (host-level CPU) are retained longer. The retention policy defines: max retention duration, rollup resolution and duration, and whether to apply downsampling. Retention is enforced during compaction — old segments are simply not compacted and are eventually garbage-collected.</p><p><b>Query federation with Thanos/M3:</b> For a global monitoring infrastructure (multiple data centers, multiple TSDB instances), queries must federate across instances. Thanos provides: (1) Sidecar on each Prometheus instance that uploads segments to object storage (S3/GCS). (2) Store Gateway — reads segments from object storage and serves queries. (3) Query Frontend — receives user queries, fans out to appropriate Store Gateways, and merges results. (4) Compactor — performs global compaction and downsampling across instances. This architecture enables 'global view' queries: 'show me P99 latency across all regions for the last 30 days.'</p>"
+        }
+      ],
+      "codeBlock": ""
+    }
+  ],
+  "details": "<p><b>FAANG Interview Tip:</b> Time-series database design is common at Google (Monarch/Borgmon), Uber (M3), and for SRE/observability-focused roles at any FAANG. The key signals: (1) Understanding the LSM tree storage engine — most candidates suggest B-tree, but LSM trees are the right answer for write-heavy time-series. (2) Gorilla compression — citing the Facebook paper shows depth. (3) Downsampling and rollup strategy — distinguishes real-world experience from textbook knowledge. SAP engineers with ST05/CCMS experience should frame this as: 'I understand the monitoring data model; now let me apply it at internet scale.'</p>"
+}

@@ -1,0 +1,188 @@
+{
+  "id": "staff-capacity-planning",
+  "type": "article",
+  "title": "Capacity Planning & Resource Forecasting for Staff+ Engineers",
+  "subtitle": "How to predict infrastructure needs, avoid outages, and optimize cloud spend — using data, not gut feel",
+  "category": "Leadership",
+  "tags": [
+    "capacity-planning",
+    "resource-forecasting",
+    "cloud-cost",
+    "scalability",
+    "infrastructure",
+    "sizing",
+    "sap-hana",
+    "faang",
+    "staff-plus"
+  ],
+  "sections": [
+    {
+      "id": "intro",
+      "type": "markdown",
+      "content": "## Why Capacity Planning Is a Staff+ Skill\n\nAt SAP, capacity planning is often static: buy hardware based on peak load, over-provision by 50%, refresh every 3 years. At FAANG scale, this approach is financially impossible. A 10% over-provision on a $100M infrastructure budget is $10M waste.\n\nCapacity planning at FAANG is a **continuous, data-driven process** that balances:\n\n- **Performance** — Can the system handle peak traffic without degrading?\n- **Cost** — Are we paying for capacity we don't need?\n- **Risk** — What happens if traffic spikes 5x above forecast?\n- **Velocity** — Can we add capacity faster than traffic grows?\n\nAs a Staff+ engineer, you'll be responsible for capacity planning for your team's services. Getting it wrong means either wasted budget or a preventable outage.\n\n### The Cost of Getting It Wrong\n\n| Scenario | Under-provisioning | Over-provisioning |\n|---|---|---|\n| Impact | Outage, degraded performance, SLO breach, revenue loss | Wasted spend, reduced R&D budget, lower margins |\n| Example | AWS outage during Prime Day (est. $100M lost sales) | Orphaned cloud resources (avg 30% of cloud spend is waste) |\n| Detection | Immediate (alerts fire) | Gradual (never noticed until cost review) |\n| Fix | Emergency scaling (slow, expensive) | Decommission (low urgency, rarely done) |\n| FAANG philosophy | Prefer over-provisioning for user-facing services | Prefer under-provisioning for batch/non-critical services |"
+    },
+    {
+      "id": "forecasting-methods",
+      "type": "card-grid",
+      "columns": 2,
+      "cards": [
+        {
+          "icon": "trending-up",
+          "title": "Time-Series Forecasting",
+          "body": "The most common approach. Use historical traffic data to predict future needs.\n\n**Simple methods:**\n- Linear regression: traffic = base + growth_rate * time\n- Exponential smoothing: weight recent data more heavily\n- Holt-Winters: captures trend + seasonality (daily, weekly, yearly)\n\n**Advanced (FAANG-scale):**\n- Prophet (Meta): Handles holidays, changepoints, and missing data\n- SARIMA: Seasonal ARIMA for strong periodic patterns\n- ML-based: XGBoost/LightGBM with features (day-of-week, hour, marketing events, product launches)\n\n**Key principle:** Forecast at the service level, sum up for total. Don't forecast total infrastructure spend directly — it masks individual service trends."
+        },
+        {
+          "icon": "activity",
+          "title": "Leading Indicators",
+          "body": "Leading indicators predict capacity needs before demand hits:\n\n**User growth metrics:**\n- New user signups (leading by 30-90 days)\n- DAU/MAU growth rate\n- Marketing campaign pipeline\n\n**Product signals:**\n- New feature launch calendar (each feature has an expected traffic multiplier)\n- API consumer growth (more integrations = more traffic)\n- Data volume growth (more users = more data = more storage demand)\n\n**Business inputs:**\n- Quarterly OKRs and growth targets\n- Expansion into new regions/markets\n- Enterprise customer commitments (contractually guaranteed throughput)\n\n**FAANG practice:** Monthly 'capacity review' with product, engineering, and finance. Each team presents 3-month ahead forecast with confidence intervals."
+        },
+        {
+          "icon": "alert-triangle",
+          "title": "Load Testing & Benchmarking",
+          "body": "Forecasts predict traffic volume, but load testing determines how much capacity each unit of traffic consumes.\n\n**Key metrics per service:**\n- Requests per second per CPU core\n- Memory per concurrent connection\n- Disk IOPS per write operation\n- Network bandwidth per request\n\n**Scaling law:** Does the service scale linearly? Or does throughput degrade at high concurrency (Amdahl's law)?\n\n**How to measure:**\n- Production shadow traffic (duplicate live traffic to a test instance)\n- Canary analysis (ramp up traffic to a new instance until it breaks)\n- Synthetic load testing (Gatling, k6, Locust) at 2x, 5x, 10x peak"
+        },
+        {
+          "icon": "bar-chart",
+          "title": "Reserved vs On-Demand Strategy",
+          "body": "Cloud capacity comes in three flavors with different economics:\n\n**Reserved/Committed (1-3 year):** 30-60% discount vs on-demand. Best for predictable base load (40-60% of total traffic).\n\n**On-Demand:** Full price, infinite elasticity. Best for spikes and unpredictable traffic.\n\n**Spot/Preemptible:** 60-90% discount, but can be reclaimed. Best for fault-tolerant workloads (batch processing, CI/CD, stateless workers).\n\n**The Staff+ strategy:**\n1. Forecast base load (P50 traffic) → reserved capacity\n2. Forecast peak load (P99 traffic) → on-demand autoscaling\n3. Batch/fault-tolerant work → spot\n4. Buffer: 20% headroom above P99 forecast for unexpected spikes"
+        }
+      ]
+    },
+    {
+      "id": "autoscaling",
+      "type": "comparison-table",
+      "title": "Autoscaling Strategies",
+      "headers": [
+        "Strategy",
+        "Trigger",
+        "Reaction Time",
+        "Cost Efficiency",
+        "Risk",
+        "Best For"
+      ],
+      "rows": [
+        [
+          "Reactive (CPU/memory)",
+          "CPU > 70% for 5 minutes",
+          "2-5 minutes",
+          "Good",
+          "Lag during flash crowds",
+          "Steady-state traffic with gradual changes"
+        ],
+        [
+          "Reactive (request queue)",
+          "Queue depth > 100 for 30 seconds",
+          "1-2 minutes",
+          "Better (leads CPU)",
+          "Queue depth oscillation",
+          "Request-based services (APIs, web servers)"
+        ],
+        [
+          "Predictive (ML-based)",
+          "Forecast model predicts upcoming load",
+          "Pre-scales before traffic hits",
+          "Best",
+          "Model accuracy",
+          "Known traffic patterns (diurnal, weekly)"
+        ],
+        [
+          "Scheduled (cron-based)",
+          "Time of day / day of week",
+          "Instant (pre-scaled)",
+          "Best if pattern stable",
+          "Pattern changes break schedule",
+          "Known periodic patterns (batch jobs, business hours)"
+        ],
+        [
+          "Event-driven (webhook)",
+          "External event (marketing launch, new feature)",
+          "Minutes to hours",
+          "Good",
+          "Event miss or delay",
+          "Planned traffic events"
+        ],
+        [
+          "HPA + VPA (K8s)",
+          "Combined CPU/memory + historical",
+          "1-5 minutes",
+          "Good",
+          "Metrics pipeline latency",
+          "Kubernetes-native services"
+        ]
+      ]
+    },
+    {
+      "id": "capacity-example",
+      "type": "code-block",
+      "title": "Capacity Planning Worksheet (Staff+ Template)",
+      "language": "text",
+      "code": "-- Capacity Planning for 'User Profile Service' --\n\n1. TRAFFIC FORECAST (next 12 months)\n   Current DAU: 5M\n   Growth rate: 15% QoQ (from product OKRs)\n   New feature impact: 'AI Profile Photo' launches Q2, expected +20% traffic\n   \n   Month | DAU | Requests/s | Peak Requests/s (2x avg)\n   ------|-----|------------|---------------------\n   Jan   | 5M  | 5,800      | 11,600\n   Apr   | 6.6M| 7,600      | 15,200  (new feature)\n   Jul   | 7.6M| 8,700      | 17,400\n   Oct   | 8.7M| 10,000     | 20,000\n   Dec   | 10M | 11,600     | 23,200  (holiday peak)\n\n2. RESOURCE PER REQUEST (from load testing)\n   CPU: 50ms per request = 50,000 req/s per CPU core\n   Memory: 2MB per concurrent connection\n   Storage: 10KB per new profile = 50GB/month growth\n   Network: 100KB per response (includes profile photo)\n\n3. CAPACITY REQUIRED\n   Month | CPU Cores | Memory (GB) | Storage (GB) | Network (Gbps)\n   ------|-----------|-------------|--------------|---------------\n   Jan   | 12        | 48          | 500          | 10\n   Apr   | 16        | 64          | 700          | 13\n   Jul   | 18        | 72          | 900          | 15\n   Oct   | 20        | 80          | 1,100        | 17\n   Dec   | 24        | 96          | 1,400        | 20\n\n4. COST PROJECTION (monthly)\n   Reserved (60% of peak): 14 cores x $30 = $420\n   On-demand (40% of peak): 10 cores x $60 = $600\n   Storage: 1,400GB x $0.10 = $140\n   Network: 20Gbps x $50 = $1,000\n   Total Dec: $2,160/month\n   Total Annual: ~$18,000\n\n5. RISK SCENARIOS\n   Worst case: Viral launch drives 10x traffic -> $12K/month emergency spend\n   Mitigation: Request throttling + CDN cache (absorbs 5x before scaling needed)"
+    },
+    {
+      "id": "sap-bridge",
+      "type": "markdown",
+      "content": "## SAP Bridge — Capacity Planning in the SAP World\n\n### Current SAP Practice\n\nSAP capacity planning is typically done during implementation:\n\n- **SAP Quick Sizer** — Questionnaire-based tool that estimates HANA memory, CPU, and disk based on expected data volume and user count. Results in a 'sizing' that maps to certified hardware.\n- **Static sizing** — Once sized, the system runs on fixed hardware for 3-5 years until the next upgrade.\n- **HANA memory is the constraint** — HANA is an in-memory database. If data grows beyond memory, performance degrades catastrophically (column store falls back to disk).\n\n### The FAANG Approach Applied to SAP\n\n| Aspect | SAP Traditional | FAANG-Inspired |\n|---|---|---|\n| Sizing method | Quick Sizer (one-time) | Continuous forecasting (monthly) |\n| Capacity buffer | 50% over-provision (safety) | 20% headroom + autoscaling |\n| Scaling model | Vertical (buy bigger hardware) | Horizontal (add more nodes) |\n| Cost awareness | Capital expense (CAPEX) | Operating expense (OPEX, hourly) |\n| Forecasting inputs | Questionnaire answers | Historical usage + business OKRs |\n| Risk management | Over-provision to be safe | Reserved + on-demand mix |\n\n### Practical Guidance for SAP Architects\n\n1. **HANA Cloud changes the game** — With HANA Cloud on AWS/Azure/GCP, you can scale compute and storage independently. This is the first SAP database that supports FAANG-style elasticity.\n2. **Monitor actual usage, not Quick Sizer** — Quick Sizer estimates are notoriously inaccurate (often 2-3x over actual). Use SAP Cloud ALM or Prometheus to measure actual CPU/memory/IOPS.\n3. **Plan for data growth** — HANA's in-memory nature means storage growth directly affects capacity. Forecast data volume separately from compute.\n4. **The 'HANA memory wall'** — When a HANA instance runs out of memory, it doesn't degrade gracefully. Your capacity plan must include a safety margin above peak data volume."
+    },
+    {
+      "id": "faang-interview",
+      "type": "interactive",
+      "style": "tabs",
+      "title": "Capacity Planning FAQ for Staff+ Interviews",
+      "tabs": [
+        {
+          "label": "Methodology",
+          "content": "**Interviewer:** \"How would you forecast capacity needs for a new feature?\"\n\n**Staff+ answer:** \"I'd use a **bottom-up + top-down hybrid** approach:\n\n**Top-down:** Product says the feature targets 5M DAU by end of year. That's the envelope.\n\n**Bottom-up:** I estimate per-user traffic: each user sends 10 requests/day for this feature = 50M requests/day = 580 req/s average, 1,200 req/s peak.\n\nThen I look at similar existing features for resource-per-request. If the 'feed' feature uses 30ms CPU and 1MB memory per request, that's a starting point. I load-test the new feature in a staging environment to get accurate numbers.\n\n**Result:** Feature will need 36 CPU cores and 72GB memory at peak. Cost: ~$3,000/month. Growth rate: matches DAU growth (15% QoQ).\n\n**The confidence interval matters:** P50 forecast: 1,200 req/s. P90: 2,000 req/s (if feature is more popular than expected). P99: 5,000 req/s (if it goes viral). I plan for P90, have budget authority to scale to P99.\"\n\n**Why this impresses:** You combined two forecasting methods, used data from similar features, included load testing validation, and gave a confidence interval."
+        },
+        {
+          "label": "Handling Spikes",
+          "content": "**Interviewer:** \"Your service normally handles 10K req/s. A marketing campaign is expected to drive 50K req/s for 2 hours. How do you prepare?\"\n\n**Staff+ answer:** \"Four strategies, in order of preference:\n\n**1. Pre-scale** — 24 hours before the campaign, scale the service to 50K capacity. Keep it running through the event. Cost: 2 hours x 5x capacity = negligible. Risk: zero. This is the FAANG default for planned events.\n\n**2. Request throttling + queueing** — Set up a request queue (SQS, Kafka) with a 5-minute TTL. If traffic exceeds 50K, excess requests queue. The frontend polls for results. Works for async features (not real-time).\n\n**3. CDN + caching** — If the campaign page is cacheable, push a static version to CDN. Most users see cached content. Only uncacheable API calls hit the backend.\n\n**4. Degraded mode** — If all else fails, turn off non-critical features (personalization, recommendations) and serve a simpler response. Users get a functional but not personalized experience.\n\n**Capability to implement:** Autoscaling with predictive scaling (ML model predicts the 50K spike based on campaign schedule). Without that, schedule-based scaling (cron job at campaign start).\"\n\n**Why this impresses:** You gave four concrete strategies in priority order, with cost/risk analysis for each, and an implementation path (predictive vs scheduled scaling)."
+        },
+        {
+          "label": "SAP Scenario",
+          "content": "**Interviewer:** \"SAP HANA Cloud is running out of memory. How do you handle it?\"\n\n**Staff+ answer:** \"HANA running out of memory is a critical incident. Three-phase response:\n\n**Phase 1: Immediate (minutes)** — Identify what's consuming memory. Use HANA's memory consumption monitors (M_MEMORY, M_HEAP_MEMORY). Is it column store data growth, a runaway query, or a session leak? Kill the offending session or query. If it's data growth, truncate or archive the largest unused tables.\n\n**Phase 2: Tactical (hours)** — Scale up the HANA Cloud instance (more memory). HANA Cloud supports online scaling. Add memory, wait for column store to re-load into memory. This buys time.\n\n**Phase 3: Strategic (weeks)** — Implement a capacity plan:\n- Forecast data growth (which tables grow fastest?)\n- Archive old data (HANA Data Tiering Optimization, BW nearline storage)\n- Partition the largest tables (distribute data across more nodes)\n- Set up HANA memory alerts at 70%, 80%, 90% usage\n- Budget for quarterly capacity reviews\n\n**The key lesson:** Memory pressure on HANA is a slow-moving problem (data grows gradually). The solution is a monthly capacity review, not an emergency response.\"\n\n**Why this impresses:** You gave a three-phase response (immediate/tactical/strategic) with specific SAP tools (M_MEMORY, Data Tiering Optimization, online scaling). Shows you understand both the technical and operational aspects of HANA capacity management."
+        },
+        {
+          "label": "Cost Optimization",
+          "content": "**Interviewer:** \"Your team's cloud bill doubled. How do you investigate and optimize?\"\n\n**Staff+ answer:** \"Systematic approach:\n\n**1. Break down by service** — Which services grew fastest? Use AWS Cost Explorer or GCP Billing with service-level tags. Identify the top 3 cost drivers.\n\n**2. Break down by resource type** — Is it compute, storage, network, or database? Each has different optimization strategies.\n\n**3. Analyze the growth pattern** — Did traffic grow proportionally? If compute grew 2x but traffic grew 1.5x, there's an efficiency problem.\n\n**Common findings:**\n- **Orphaned resources:** 30% of cloud resources are unused (test environments, stale snapshots). Tag governance + automated deletion fixes this.\n- **Over-provisioned instances:** Services running on large instances that could use smaller ones with autoscaling.\n- **No reserved capacity:** Paying on-demand prices for base load that hasn't changed in 6 months.\n- **Data hoarding:** Storing data in hot storage (S3 Standard) that should be in cold (S3 Glacier Infrequent Access).\n- **Cross-region data transfer:** Services in different regions talking to each other without reason.\n\n**The FAANG approach:** Monthly 'cost review' where each service owner presents their cost-per-transaction trend. A rising trend triggers an investigation. A flat or falling trend is green.\"\n\n**Why this impresses:** You gave a systematic investigation methodology (breakdown by service, resource, growth pattern), enumerated the top 5 optimization opportunities with specific percentages, and framed it as an ongoing process (monthly cost review) rather than a one-time cleanup."
+        }
+      ]
+    },
+    {
+      "id": "takeaways",
+      "type": "card-grid",
+      "columns": 3,
+      "cards": [
+        {
+          "icon": "trending-up",
+          "title": "Forecast at Service Level",
+          "body": "Total infrastructure forecast masks individual service trends. Forecast each service independently, then sum for total. Use time-series methods (Prophet, SARIMA) or ML."
+        },
+        {
+          "icon": "activity",
+          "title": "Confidence Intervals, Not Point Estimates",
+          "body": "A single number for future capacity is wrong. Give P50/P90/P99 ranges. Plan for P90, have authority to scale to P99. Use confidence intervals in every forecast."
+        },
+        {
+          "icon": "bar-chart",
+          "title": "Load Test to Get Resource-Per-Request",
+          "body": "Traffic forecasts are useless without resource-per-request data. Load test every service to know CPU/memory/IOPS per request. Update benchmarks quarterly."
+        },
+        {
+          "icon": "zap",
+          "title": "Reserved + On-Demand + Spot Mix",
+          "body": "Reserve 40-60% of base load (30-60% discount). Use on-demand for spikes. Use spot for batch/fault-tolerant. Never run everything on-demand."
+        },
+        {
+          "icon": "clock",
+          "title": "Autoscaling Isn't Instant",
+          "body": "Even the fastest autoscaler takes 1-5 minutes. For flash crowds (marketing events, viral launches), pre-scale or use predictive scaling."
+        },
+        {
+          "icon": "dollar-sign",
+          "title": "Monthly Cost Review",
+          "body": "Capacity planning is a continuous process, not a one-time exercise. Monthly review of cost-per-transaction, forecast accuracy, and optimization opportunities."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "id": "sd-design-fraud-detection",
+  "title": "Design Fraud Detection System (Real-Time Risk Scoring)",
+  "category": "System Design",
+  "subcategory": "FAANG Whiteboarding",
+  "language": "text",
+  "description": "<p>Design a real-time fraud detection system that scores transactions for fraud risk with sub-100ms latency. Covers rule-based scoring, ML model inference, feature computation, graph analysis (fraud rings), model monitoring, and how SAP's FSCM (Financial Supply Chain Management) and credit management provide a conceptual bridge.</p>",
+  "tags": ["FAANG", "Staff+", "System Design", "Fraud Detection", "Risk", "ML", "Real-Time", "Security"],
+  "sections": [
+    {
+      "title": "Real-Time Scoring Pipeline",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>The problem:</b> When a user initiates a transaction (payment, login, account creation), the fraud detection system must decide within 50-200ms whether the transaction is legitimate, suspicious (flag for manual review), or fraudulent (block). The decision is based on a risk score — a value from 0 (legitimate) to 100 (certain fraud).</p><p><b>Scoring pipeline:</b> The fraud scoring pipeline runs synchronously in the transaction flow: (1) Transaction event arrives at the fraud service (HTTP request or Kafka message). (2) The service extracts features from the event and enriches them with real-time context. (3) A sequence of scoring stages runs, each potentially short-circuiting if the risk is already determined: Stage 1: Rule-based scoring — fast rules (deny blocklist, allowlist, velocity checks). Stage 2: ML model inference — feature vector → fraud probability score. Stage 3: Graph analysis — check the transaction entities against a fraud graph database. (4) The final risk score is compared against thresholds: score > 90 → block; score > 70 → flag for manual review; else → allow. (5) The decision is returned within the latency budget.</p><p><b>Feature computation for fraud:</b> Fraud detection features include: (1) Transaction features — amount, currency, merchant, payment method, time of day. (2) User features — account age, past chargeback rate, average transaction amount, login frequency. (3) Device features — IP geolocation (does it match the user's country?), device fingerprint (has this device been associated with fraud before?), browser/OS fingerprint. (4) Velocity features — number of transactions from this user in the last hour, from this IP in the last 5 minutes, from this device in the last day. Velocity features are computed in real-time from Redis counters with TTL. (5) Network features — how is this user connected to known fraudsters? (shared IP, shared phone number, shared shipping address).</p><p><b>SAP Bridge:</b> SAP's FSCM (Financial Supply Chain Management) includes credit management and dispute management that perform analogous fraud detection at enterprise scale: checking a customer's credit limit, payment history, and open receivables before approving an order (credit check = risk score). The key difference is: SAP's checks run on known customers with established credit profiles; FAANG's fraud detection must score anonymous or new users where the fraud signal is much weaker.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Graph Analysis — Detecting Fraud Rings",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>Why graphs for fraud:</b> Individual transaction features can look legitimate, but when transactions are connected (shared phone numbers, shared IPs, shared devices), a pattern emerges. Fraudsters operate in rings — they use the same device for multiple accounts, the same phone number for verification, the same IP address for multiple transactions. These connections form a graph.</p><p><b>Graph database (Neo4j, Amazon Neptune, or custom):</b> Every entity is a node (user, device, IP address, phone number, credit card, shipping address). Every relationship is an edge (user USES device, user HAS phone number, user TRANSACTED_FROM IP). The graph is built from historical data — every transaction adds edges. Fraud detection queries on the graph: (1) Shortest path — 'find the shortest path between this user and any known fraudster.' If the distance is <= 2 (shared device or shared phone number), the user is at high risk. (2) Connected components — 'find all nodes connected to this user who have been flagged for fraud.' If the user is in a large component with many fraud nodes, the user is likely part of a fraud ring. (3) PageRank — 'compute the PageRank of this user in the fraud graph.' Users with high PageRank are structurally important to fraud networks (they are highly connected).</p><p><b>Real-time graph queries:</b> Running graph queries synchronously for every transaction is too slow. The optimization: (1) Pre-compute 'risk distance' for each entity — for each user, compute and cache the shortest distance to any known fraudster. Update the cache when new fraud is confirmed. (2) For real-time scoring, read the cached risk distance (sub-millisecond key-value lookup). (3) If the distance is <= 2, block or flag. (4) Asynchronously, run more expensive graph queries to update the risk distance cache and detect new fraud rings. This batch + caching approach is used by all major fraud detection systems (Sift, Riskified, Forter).</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Model Monitoring, Retraining & Adversarial Adaptation",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>Concept drift in fraud detection:</b> Fraudsters constantly adapt their techniques to evade detection. A model trained on last year's fraud patterns will miss this year's fraud patterns. The fraud detection system must continuously monitor and adapt. Key metrics: (1) Fraud rate — fraction of transactions flagged as fraud. A sudden drop may mean fraudsters found a new strategy that the models don't detect (false negative increase). (2) False positive rate — fraction of legitimate transactions incorrectly flagged. A sudden spike may mean the model is being too aggressive. (3) Chargeback rate — the most important real-world metric: after a transaction is allowed, how many chargebacks occur? An increase in chargeback rate indicates the model is missing fraud.</p><p><b>Adversarial feature engineering:</b> When fraudsters realize that a particular feature is correlated with fraud detection (e.g., 'transactions from IPs in Country X are high risk'), they change their behavior to evade detection (use VPNs to appear from Country Y). The response: (1) Feature engineering must be a continuous process — new features are developed to detect the new evasion strategies. (2) Features with high predictive power are intentionally obfuscated — the model uses an ensemble of features so no single feature's evasion strategy defeats the system. (3) Some features are designed to be 'honeypots' — features that fraudsters will try to evade, revealing themselves in the process.</p><p><b>Feedback loop:</b> Every fraud detection decision creates a feedback loop: (1) If a transaction was blocked, was it actually fraudulent? Human review confirms or overrides. (2) If a transaction was allowed, did it result in a chargeback? The chargeback outcome is a label. (3) The confirmed labels are fed back into the training pipeline: daily retraining for the ML model, rule updates for rule-based scoring, and graph database updates for new confirmed fraudsters. The feedback loop latency (from transaction to confirmed label) is typically 1-30 days (chargebacks take time). During this window, the system is operating on stale labels — one reason why fraud detection is inherently challenging.</p>"
+        }
+      ],
+      "codeBlock": ""
+    }
+  ],
+  "details": "<p><b>FAANG Interview Tip:</b> Fraud detection system design is common at Stripe, PayPal, Amazon (Payments), and Meta (Payments/Auth). The key signals: (1) Real-time scoring pipeline with multiple stages — shows you understand the latency challenge. (2) Graph analysis for fraud rings — this distinguishes Senior from Staff+ answers. (3) Model monitoring and adversarial adaptation — shows you understand that fraud detection is a cat-and-mouse game, not a one-time ML model deployment. SAP FSCM/credit management engineers have relevant experience — credit scoring is a form of fraud detection at scale.</p>"
+}

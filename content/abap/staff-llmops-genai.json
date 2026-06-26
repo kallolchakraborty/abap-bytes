@@ -1,0 +1,204 @@
+{
+  "id": "staff-llmops-genai",
+  "type": "article",
+  "title": "LLMOps & GenAI Serving — vLLM, Triton Inference Server & RAG at Scale",
+  "subtitle": "How FAANG-scale AI serving works under the hood — and how SAP's generative AI (Joule, AI Core) maps to production inference infrastructure",
+  "category": "Engineering Culture",
+  "tags": [
+    "llmops",
+    "genai",
+    "vllm",
+    "triton",
+    "rag",
+    "inference-serving",
+    "ai-infrastructure",
+    "sap-joule",
+    "sap-ai-core",
+    "gpu-optimization",
+    "staff-plus"
+  ],
+  "sections": [
+    {
+      "id": "intro",
+      "type": "markdown",
+      "content": "## The GenAI Serving Problem\n\nTraining large language models gets all the attention, but **inference serving** is where the real engineering challenges lie:\n\n- **Latency:** Users expect LLM responses in < 2 seconds, not 30 seconds\n- **Throughput:** A popular feature can receive 10,000+ requests per second\n- **Cost:** GPU inference is 10-100x more expensive than CPU serving\n- **Memory:** A 70B parameter model requires 140GB+ of GPU memory (FP16)\n- **Scalability:** Serving must handle traffic spikes without collapsing\n\nFor Staff+ engineers: GenAI serving infrastructure is the most impactful problem to work on in 2024-2026. Every FAANG company is hiring for it. Understanding the stack — vLLM, Triton Inference Server, RAG pipelines, GPU optimization — is a career-defining skill.\n\nFor SAP architects: SAP's Joule copilot and AI Core use similar infrastructure under the hood. Understanding how the inference layer works helps you design better SAP integrations with LLMs."
+    },
+    {
+      "id": "inference-engines",
+      "type": "card-grid",
+      "columns": 2,
+      "cards": [
+        {
+          "icon": "zap",
+          "title": "vLLM — High-Throughput LLM Serving",
+          "body": "vLLM (UC Berkeley) is the most popular open-source LLM serving engine. Key innovations:\n\n**PagedAttention** — The KV cache for each request is fragmented across non-contiguous memory blocks (like OS virtual memory pages). This eliminates the 60-80% memory waste from fragmentation, enabling 2-4x higher throughput.\n\n**Continuous batching** — Unlike traditional batch processing (wait for N requests, then process), vLLM adds new requests to the running batch after each iteration completes. This maximizes GPU utilization.\n\n**Prefix caching** — If multiple requests share a common prompt prefix (e.g., system prompt), the KV cache for that prefix is shared, saving computation.\n\n**Result:** vLLM serves 2-4x more tokens/second than HuggingFace TGI and 2x more than NVIDIA Triton for pure LLM workloads."
+        },
+        {
+          "icon": "cpu",
+          "title": "NVIDIA Triton Inference Server",
+          "body": "Triton is NVIDIA's production inference platform. Unlike vLLM (LLM-only), Triton serves **any model type**: LLMs, vision models, embedding models, and ensemble pipelines.\n\n**Model concurrency** — Multiple models on the same GPU, with dynamic batching per model. An LLM and an embedding model can share the same GPU.\n\n**Model ensembles** — Chain multiple models into a single inference pipeline (e.g., text -> embedding -> classifier). Triton manages the data flow between models.\n\n**Performance tuning:**\n- Dynamic batching (max batch size, delay timer)\n- Concurrent model execution (GPU streams)\n- Model warmup (pre-load KV cache)\n- GPU memory pooling (CUDA unified memory)\n\n**Tradeoff:** Triton is more complex to configure but more flexible. vLLM is simpler and faster for pure LLM serving."
+        },
+        {
+          "icon": "git-branch",
+          "title": "RAG — Retrieval-Augmented Generation at Scale",
+          "body": "RAG is the dominant pattern for production LLM applications. The pipeline:\n\n1. **Ingestion** — Chunk documents, generate embeddings (Nomic, OpenAI, Cohere), store in vector DB\n2. **Retrieval** — Convert user query to embedding, search vector DB for top-K similar chunks\n3. **Augmentation** — Combine retrieved chunks + query into a prompt\n4. **Generation** — LLM generates response based on augmented prompt\n\n**Scaling challenges:**\n- Embedding generation: Use a separate Triton endpoint or batching server\n- Vector DB latency: HNSW indexing for sub-10ms search at 10M+ vectors\n- Context window limits: Chunking strategy matters (200-500 token chunks, 50% overlap)\n- Caching: Embedding cache (same query -> same embedding) and LLM response cache (identical queries)\n\n**FAANG approach:** Dedicated embedding service (Triton + E5/Llama embeddings) + distributed vector search (ScaNN, DiskANN) + vLLM for generation."
+        },
+        {
+          "icon": "activity",
+          "title": "RAG Evaluation & Quality",
+          "body": "RAG quality depends on retrieval accuracy + generation quality. Key metrics:\n\n**Retrieval Metrics:**\n- Hit Rate: Percentage of queries where relevant context is retrieved\n- MRR (Mean Reciprocal Rank): Rank of first relevant result\n- NDCG: Rank-weighted relevance (discounts lower ranks)\n\n**Generation Metrics:**\n- Faithfulness: Does the response stick to the retrieved context?\n- Answer Relevance: Does the response address the query?\n- Context Precision: How much of the context was actually used?\n\n**Tools:** RAGAS framework, TruLens, LangSmith.\n\n**FAANG practice:** Continuous evaluation pipeline — sample 1% of production queries, have LLM-as-judge score each response, alert on score degradation."
+        }
+      ]
+    },
+    {
+      "id": "gpu-optimization",
+      "type": "comparison-table",
+      "title": "LLM Inference Optimization Techniques",
+      "headers": [
+        "Technique",
+        "Speedup",
+        "Memory Reduction",
+        "Quality Impact",
+        "When to Use"
+      ],
+      "rows": [
+        [
+          "PagedAttention (vLLM)",
+          "2-4x throughput",
+          "60-80% KV cache savings",
+          "None (mathematically identical)",
+          "Always for LLM serving"
+        ],
+        [
+          "Continuous batching",
+          "2-3x throughput",
+          "None",
+          "None",
+          "Always for production"
+        ],
+        [
+          "FP16 / BF16",
+          "2x memory (vs FP32)",
+          "50% (vs FP32)",
+          "Negligible (standard practice)",
+          "Default. Use BF16 for newer GPUs (A100, H100)"
+        ],
+        [
+          "INT8 / INT4 quantization",
+          "2-4x memory (vs FP16)",
+          "75-87% (vs FP16)",
+          "Slight quality degradation (1-5%)",
+          "For throughput-critical or memory-bound deployments"
+        ],
+        [
+          "Speculative decoding",
+          "1.5-2.5x latency reduction",
+          "None",
+          "None (verified against draft)",
+          "For latency-sensitive streaming applications"
+        ],
+        [
+          "Flash Attention (v2/v3)",
+          "2-4x attention compute",
+          "Memory linear in sequence length (not quadratic)",
+          "None (mathematically identical)",
+          "Always, especially for long-context (>8K tokens)"
+        ],
+        [
+          "Tensor parallelism",
+          "Nx (with N GPUs)",
+          "Per-GPU (splits model across GPUs)",
+          "None",
+          "For models that don't fit on one GPU (70B+)"
+        ],
+        [
+          "Prefix caching",
+          "0.5-2x (query-dependent)",
+          "KV cache per unique prefix",
+          "None",
+          "When many requests share a system prompt"
+        ],
+        [
+          "Skeleton-of-Thought (SoT)",
+          "1.5x (draft-then-verify)",
+          "None",
+          "Slight (parallel decoding quality)",
+          "For latency-critical real-time features"
+        ]
+      ]
+    },
+    {
+      "id": "rag-architecture",
+      "type": "code-block",
+      "title": "RAG Serving Architecture (FAANG-Style)",
+      "language": "text",
+      "code": "-- Production RAG pipeline architecture --\n\nClient Request\n  |\n  v\n[Gateway / Load Balancer]\n  |  -> Rate limiting (per-user, per-API-key)\n  |  -> Authentication + Authorization\n  v\n[RAG Orchestrator Service]\n  |  - Classifies query type (factual vs creative vs code)\n  |  - Routes to appropriate pipeline\n  |\n  |--- 1. Query Rewriting ---\n  |    LLM rewrites ambiguous query: 'latest features' -> 'new features in v3.2.0'\n  |\n  |--- 2. Embedding ---\n  |    Triton server: bge-large-en-v1.5 (FP16, batch size 32)\n  |    Time: ~50ms per query\n  |\n  |--- 3. Vector Search ---\n  |    Vector DB: Pinecone / Qdrant / Milvus (HNSW index)\n  |    Top-K: 5 chunks (200 tokens each, 50% overlap)\n  |    Time: ~10ms (10M vectors, 768 dims, ef_search=100)\n  |\n  |--- 4. Context Assembly ---\n  |    Combine chunks + query + system prompt\n  |    Truncate if total > 4K tokens (context limit)\n  |\n  |--- 5. Generation ---\n  |    vLLM server: Llama 3 70B (FP16, tensor parallel 4)\n  |    Temperature: 0.1 (factual), 0.7 (creative)\n  |    Max tokens: 1024\n  |    Time: ~500ms (first token) + ~50ms/token\n  |\n  |--- 6. Post-processing ---\n  |    Citation extraction: [1], [2] -> hyperlinks\n  |    Answer relevance filter: reject if answer doesn't address query\n  |\n  v\nClient Response (~1-2 seconds total)"
+    },
+    {
+      "id": "sap-bridge",
+      "type": "markdown",
+      "content": "## SAP Bridge — Joule, AI Core & GenAI in the SAP Ecosystem\n\n### SAP's GenAI Infrastructure\n\nSAP has built its GenAI infrastructure around three layers:\n\n**SAP AI Core** — The ML platform (model hosting, training, serving). Supports HuggingFace models, SageMaker integration, and custom containers. Behind the scenes, it uses Kubernetes + GPU nodes (not unlike FAANG's internal platforms).\n\n**SAP AI Launchpad** — The UI for managing AI scenarios, deployments, and monitoring.\n\n**SAP Joule** — The copilot interface. Joule calls AI Core models, embeds into SAP applications (S/4HANA, SuccessFactors, Ariba).\n\n### The Gap vs FAANG\n\n| Aspect | SAP AI Core | FAANG Inference Platform |\n|---|---|---|\n| Serving engine | HuggingFace TGI (default), custom containers | vLLM (LLMs), Triton (multi-model) |\n| GPU optimization | Minimal (generic containers) | PagedAttention, Flash Attention, quantization |\n| Batching | Request-level (one request at a time) | Continuous batching (max GPU utilization) |\n| RAG support | AI Core's vector engine (HANA Vector) | Dedicated embedding service + vector DB |\n| Monitoring | Basic metrics | Per-request latency breakdown, GPU utilization, quality scores |\n| Cost optimization | N/A (fixed infrastructure) | Spot GPU, model distillation, speculative decoding |\n\n### What SAP Architects Should Know\n\n1. **Joule uses RAG internally** — Joule retrieves context from SAP Help Portal, SAP Community, and customer-specific knowledge bases before generating responses. Understanding RAG quality directly impacts Joule adoption.\n2. **HANA Vector Engine** — SAP's vector DB inside HANA Cloud enables RAG without external infrastructure. Know the tradeoffs (HANA's hnsw implementation vs Pinecone/Qdrant).\n3. **Model selection matters** — Joule uses multiple models (GPT-4 for complex queries, smaller models for simple classification). This 'model routing' pattern is exactly what FAANG serving platforms implement.\n4. **The SAP use case is uniquely suited** — Enterprise data is mostly structured + semi-structured (SAP tables, IDocs). RAG for enterprise requires table-aware chunking (entity extraction, relationship preservation) that general-purpose RAG doesn't handle well."
+    },
+    {
+      "id": "faang-interview",
+      "type": "interactive",
+      "style": "tabs",
+      "title": "LLMOps FAQ for Staff+ Interviews",
+      "tabs": [
+        {
+          "label": "Architecture",
+          "content": "**Interviewer:** \"Design an LLM serving platform for a customer support chatbot.\"\n\n**Staff+ answer:** \"I'd use a three-tier architecture:\n\n**Tier 1: Gateway** — Authentication, rate limiting (per-user: 10 req/min, per-API-key: 1000 req/min), load balancing across model replicas, request queue for overload protection.\n\n**Tier 2: RAG Pipeline** — Query classification (intent + complexity), query rewriting, embedding generation (Triton with E5-large), vector search (Pinecone, 10M+ docs, HNSW index, sub-10ms), context assembly with token budget management.\n\n**Tier 3: Generation** — Model replicas behind vLLM, each with PagedAttention + continuous batching. Two model tiers: small model (Llama 3 8B, FP16, single GPU) for 80% of queries, large model (Llama 3 70B, FP16, TP=4) for complex queries. Model routing based on query complexity score.\n\n**Observability:** Per-request latency breakdown (embedding time, search time, generation time), GPU utilization per model replica, cache hit rate (KV cache + response cache), and quality scores from LLM-as-judge evaluation on 1% sample.\n\n**Cost optimization:** Spot GPU for non-latency-sensitive batch workloads, reserved GPU for real-time generation, cache TTL tuning.\"\n\n**Why this impresses:** You gave a complete architecture with three tiers, specific technologies (Triton, vLLM, Pinecone), two model tiers with routing, and cost optimization strategy. This is a production-ready design."
+        },
+        {
+          "label": "Performance",
+          "content": "**Interviewer:** \"Your LLM serving is too slow (P95 = 8 seconds). How do you debug and fix it?\"\n\n**Staff+ answer:** \"First, break down latency into components:\n\n1. **Network + auth:** Expect < 50ms. If higher, check load balancer and auth service.\n2. **RAG pipeline:** Embedding (~50ms) + vector search (~10ms) + context assembly (~5ms). Should be < 100ms total. If higher, check embedding batch size or vector DB index quality.\n3. **Time-to-first-token (TTFT):** Should be < 500ms. If higher, check prompt size (long prompts take longer to prefill), model parallelism overhead, or GPU memory bandwidth contention.\n4. **Inter-token latency:** Should be < 50ms/token. If higher, check GPU utilization (are other models sharing the GPU?), KV cache fragmentation, or model quantization level.\n\n**Most common fixes:**\n- Enable PagedAttention (vLLM) — reduces TTFT by 50%\n- Reduce max sequence length — shorter sequences = less KV cache pressure\n- Increase batch size — continuous batching works best with more concurrent requests\n- Switch to INT4 quantization — 2x tokens/second with acceptable quality loss\n- Use speculative decoding — draft model generates tokens, target model verifies = 2x tokens/second\n\n**Last resort:** Add more GPU replicas. But always optimize the model before scaling horizontally.\"\n\n**Why this impresses:** You gave a systematic debugging approach (break down P95 into components with expected values), specific fixes with expected impact, and the principle (optimize before scaling)."
+        },
+        {
+          "label": "SAP Integration",
+          "content": "**Interviewer:** \"How would you integrate an LLM with SAP S/4HANA for natural-language querying?\"\n\n**Staff+ answer:** \"This is Text-to-SQL + RAG combined. Architecture:\n\n1. **Schema ingestion** — Crawl SAP DDIC (Data Dictionary) tables, extract table names, field names, data types, relationships, and descriptions. Store as embeddings in HANA Vector Engine.\n2. **Query understanding** — User asks 'Show me top 10 customers by revenue this quarter.' Classify intent, extract entities (customers, revenue, quarter).\n3. **Schema retrieval** — Retrieve relevant tables/fields from HANA Vector Engine (KNA1 for customers, VBAK for sales orders, VBAP for line items, etc.).\n4. **Context + prompt** — Build prompt with: retrieved schema definitions (field names + descriptions), user query, examples of correct Text-to-SQL for similar patterns.\n5. **SQL generation** — LLM generates ABAP SQL or HANA SQL. Use a model fine-tuned on SAP SQL patterns (or append SAP SQL examples to the prompt).\n6. **SQL validation** — Parse the generated SQL, validate table/field names against DDIC, reject and retry if invalid.\n7. **Execute + format** — Run SQL against HANA, format results as a natural language response with citations.\n\n**Key challenge:** SAP's data model is complex (thousands of tables, cryptic field names like VBAP-NETWR). The embedding for 'customer name' might match multiple fields (KNA1-NAME1, ADR6-MC_NAME1, etc.). The LLM needs to handle ambiguity gracefully.\"\n\n**Why this impresses:** You gave a concrete 7-step architecture with SAP-specific challenges (DDIC, cryptic field names, ambiguous entity resolution). Shows you understand the real difficulty of enterprise LLM integration."
+        },
+        {
+          "label": "Evaluation",
+          "content": "**Interviewer:** \"How do you evaluate whether your GenAI feature is working well in production?\"\n\n**Staff+ answer:** \"Three tiers of metrics:\n\n**Tier 1: System metrics** (always-on)\n- P50/P95/P99 latency (target: < 2s P95)\n- Tokens per second per GPU (target: > 50 tokens/s for 7B, > 20 tokens/s for 70B)\n- Request error rate (target: < 0.1% 5xx errors)\n- Queue depth (target: < 100 requests waiting at peak)\n\n**Tier 2: Quality metrics** (continuous sampling)\n- LLM-as-judge scores on 1% of production requests\n- Faithfulness (does answer stick to context?)\n- Helpfulness (does answer address the query?)\n- Safety (no harmful/toxic content)\n\n**Tier 3: Business metrics** (weekly dashboard)\n- User retention: Do users return after their first query?\n- Task completion rate: Did the user achieve their goal?\n- Human escalation rate: How often does the user need a human agent?\n- Cost per query: Infrastructure cost divided by query count\n\n**The most important metric** for a Staff+ engineer: cost per successful query. If each query costs $0.05 and has a 90% success rate, the effective cost per successful query is $0.056. Reducing model size, improving RAG accuracy, and caching can all improve this metric.\"\n\n**Why this impresses:** You gave a three-tier evaluation framework with specific targets and the Staff+ meta-metric (cost per successful query). Shows you think about GenAI as a business, not just a technology."
+        }
+      ]
+    },
+    {
+      "id": "takeaways",
+      "type": "card-grid",
+      "columns": 3,
+      "cards": [
+        {
+          "icon": "zap",
+          "title": "vLLM + PagedAttention Are the Standard",
+          "body": "vLLM's PagedAttention eliminates KV cache fragmentation, delivering 2-4x throughput improvement over naive serving. It's the de facto standard for open-source LLM serving."
+        },
+        {
+          "icon": "cpu",
+          "title": "Triton for Multi-Model Serving",
+          "body": "When you need to serve LLMs + embedding models + vision models on the same GPU, Triton is the choice. It's more complex but more flexible than vLLM."
+        },
+        {
+          "icon": "git-branch",
+          "title": "RAG Is the Dominant Production Pattern",
+          "body": "Most production LLM features use RAG, not raw LLM calls. The retrieval pipeline (embedding + vector search) is often the bottleneck, not the LLM itself."
+        },
+        {
+          "icon": "bar-chart",
+          "title": "Quantization Is Your Cost Saver",
+          "body": "INT8/INT4 quantization reduces GPU memory by 75-87% with minimal quality loss. Use it for high-throughput, low-latency deployments where every millisecond counts."
+        },
+        {
+          "icon": "activity",
+          "title": "Continuous Batching Maximizes GPU",
+          "body": "Traditional request-level batching underutilizes GPU memory. Continuous batching (add requests to the active batch after each iteration) is essential for production throughput."
+        },
+        {
+          "icon": "trending-up",
+          "title": "Cost Per Successful Query Is the Key Metric",
+          "body": "Model serving cost + RAG cost + error rate = effective cost per good response. Optimizing all three together, not just the model, drives the best business outcome."
+        }
+      ]
+    }
+  ]
+}

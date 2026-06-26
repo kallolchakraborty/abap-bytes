@@ -1,0 +1,42 @@
+{
+  "id": "staff-stripe-prep",
+  "title": "Stripe Staff+ Interview Preparation for Enterprise Architects",
+  "category": "Leadership",
+  "subcategory": "Company-Specific Prep",
+  "language": "text",
+  "description": "<p>Complete guide to Stripe Staff+ interviews for SAP/enterprise engineers. Covers Stripe's engineering culture (API-first design, developer experience obsession, economic infrastructure for the internet), the interview loop structure (the Stripe coding round on API design, the system design deep dive), and how SAP's financial and payments experience maps to Stripe's mission.</p>",
+  "tags": ["FAANG", "Stripe", "Staff+", "Interview", "Prep", "API", "Payments", "Enterprise"],
+  "sections": [
+    {
+      "title": "Stripe Engineering Culture & What They Value",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>What Stripe looks for in Staff+ candidates:</b> (1) <b>API-first design thinking</b> — Stripe is the definition of API-first. Every product at Stripe starts with the API. The user experience IS the API. A Staff+ candidate must demonstrate: understanding of API design principles (consistency, discoverability, idempotency, versioning, error handling), developer experience (DX) as a first-class concern, and the ability to design APIs that are both simple and powerful. (2) <b>Economic infrastructure thinking</b> — Stripe's mission is to 'increase the GDP of the internet.' They think about their products as economic infrastructure — they must be reliable (99.999% uptime for payment processing), secure (PCI DSS Level 1), and global (135+ currencies, 40+ countries). Your system designs should demonstrate this infrastructure mindset. (3) <b>Detailed craftsmanship</b> — Stripe's founders are engineers who obsess over details: API error messages that are actually helpful, documentation that includes copy-paste examples, and libraries that feel native in each language. An interview response that lacks detail (hand-waving about 'use a database' without specifying schema, query patterns, and indexing strategy) is a red flag.</p><p><b>Stripe leveling:</b> L1-L2 (Junior), L3 (Mid), L4 (Senior), L5 (Staff), L6 (Principal). Staff+ at Stripe is L5+. Criteria: technical depth, product impact, mentorship, and operational excellence. Stripe's compensation: base + RSUs (with a unique 'early exercise' option for pre-IPO stock) + annual bonus. Total comp for L5: $350K-$500K+ depending on stock performance. Stripe is known for paying at or above FAANG levels for top talent.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "The Stripe Interview Loop",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>Interview structure (L4+):</b> (1) Phone screen (45 min) — technical background + a design discussion. Stripe's phone screen often includes: 'How would you design an API for X?' or 'What's a system you've built, and what were the tradeoffs?' (2) Onsite (typically 4-5 rounds): (a) <b>API Design (coding round)</b> — Stripe's signature coding round. Unlike LeetCode (algorithm-focused), this round is about designing an API for a real-world scenario. Example: 'Design an API for a billing system that supports subscriptions, metered usage, and proration.' You write the API spec (endpoints, request/response schemas, error codes, idempotency keys) and implement the backend logic. This round evaluates: API design judgment, attention to edge cases (what happens when a subscription is cancelled mid-cycle?), code organization, and testing mindset. (b) <b>System Design (1-2 rounds)</b> — design a distributed system at Stripe's scale. (c) <b>Product/Behavioral (1 round)</b> — how you think about product impact, user empathy, and cross-functional collaboration. (d) <b>Debugging/Operational (1 round)</b> — Stripe values operational excellence. You're given a production incident scenario and asked to debug it. (e) <b>Hiring Manager round</b> — team-specific conversation.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "System Design at Stripe — Payments & Financial Infrastructure",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>Typical system design questions at Stripe:</b> (1) 'Design Stripe's payment processing pipeline' — dual-ledger, idempotency, authorization → capture, 3D Secure, reconciliation. (2) 'Design a subscription billing system' — recurring billing, metered usage, coupons, proration, invoicing, dunning (failed payment retry). (3) 'Design Stripe Connect' — marketplace payments, onboarding merchants, split payments, disputes. (4) 'Design a financial reconciliation system' — matching Stripe's transaction records against bank statements, finding discrepancies, generating reports. (5) 'Design Stripe's fraud detection system' — real-time risk scoring, machine learning models, graph analysis.</p><p><b>How Stripe evaluates system design:</b> (1) <b>Idempotency as a religion</b> — Stripe's payment APIs are built on idempotency keys. Every system design must address: how do we guarantee that retrying a request doesn't cause double charges? (2) <b>Global consistency</b> — Stripe operates in 40+ countries with different regulations, currencies, payment methods, and banking systems. Your design must handle: multi-currency support (with exchange rates and rounding), local payment methods (SEPA in Europe, BACS in UK, UPI in India), and regulatory compliance per country. (3) <b>Financial correctness</b> — Stripe is audited by external auditors and regulated by financial authorities. Your design must produce an immutable audit trail where every cent is accounted for. The dual-ledger pattern (transaction ledger + accounting ledger) is essential. (4) <b>Developer experience</b> — Stripe's products are APIs consumed by developers. Your design discussion should include the API surface: how will developers interact with this system? What does a typical integration look like? How do we make it hard to misuse the API?</p><p><b>SAP advantage at Stripe:</b> Stripe's recent focus on enterprise payments (Stripe for enterprise, Stripe B2B billing) means they value engineers with enterprise experience. SAP FI and FSCM engineers directly understand: (1) Financial accounting — double-entry bookkeeping, general ledger, reconciliation. (2) Payment processing — credit management, dunning, payment runs. (3) Subscription and billing — SAP's billing plans and subscription billing in S/4HANA. SAP engineers should emphasize their deep understanding of financial systems — something most FAANG engineers lack.</p>"
+        }
+      ],
+      "codeBlock": ""
+    }
+  ],
+  "details": "<p><b>FAANG Interview Tip:</b> Stripe's interview process is unique in its focus on API design (the coding round) and financial systems thinking. Key signals: (1) API design as a coding skill — you should practice designing APIs that are consistent, idempotent, and developer-friendly. (2) Financial correctness — lead with the dual-ledger pattern, reconciliation, and audit trails. (3) Global thinking — payment methods, currencies, and regulations per country. SAP FI engineers have the strongest advantage at Stripe compared to any other FAANG — your financial systems experience is directly applicable. Frame it: 'I've worked with the world's most sophisticated financial system (SAP FI); I can help Stripe build the next generation of payment infrastructure.'</p>"
+}

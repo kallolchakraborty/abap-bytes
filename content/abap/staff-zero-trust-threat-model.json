@@ -1,0 +1,196 @@
+{
+  "id": "staff-zero-trust-threat-model",
+  "type": "article",
+  "title": "Zero-Trust Architecture & Threat Modeling (STRIDE) for Staff+ Engineers",
+  "subtitle": "How to design security into distributed systems from day one — and why every FAANG architect must think like a threat modeler",
+  "category": "Engineering Culture",
+  "tags": [
+    "security",
+    "zero-trust",
+    "threat-modeling",
+    "stride",
+    "authentication",
+    "authorization",
+    "iam",
+    "staff-plus",
+    "sap-btp",
+    "cloud-security"
+  ],
+  "sections": [
+    {
+      "id": "intro",
+      "type": "markdown",
+      "content": "## Why Zero-Trust Matters for Staff+ Engineers\n\nAt FAANG, security is not the security team's job — it's every engineer's job. A Staff+ engineer is expected to design systems that are **secure by default**, not secure by audit. This means:\n\n- **Threat modeling** before writing code, not after\n- **Zero-trust principles** baked into the architecture, not bolted on\n- **Least privilege** enforced at every layer, not just the network perimeter\n\nFor SAP architects: SAP's traditional architecture assumed a trusted corporate network (RFC trusted systems, SAProuter). Zero-Trust flips this: **never trust, always verify**. Every RFC call, every OData request, every RFC destination must be authenticated and authorized — even within the same datacenter.\n\n### The Staff+ Security Mindset\n\n| Aspect | Junior/Mid Engineer | Staff+ Engineer |\n|---|---|---|\n| Threat modeling | 'Security team will review it' | Leads the threat modeling session |\n| Authentication | 'Use SSO' | Designs token exchange, OAuth flows, mTLS |\n| Authorization | 'Check the role' | Designs RBAC/ABAC models with overlapping permissions |\n| Data security | 'Database has access control' | Designs field-level encryption, column-level ACLs |\n| Incident response | 'Escalate to security' | Defines the on-call runbook for security incidents |\n| Compliance | 'Legal handles it' | Designs audit logging, data retention, and privacy controls"
+    },
+    {
+      "id": "stride",
+      "type": "card-grid",
+      "columns": 2,
+      "cards": [
+        {
+          "icon": "user-check",
+          "title": "Spoofing",
+          "body": "**Threat:** Attacker pretends to be someone else (user, service, device).\n\n**Mitigation:** Authentication — passwords, MFA, certificates, OAuth tokens, mTLS.\n\n**SAP context:** An attacker sends a forged RFC request claiming to be from a trusted SAP system. Without client certificate validation, the receiver processes it.\n\n**FAANG approach:** Every service call uses mTLS or OAuth2 with audience and issuer validation. No service trusts another just because it's on the same network."
+        },
+        {
+          "icon": "shield",
+          "title": "Tampering",
+          "body": "**Threat:** Attacker modifies data in transit or at rest.\n\n**Mitigation:** Integrity checks — TLS for transit, cryptographic signatures for stored data, checksums, immutable logs.\n\n**SAP context:** An attacker intercepts and modifies an IDoc between two SAP systems. Without digital signatures, the receiving system processes the fraudulent data.\n\n**FAANG approach:** All data-in-transit uses TLS 1.3. Critical data-at-rest uses field-level encryption with separate key per tenant (envelope encryption)."
+        },
+        {
+          "icon": "message-circle",
+          "title": "Repudiation",
+          "body": "**Threat:** User/service denies performing an action, and there's no proof.\n\n**Mitigation:** Non-repudiation — audit logs, digital signatures, immutable event stores.\n\n**SAP context:** A user posts a critical financial document. Later, they claim they didn't. Without detailed audit logs, there's no proof.\n\n**FAANG approach:** Every action is logged with caller identity, timestamp, and action hash. Logs are written to append-only storage (S3 Object Lock, Kafka immutable topic). Retention is configurable per compliance requirement."
+        },
+        {
+          "icon": "folder",
+          "title": "Information Disclosure",
+          "body": "**Threat:** Attacker reads data they shouldn't have access to.\n\n**Mitigation:** Confidentiality — encryption, access control, data masking, column-level security.\n\n**SAP context:** A BI report shows salary data to all managers instead of only HR. The authorization check is on the report level, not the row level.\n\n**FAANG approach:** Row-level security in BigQuery, column-level ACLs in Hive, automatic data masking based on user role. Access decisions at query time, not just at UI time."
+        },
+        {
+          "icon": "shield-off",
+          "title": "Denial of Service",
+          "body": "**Threat:** Attacker prevents legitimate users from accessing the system.\n\n**Mitigation:** Availability — rate limiting, load shedding, autoscaling, DDoS protection.\n\n**SAP context:** An attacker floods SAP Gateway with OData requests. Without rate limiting, the system becomes unresponsive for all users.\n\n**FAANG approach:** Multi-layer rate limiting: per-user, per-API-key, per-IP at the load balancer, token bucket at the application layer, and adaptive throttling based on backend latency."
+        },
+        {
+          "icon": "key",
+          "title": "Elevation of Privilege",
+          "body": "**Threat:** Attacker gains higher privileges than they should have.\n\n**Mitigation:** Authorization — least privilege, RBAC, ABAC, privilege separation.\n\n**SAP context:** A standard SAP user exploits a misconfigured authorization object to access transaction SE16 (table viewer) for HR tables.\n\n**FAANG approach:** Every API call checks both authentication (who you are) and authorization (what you can do) separately. Authorization is enforced at the service layer, not the UI layer. Privileged actions require break-glass approval."
+        }
+      ]
+    },
+    {
+      "id": "zero-trust",
+      "type": "comparison-table",
+      "title": "Traditional Perimeter Security vs Zero-Trust",
+      "headers": [
+        "Principle",
+        "Traditional (Castle-and-Moat)",
+        "Zero-Trust",
+        "SAP Concrete Example"
+      ],
+      "rows": [
+        [
+          "Network trust",
+          "Trust everything inside the corporate network",
+          "Trust nothing — verify every request",
+          "SAProuter was 'trusted network.' Zero-trust: even SAP-to-SAP RFCs require mTLS"
+        ],
+        [
+          "Authentication",
+          "Single sign-on at the perimeter",
+          "Every request authenticated (even inside the cluster)",
+          "SAP Logon ticket vs OAuth2 token per service call"
+        ],
+        [
+          "Authorization",
+          "Coarse-grained (network ACLs, roles)",
+          "Fine-grained (per-resource, per-action)",
+          "SAP role-based (PFCG) vs AWS IAM policy with resource-level conditions"
+        ],
+        [
+          "Segmentation",
+          "Flat internal network",
+          "Micro-segmentation (per-service, per-workload)",
+          "SAP system landscape (DEV/QA/PRD) isolated vs Kubernetes network policies per namespace"
+        ],
+        [
+          "Data protection",
+          "Encryption at rest + transit (assumed safe inside)",
+          "Encryption everywhere, field-level, column-level",
+          "SAP HANA column-level encryption vs envelope encryption per tenant"
+        ],
+        [
+          "Monitoring",
+          "Perimeter-focused (firewall logs)",
+          "Every transaction monitored and audited",
+          "SAP audit log (SM19) vs event-driven audit with alerting"
+        ],
+        [
+          "Client trust",
+          "Device is trusted (corporate-managed)",
+          "Device posture verified (zero-trust client)",
+          "SAP GUI on corporate laptop vs Verify device health before allowing Fiori access"
+        ]
+      ]
+    },
+    {
+      "id": "threat-modeling-process",
+      "type": "markdown",
+      "content": "## How to Lead a Threat Modeling Session\n\nAs a Staff+ engineer, you'll lead threat modeling sessions for your team's architecture. Here's the process:\n\n### Step 1: Draw the Architecture Diagram\n\nInclude every component, data flow, trust boundary, and external entity. Use the **DFD (Data Flow Diagram)** notation:\n\n- **Process** (circle) — Service, job, Lambda function\n- **Data Store** (parallel lines) — Database, cache, S3 bucket\n- **External Entity** (rectangle) — User, third-party service\n- **Data Flow** (arrow) — API call, message queue, file transfer\n- **Trust Boundary** (dashed line) — Network boundary, process boundary, deployment boundary\n\n### Step 2: Apply STRIDE to Each Element\n\n| Element | STRIDE Threats to Consider |\n|---|---|\n| Each process | S (spoofed as process), T (process tampered with), R (process actions repudiable), I (process leaks data), D (process DoS'd), E (process privilege escalated) |\n| Each data flow | S (sender spoofed), T (data tampered in transit), I (data eavesdropped), D (flow flooded) |\n| Each data store | T (data tampered at rest), I (data leaked), D (store overloaded) |\n| Each external entity | S (entity spoofed), R (entity actions repudiated) |\n\n### Step 3: Rate and Prioritize Threats (DREAD)\n\nUse DREAD (Damage, Reproducibility, Exploitability, Affected users, Discoverability) or **CVSS scores** to prioritize:\n\n- **Critical (9-10):** Remote code execution without authentication\n- **High (7-8):** Authentication bypass, privilege escalation, data exposure\n- **Medium (4-6):** Limited DoS, information leakage with exploitation complexity\n- **Low (1-3):** Theoretical attacks requiring physical access\n\n### Step 4: Document Mitigations\n\nFor each threat: mitigation mechanism, owner, timeline. **Risk acceptance** is allowed but must be documented and approved by the security team."
+    },
+    {
+      "id": "practical-zero-trust",
+      "type": "code-block",
+      "title": "Zero-Trust Service-to-Service Authentication (OAuth2 + mTLS)",
+      "language": "text",
+      "code": "-- Zero-trust service call pattern --\n\n1. Service A (caller) gets a JWT token\n   - Token from internal OAuth2 server (e.g., Vault, AWS STS, GCP IAM)\n   - Contains: issuer, audience, subject, expiration, scope\n\n2. Service A calls Service B with:\n   - TLS 1.3 connection (mutual, both present client certs)\n   - Authorization: Bearer <JWT> header\n\n3. Service B (receiver):\n   a. Validates client TLS certificate (CA-signed, not expired, not revoked)\n   b. Validates JWT: issuer trusted, audience matches service B, not expired\n   c. Extracts claims: caller identity (subject), scopes\n   d. Checks authorization: does the caller have the required scope?\n   e. Audits the request: caller, action, resource, timestamp\n\n-- Fail-closed: if any check fails, reject with 403 (not 401)\n-- No: 'let me check if this IP is in the internal CIDR'\n-- Yes: 'let me verify the cryptographic identity of every caller'"
+    },
+    {
+      "id": "sap-bridge",
+      "type": "markdown",
+      "content": "## SAP Bridge — From Trusted RFC to Zero-Trust\n\n### The SAP Trust Model (Old Way)\n\nSAP's traditional trust model:\n\n- **RFC trusted systems** — If System A is in System B's 'trusted systems' list, calls from A are automatically trusted (no password check)\n- **SAProuter** — Acts as a network gateway. Anything behind the SAProuter is assumed trusted\n- **SAP Logon tickets** — Signed but not scoped. A logon ticket grants access to all systems, not just the intended one\n- **RFC destination credentials** — Hardcoded or stored in table. Rarely rotated\n\n### Zero-Trust SAP (FAANG Way)\n\n| Legacy SAP | Zero-Trust Replacement |\n|---|---|\n| RFC trusted system | OAuth2 client credentials grant with audience restriction |\n| SAProuter IP allowlist | mTLS with per-service certificate |\n| Logon ticket (MSSCH) | Scoped JWT with audience, issuer, expiration |\n| Hardcoded RFC destination credentials | Vault (HashiCorp/AWS Secrets Manager) with dynamic rotation |\n| SM19 audit log | Structured audit events to SIEM (Splunk, Elastic) |\n\n### Concrete Migration\n\n1. **Phase 1** (Existing SAP): Add a gateway (SAP Cloud Platform Integration / SAP BTP) in front of RFC endpoints. The gateway authenticates via OAuth2 before forwarding to RFC.\n2. **Phase 2** (Modern SAP): Replace RFC with REST/OData calls authenticated via OAuth2. Each service has its own service account with scoped permissions.\n3. **Phase 3** (Zero-Trust): mTLS between all services, short-lived tokens, continuous authorization evaluation, and real-time audit streaming."
+    },
+    {
+      "id": "faang-interview",
+      "type": "interactive",
+      "style": "tabs",
+      "title": "Security FAQ for Staff+ Interviews",
+      "tabs": [
+        {
+          "label": "Threat Model",
+          "content": "**Interviewer:** \"Walk me through the threat model for a payment processing system.\"\n\n**Staff+ answer:** \"I'll use STRIDE against a DFD with three trust boundaries.\n\n**External boundary** (user to API): S (spoof user) → OAuth2 with MFA + device fingerprint. T (tamper payment) → TLS 1.3 + request signing. D (DDoS API) → rate limiting + WAF.\n\n**Internal boundary** (API to payment service): S (spoof API service) → mTLS with short-lived certs. E (elevate from API to payment) → OAuth2 scopes (payment:write vs payment:admin). R (repudiate charge) → immutable audit log with request hash.\n\n**Storage boundary** (payment service to DB): T (tamper stored transaction) → DB encryption + checksum on critical fields. I (leak credit card data) → field-level encryption with envelope encryption, tokenization for PAN. D (DB DoS) → connection pooling + query timeout.\n\nThe highest-risk threat is **privilege escalation from API to payment service** — if an attacker compromises the API, they should only be able to charge, not refund or modify fees. The mitigation is scope isolation: the API's OAuth2 token has scope `payment:charge`; refund requires a different scope with human approval workflow.\"\n\n**Why this impresses:** You gave a complete STRIDE walkthrough with three boundaries, identified the highest-risk threat, and provided a concrete mitigation with scope isolation."
+        },
+        {
+          "label": "Zero-Trust Design",
+          "content": "**Interviewer:** \"Design a zero-trust architecture for a microservices deployment.\"\n\n**Staff+ answer:** \"Six pillars:\n\n1. **Identity as the perimeter** — No trust based on network location. Every service-to-service call requires mTLS + OAuth2.\n2. **Short-lived tokens** — JWTs expire in 15 minutes. Services refresh via Vault or sidecar proxy (Envoy/Sidecar).\n3. **Continuous authorization** — Check authorization on every request, not just at login. Use a centralized policy engine (OPA, AWS Cedar).\n4. **Micro-segmentation** — Kubernetes Network Policies restrict traffic to only necessary flows. Service A cannot talk to Service C unless explicitly allowed.\n5. **Just-in-time access** — No standing admin access. Privileged actions require on-call approval via a break-glass process (PagerDuty + approval).\n6. **Immutable audit** — All access attempts (allowed and denied) logged to an append-only store. Alert on denied-to-allowed ratio spikes.\"\n\n**Why this impresses:** You enumerated six distinct pillars, not just 'use mTLS.' You included policy engines (OPA), deployment patterns (Envoy sidecar), and operational processes (break-glass, audit alerting)."
+        },
+        {
+          "label": "SAP Scenario",
+          "content": "**Interviewer:** \"How would you make SAP BTP zero-trust compliant?\"\n\n**Staff+ answer:** \"SAP BTP (Business Technology Platform) currently uses a perimeter model: your BTP subaccount is protected by IAS (Identity Authentication Service), but once authenticated, services trust each other.\n\n**Phase 1** — Service-to-service authentication: Replace trusted certificates with OAuth2 client credentials grant between BTP services. Use `xsuaa` (XSUAA) as the token broker.\n\n**Phase 2** — Fine-grained authorization: Move from BTP role collections to resource-level scopes. E.g., 'read HANA data in schema X' vs 'read HANA data in any schema.'\n\n**Phase 3** — Network micro-segmentation: BTP Cloud Foundry spaces should have network policies restricting inter-service communication. Only allow traffic that matches the service mesh routing rules.\n\n**Phase 4** — Continuous monitoring: Stream BTP audit logs (access, configuration changes, token issuance) to a SIEM. Alert on anomalous token usage patterns (e.g., a token used from 3 different IPs in 5 minutes).\n\n**The hard part:** SAP's legacy architecture assumes trust. Making BTP zero-trust requires rethinking the entire service mesh, not just adding authentication.\"\n\n**Why this impresses:** You gave a concrete 4-phase migration for a real SAP product (BTP), with specific SAP technologies (IAS, XSUAA, Cloud Foundry) and identified the core challenge (legacy trust assumptions)."
+        },
+        {
+          "label": "Tradeoff",
+          "content": "**Interviewer:** \"What's the cost of zero-trust?\"\n\n**Staff+ answer:** \"Three categories:\n\n**Latency cost:** Every request goes through authentication + authorization. With mTLS + OAuth2, this adds 5-15ms per request. For latency-sensitive services, this is significant. Mitigation: persistent connections, cached authorization decisions (with TTL), and session tokens for repeated calls.\n\n**Operational complexity:** Managing 1000 service certificates, rotating them, handling revocation is harder than maintaining one VPN. Mitigation: use a service mesh (Istio, Linkerd) that handles mTLS transparently via sidecar proxies.\n\n**Debugging difficulty:** When a request fails, is it a certificate issue, a token expiration, a scope mismatch, or a revoked client? Each has different resolution paths. Mitigation: structured error responses with clear error codes ('ERR_AUTH_TOKEN_EXPIRED' vs 'ERR_AUTH_INSUFFICIENT_SCOPE').\n\n**The FAANG perspective:** These costs are acceptable because the cost of a security breach (data leak, compliance fine, reputational damage) is 100x higher than the operational cost of zero-trust.\"\n\n**Why this impresses:** You acknowledged real costs (latency, ops, debugging) instead of pretending zero-trust is free. You gave concrete mitigation for each cost, and you closed with the FAANG perspective on why the tradeoff is worth it."
+        }
+      ]
+    },
+    {
+      "id": "takeaways",
+      "type": "card-grid",
+      "columns": 3,
+      "cards": [
+        {
+          "icon": "shield",
+          "title": "STRIDE Every Design",
+          "body": "Before writing code, draw the DFD and apply STRIDE to every element. Identify the highest-risk threat and design mitigations before implementation."
+        },
+        {
+          "icon": "key",
+          "title": "Never Trust, Always Verify",
+          "body": "Every request, even within your own datacenter, must be authenticated and authorized. Network location is not a security credential."
+        },
+        {
+          "icon": "unlock",
+          "title": "Least Privilege Always",
+          "body": "Every service account should have the minimum permissions needed. No standing admin access. Scopes and roles must be granular enough to prevent privilege escalation."
+        },
+        {
+          "icon": "list",
+          "title": "Immutable Audit Logs",
+          "body": "Every access attempt (success or failure) goes to an append-only audit store. Logs are your proof for compliance and your signal for incident detection."
+        },
+        {
+          "icon": "zap",
+          "title": "Short-Lived Tokens",
+          "body": "JWTs expire in minutes, not hours. Refresh via a secure token service. Short-lived tokens limit blast radius and reduce revocation complexity."
+        },
+        {
+          "icon": "layers",
+          "title": "Defense in Depth",
+          "body": "No single security control is sufficient. Use network policies + mTLS + OAuth2 + audit + monitoring. A failure in any one layer is contained by the others."
+        }
+      ]
+    }
+  ]
+}

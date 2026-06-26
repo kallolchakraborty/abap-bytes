@@ -1,0 +1,52 @@
+{
+  "id": "sd-design-video-conferencing",
+  "title": "Design Video Conferencing System (Zoom/Meet-Style)",
+  "category": "System Design",
+  "subcategory": "FAANG Whiteboarding",
+  "language": "text",
+  "description": "<p>Design a video conferencing platform supporting thousands of participants. Covers WebRTC signaling, SFU vs MCU architecture, adaptive bitrate, simulcast, audio/video synchronization, virtual backgrounds, breakout rooms, recording, and how SAP's SAP Conferencing (SAP Connect) provides a basic conceptual bridge.</p>",
+  "tags": ["FAANG", "Staff+", "System Design", "Video Conferencing", "WebRTC", "SFU", "Zoom", "Meet"],
+  "sections": [
+    {
+      "title": "WebRTC & Media Architecture",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>WebRTC overview:</b> WebRTC (Web Real-Time Communication) is the browser-native protocol stack for peer-to-peer audio/video/data. Key components: (1) getUserMedia — access the camera and microphone. (2) RTCPeerConnection — establish a direct peer-to-peer connection with another browser for media streaming. (3) RTCDataChannel — send arbitrary data (chat, file sharing, whiteboard) peer-to-peer. (4) ICE (Interactive Connectivity Establishment) — discover the optimal network path between peers (STUN for public IP discovery, TURN for relay when direct connection fails due to NAT/firewall).</p><p><b>Signaling server:</b> Before two peers can establish a WebRTC connection, they need to exchange session metadata (SDP offers/answers, ICE candidates). This is done via a signaling server (WebSocket typically). The signaling server: (1) Manages room membership (who is in which meeting). (2) Relays SDP offers/answers between peers. (3) Relays ICE candidates. (4) Does NOT carry media — media flows peer-to-peer (or via SFU). The signaling server is lightweight — it only handles connection setup, not the media stream.</p><p><b>Media negotiation (SDP):</b> Session Description Protocol (SDP) describes the media capabilities of each peer: supported codecs (VP8, VP9, H.264, AV1), resolutions, bitrates, and encryption keys. The negotiation flow: (1) Peer A creates an SDP offer with its capabilities and sends it via signaling. (2) Peer B creates an SDP answer with its capabilities and sends it back. (3) Both peers now know each other's capabilities and can establish media streams. In a multi-peer call, this negotiation happens with the SFU (not peer-to-peer).</p><p><b>SAP Bridge:</b> SAP's legacy conferencing (SAP Connect, SAP NetWeaver Collaboration) provided basic video conferencing through the SAP GUI or web client. The architectural concepts (signaling, media negotiation, room management) are the same — but SAP's implementation was server-centric (MCU-based, described below) while modern systems use SFU for better scalability.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "SFU vs MCU — The Multiparty Scaling Dilemma",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>Peer-to-peer (naive):</b> In a call with N participants, each participant sends their video to N-1 other participants. Each participant receives N-1 video streams. Total streams = N*(N-1). For N=4, that's 12 streams (each participant sends 3, receives 3). For N=10, that's 90 streams. For N=100, that's 9900 streams. Peer-to-peer does not scale beyond ~8 participants due to bandwidth and CPU limits.</p><p><b>MCU (Multipoint Control Unit) — legacy approach (SAP, early Skype):</b> Each participant sends their video to the MCU server. The MCU decodes all streams, composites them into a single video (e.g., a 'grid view' with all participants), encodes the composite, and sends it to all participants. Total streams = 2N (each sends 1 to MCU, receives 1 from MCU). The MCU handles all the compositing. Problem: video compositing is CPU-intensive (requires decoding N-1 streams and encoding 1 stream per resolution/layout). The MCU is a bottleneck and a single point of failure. Used in older systems where client devices were weak.</p><p><b>SFU (Selective Forwarding Unit) — modern approach (Zoom, Google Meet, Jitsi):</b> Each participant sends their video to the SFU server. The SFU forwards each participant's video to the other participants who need to see it. The SFU does NOT decode or re-encode — it just forwards packets. Total streams = N*(N-1) inbound to the SFU, but the SFU is designed to handle this routing at line rate. The critical optimization: <b>simulcast</b> — each participant sends multiple resolution streams (e.g., 720p, 360p, 180p) to the SFU. The SFU forwards only the appropriate resolution to each receiver. A participant on a 13-inch laptop gets 180p from most participants and 720p from the active speaker. A participant on a 27-inch monitor gets 360p from most participants and 720p from the active speaker. This dramatically reduces bandwidth for each participant.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Adaptive Bitrate, Active Speaker & Virtual Backgrounds",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>Adaptive bitrate for video:</b> Each participant's video encoder adjusts its output bitrate based on available bandwidth. This is implemented via WebRTC's built-in rate control (GCC — Google Congestion Control) and sender-side bandwidth estimation. When the network degrades: (1) The receiver reports packet loss and jitter. (2) The sender reduces the target encoding bitrate. (3) If the bitrate drops below the minimum for the current resolution, the sender drops to a lower simulcast layer (720p → 360p → 180p). (4) If bandwidth is critically low, the sender disables video entirely and sends audio only. Adaptive bitrate is why Zoom/Meet calls 'work' on bad WiFi — the quality degrades gracefully instead of dropping.</p><p><b>Active speaker detection:</b> The SFU or client determines which participant is currently speaking (active speaker) and signals this to all participants. The active speaker's video is displayed in the main large window. The algorithm: (1) Each client runs a voice activity detector (VAD) on their local microphone input. (2) When VAD detects speech, the client sends a 'speaking' signal to the SFU. (3) The SFU aggregates speaking signals from all participants and determines the active speaker (loudest at a given moment). (4) The active speaker ID is broadcast to all participants via the signaling channel. (5) Each client updates their layout to show the active speaker prominently. The algorithm must handle: rapid switching (two people interrupting), echo cancellation (someone speaking through the speaker's feed), and no-speaker periods (show gallery).</p><p><b>Virtual backgrounds:</b> A computationally intensive client-side operation. Each video frame: (1) Runs through a person-segmentation ML model (e.g., MediaPipe Selfie Segmentation, or Zoom's custom model). (2) The model produces a mask (person pixels vs background pixels). (3) The background is replaced with a blurred version (privacy mode), an image, or a video. (4) The composited frame is encoded and sent. Virtual background processing consumes 20-40% CPU on modern devices. Zoom offers a server-side option for low-end devices: the client sends the raw frame plus mask to the SFU, which applies the background replacement server-side (at additional server cost).</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Breakout Rooms, Recording & Enterprise Features",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>Breakout rooms:</b> A meeting host can split participants into smaller groups. Each breakout room is a separate SFU session with its own room_id. The implementation: (1) The host creates breakout rooms via the signaling server. (2) The signaling server assigns participants to rooms. (3) Each participant's client disconnects from the main SFU and connects to the breakout room's SFU. (4) When the breakout ends, participants reconnect to the main SFU. Audio and screen-share must work seamlessly across the transition. The recording infrastructure must track which room each participant is in for accurate per-room recordings.</p><p><b>Recording (cloud recording):</b> The SFU sends a copy of each participant's stream (video+audio) to a recording service. The recording service: (1) Demuxes the incoming streams. (2) Decides the recording layout (active speaker, grid, or custom). (3) Composites the selected streams into a single video stream. (4) Encodes and uploads to cloud storage (S3). (5) Generates a recording ready notification. For large meetings (1000+ participants), the recording service must selectively record: only the active speaker's video + audio, or a custom layout chosen by the host. Zoom stores recordings as MP4 files with automatic transcript generation (speech-to-text) and search indexing.</p><p><b>Enterprise features:</b> (1) Waiting room — a separate SFU session where participants wait until the host admits them. (2) Authentication — tied to corporate SSO (SAML, OIDC). (3) End-to-end encryption — Zoom uses E2EE for up to 200 participants (key exchange via signaling + AES-256-GCM for media). (4) Dial-in — PSTN bridge (telephone network gateway) connecting phone callers to the meeting.</p>"
+        }
+      ],
+      "codeBlock": ""
+    }
+  ],
+  "details": "<p><b>FAANG Interview Tip:</b> Video conferencing design is common at Google (Google Meet), Meta (Messenger Rooms, WhatsApp calls), Microsoft (Teams), and Zoom. The key signals: (1) Understanding SFU vs MCU — this is the fundamental architectural decision. (2) Simulcast and adaptive bitrate — shows deep WebRTC knowledge. (3) Active speaker detection — a deceptively complex signal processing problem. Most candidates miss this. (4) Virtual backgrounds — understanding client-vs-server tradeoff. SAP engineers should frame this as: 'I understand real-time systems with high reliability requirements — video conferencing is the same class of problem with a different data type (frames instead of business transactions).</p>"
+}

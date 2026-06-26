@@ -1,0 +1,42 @@
+{
+  "id": "ds-crdts-deep",
+  "title": "CRDTs Deep Dive — State-Based vs Operation-Based, Delta-CRDTs & CmRDTs",
+  "category": "Distributed Systems",
+  "subcategory": "Advanced Distributed Systems",
+  "language": "text",
+  "description": "<p>Conflict-Free Replicated Data Types (CRDTs) enable automatic conflict resolution in distributed systems without a central coordinator. Covers state-based CRDTs (convergent), operation-based CRDTs (commutative), delta-CRDTs, and practical data types (G-Counter, PN-Counter, G-Set, LWW-Register). Includes real-world implementations in Redis, Riak, and collaborative editing tools, plus how SAP's transport merge conflicts provide a basic conceptual bridge.</p>",
+  "tags": ["FAANG", "Staff+", "Distributed Systems", "CRDT", "Conflict-Free", "Replication", "Consistency", "Eventual Consistency"],
+  "sections": [
+    {
+      "title": "State-Based CRDTs (CvRDTs) — Convergent",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>Core concept:</b> A state-based CRDT defines a merge function that combines the states of two replicas. The merge function must be: (1) Commutative — merge(A, B) = merge(B, A). (2) Associative — merge(merge(A, B), C) = merge(A, merge(B, C)). (3) Idempotent — merge(A, A) = A. These three properties (a 'semilattice') guarantee that replicas converge to the same state, regardless of the order in which updates are merged. No central coordinator is needed — any replica can merge with any other replica at any time and reach the same final state.</p><p><b>Example: G-Counter (Grow-Only Counter):</b> (1) State: an array of integers, one per replica. Each replica owns its position in the array. (2) Increment: replica_i increments its own counter (state[i]++). (3) Merge: element-wise maximum of the two arrays. merge(A, B) = [max(A[0], B[0]), max(A[1], B[1]), ...]. (4) Value: sum of all elements in the array. (5) Properties: commutativity (max is commutative), associativity (max is associative), idempotence (max(x, x) = x). (6) Limitation: G-Counter can only be incremented, not decremented. For decrement support, you need a PN-Counter (two G-Counters: one for increments, one for decrements).</p><p><b>Example: LWW-Register (Last-Writer-Wins Register):</b> (1) State: (value, timestamp). (2) Write: set value = new_value, timestamp = wall_clock_time. (3) Merge: keep the value with the highest timestamp. If timestamps are equal, use a deterministic tiebreaker (e.g., replica ID). (4) Limitation: LWW-Register can lose writes — if two writes happen at the same wall-clock time on different replicas, one is arbitrarily discarded. In practice, use version vectors or hybrid logical clocks (HLC) instead of wall clocks.</p><p><b>SAP Bridge:</b> SAP's transport system has a similar merge challenge: when two developers modify the same object in different systems, the transport merge must reconcile both changes. SAP's merge is manual (the developer resolves conflicts) — CRDTs make this automatic by defining a mathematical merge function that always converges. The concept of 'merge two states to get a third, consistent state' maps directly to SAP's transport of workbench requests.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Operation-Based CRDTs (CmRDTs) — Commutative",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>Core concept:</b> An operation-based CRDT defines operations that commute — applying them in any order produces the same final state. The key difference from state-based CRDTs: (1) Operations are broadcast to all replicas (instead of replicas periodically exchanging their full state). (2) Each operation must be delivered exactly once (at-least-once delivery is acceptable if operations are idempotent). (3) Operations must be delivered in causal order (if op A happens before op B, A must be delivered before B on all replicas). (4) If operations commute, causal delivery is sufficient for convergence — you don't need the strong eventual consistency guarantees of state-based CRDTs.</p><p><b>Example: G-Set (Grow-Only Set) as a CmRDT:</b> (1) Operation: add(element) — insert the element into the set. (2) Two add operations commute: add(A); add(B) produces the same result as add(B); add(A). (3) State: the union of all added elements. (4) Merge (for state sync): union of both sets. A G-Set can grow but never shrink. For removal, you need a Two-Phase Set (2P-Set) with separate add and remove sets, where add and remove sets are both G-Sets. An element is in the 2P-Set if it is in the add set and not in the remove set. The remove set is a G-Set — you can't re-add a removed element (the remove set trivially wins because it was added later).</p><p><b>Observation (Observed-Remove Set):</b> The major limitation of 2P-Set is that you cannot re-add a removed element. The OR-Set (Observed-Remove Set) solves this: each element is tagged with a unique tag per add operation. When an element is removed, only the tags observed by the remover are removed. A concurrent add on another replica adds a new tag that is NOT removed. This allows re-adding a previously removed element: (1) Replica A adds 'x' with tag t1. (2) Replica B adds 'x' with tag t2. (3) Replica A removes 'x' — removes t1 but not t2. (4) After merge, 'x' exists (with tag t2) because t2 was not removed. This is the CRDT type used in collaborative editing applications (Riak, Redis with CRDTs).</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Delta-CRDTs & Practical Implementations",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>Delta-CRDTs (Δ-CRDTs):</b> A state-based CRDT requires transmitting the entire state during each synchronization — inefficient for large states (e.g., a multi-GB dataset). Delta-CRDTs solve this by sending only the delta (the difference) between the current state and the last synchronized state. (1) Each update produces a delta — a small state fragment representing what changed. (2) Deltas are merged just like full states (they are themselves CRDTs). (3) A join-decomposition factorizes any update into a delta and a remaining state. (4) Riak's CRDT implementation uses delta-CRDTs — each write produces a delta that propagates to other replicas. Delta size is proportional to the number of modified keys, not the total dataset size.</p><p><b>Redis CRDTs (Redis Enterprise, Redis 7+):</b> Redis Enterprise implements CRDT-based active-active geo-distribution: (1) Multiple Redis instances in different regions accept writes. (2) Each write produces a CRDT delta. (3) Deltas are replicated asynchronously to other regions. (4) CRDT merge guarantees convergence — two replicas in different regions converge to the same state without conflicts. Redis supports CRDTs for: strings (LWW-Register), sets (OR-Set), sorted sets, counters (PN-Counter), hashes (LWW per field), and streams. The GA (Globally Active-Active) architecture in Redis Enterprise uses CRDTs to provide multi-region active-active with five 9s availability.</p><p><b>Riak's CRDT implementation:</b> Riak KV (distributed key-value store) has native CRDT support built on the Dynamo paper's vector clocks. Riak's CRDTs: (1) Maps (nested CRDT map) — a key-value map where values can be CRDTs themselves (recursive). (2) Sets — OR-Set under the hood. (3) Counters — PN-Counter. (4) Flags — LWW-Register for a boolean. Riak uses bloom filters within the CRDT implementation for efficient delta propagation between replicas.</p>"
+        }
+      ],
+      "codeBlock": ""
+    }
+  ],
+  "details": "<p><b>FAANG Interview Tip:</b> CRDTs are a hot topic for Staff+ distributed systems roles at Redis, MongoDB, Apple (CloudKit), and anywhere doing multi-region active-active replication. The key signals: (1) Understanding the merge function properties (commutative, associative, idempotent) — this is the mathematical foundation. (2) State-based vs operation-based CRDTs — when each is appropriate. (3) OR-Set semantics — the most practically useful CRDT. (4) Real implementations — Redis CRDTs, Riak. SAP engineers should frame their transport merge experience as: 'I understand the problem of converging divergent states — CRDTs formalize what SAP's manual merge process tries to achieve.'</p>"
+}

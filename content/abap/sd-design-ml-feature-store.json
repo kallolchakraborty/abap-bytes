@@ -1,0 +1,42 @@
+{
+  "id": "sd-design-ml-feature-store",
+  "title": "Design ML Feature Store (Feast/Tecton-Style)",
+  "category": "System Design",
+  "subcategory": "FAANG Whiteboarding",
+  "language": "text",
+  "description": "<p>Design a feature store for ML systems — a centralized platform for defining, storing, and serving features for training and inference. Covers offline vs online serving, point-in-time joins, feature serving with low-latency retrieval, feature validation, and how SAP's CDS views and data models provide a conceptual bridge.</p>",
+  "tags": ["FAANG", "Staff+", "System Design", "ML", "Feature Store", "Feast", "Tecton", "MLOps"],
+  "sections": [
+    {
+      "title": "Why a Feature Store?",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>The problem:</b> In a typical ML workflow, data scientists write feature computation pipelines in notebooks, store features in ad-hoc locations (CSV files, database tables, Redis caches), and serve them inconsistently for training vs inference. The result: (1) Training-serving skew — the feature computed during training is slightly different from the feature computed during inference (different timestamp, different rounding, different null handling). (2) Duplicate work — ten teams each compute the same 'user_7day_purchase_count' feature independently. (3) No governance — features have no owner, no documentation, no versioning, no validation.</p><p><b>The feature store solution:</b> A feature store is a centralized platform that: (1) Stores feature definitions (name, type, owner, description, source SQL/computation). (2) Computes features on a schedule (batch) or continuously (streaming). (3) Serves features for training (bulk export of historical features) and inference (real-time lookup by entity key). (4) Ensures training-serving consistency — the same feature definition produces the same value whether fetched for training or inference. (5) Provides point-in-time correctness — features are joined to training data at the correct historical timestamp, preventing data leakage.</p><p><b>SAP Bridge:</b> SAP's CDS (Core Data Services) views are a feature store for ABAP — they define reusable data models with annotations (analytics, semantics) that can be consumed by UI (Fiori), analytics (SAC), and integration (OData). The CDS view is the feature definition; the CDS association is the entity join. The concept of 'a reusable, governed, documented data model that is consumed by multiple systems' maps directly to the feature store's value proposition. The difference is that SAP's CDS is designed for deterministic business reporting (closed books) while ML features must handle point-in-time correctness for training (time-travel queries).</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Offline Store — Training Data Generation",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>Offline store architecture:</b> The offline store stores historical feature values for training. It is typically backed by a data warehouse (Snowflake, BigQuery, Redshift) or a data lake (S3 + Parquet + Spark). The key operations: (1) Feature definition — a data scientist defines a feature using SQL (or Python with a DataFrame API). Example: 'define feature user_7day_purchase_count as SELECT user_id, SUM(amount) FROM orders WHERE order_ts >= NOW() - INTERVAL 7 DAY GROUP BY user_id'. (2) Feature computation — the feature store runs this SQL on a schedule (hourly, daily) and stores the results in the offline store, partitioned by date. (3) Training dataset generation — for a training dataset, the data scientist specifies: label events (e.g., 'user clicked on item at timestamp T'), feature definitions, and a point-in-time join.</p><p><b>Point-in-time join (the critical ML concept):</b> To train a model that predicts 'will the user click this item?', you need features computed at the exact moment the prediction is made, not using future data. Example: if event E happened at timestamp T, you want 'user_7day_purchase_count' computed at T-1 second (not at T+1 hour, which would include post-event purchases — data leakage). The point-in-time join: (1) For each label event (timestamp, entity_id), find the latest feature value for that entity_id where the feature's timestamp <= event timestamp. (2) Return the feature value at that point in time. This is a 'temporal AS OF join' — standard SQL supports this (AS OF TIMESTAMP in BigQuery, FOR SYSTEM_TIME in standard SQL). The feature store abstracts this complexity from the data scientist.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Online Store — Real-Time Serving",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>Online store architecture:</b> The online store provides sub-millisecond feature lookup for inference. It is typically backed by a key-value store (Redis, DynamoDB, Cassandra). The key design: (1) Features are pre-computed and written to the online store. (2) The inference request includes the entity key (user_id, item_id). (3) The feature store retrieves all features for that entity in a single call (multi-get). (4) Features are returned to the model for scoring. Total latency target: < 5ms P99.</p><p><b>Online serving materialization:</b> Features are materialized from the offline store to the online store on a schedule. The materialization pipeline: (1) A cron job reads all feature values updated since the last materialization timestamp from the offline store. (2) Writes the latest value per entity to the online store (upsert — overwrite the previous value for that entity). (3) Records the materialization watermark (the timestamp of the last successfully materialized feature). (4) If the feature value is computed streamingly (via Kafka), the materialization is continuous — each new feature value is written directly to both offline and online stores.</p><p><b>Training-serving consistency:</b> The feature store guarantees that the same feature definition produces the same value for training and inference by: (1) Using the same feature definition SQL/code for both offline computation (batch Spark job) and online computation (streaming Flink job or Lambda function). (2) Running feature validation — materialization jobs validate that the online feature values match the offline values for a sample of entities. (3) Feature versioning — if the feature definition changes, both offline and online stores are recomputed with the new version, and feature names include the version (user_7day_purchase_count_v2).</p>"
+        }
+      ],
+      "codeBlock": ""
+    }
+  ],
+  "details": "<p><b>FAANG Interview Tip:</b> The feature store design question is increasingly common at Uber, Netflix, Airbnb, and other ML-heavy FAANGs. The key signals: (1) Understanding the training-serving skew problem — this is the fundamental reason feature stores exist. (2) Point-in-time joins — shows deep ML infrastructure knowledge. (3) Materialization pipeline design — offline to online with consistency guarantees. SAP engineers with CDS view experience should frame this as: 'I've designed reusable data models for the enterprise — the feature store is the same concept adapted for ML training and inference.'</p>"
+}

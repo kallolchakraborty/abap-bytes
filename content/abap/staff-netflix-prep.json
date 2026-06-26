@@ -1,0 +1,42 @@
+{
+  "id": "staff-netflix-prep",
+  "title": "Netflix Staff+ Interview Preparation for Enterprise Architects",
+  "category": "Leadership",
+  "subcategory": "Company-Specific Prep",
+  "language": "text",
+  "description": "<p>Complete guide to Netflix Staff+ interviews for SAP/enterprise engineers. Covers Netflix's unique culture (Freedom & Responsibility, the Keeper Test, Context vs Control), the interview loop structure, the 'Netflix System Design' round focused on high-availability streaming and personalization, and how to frame enterprise experience in Netflix's results-oriented culture.</p>",
+  "tags": ["FAANG", "Netflix", "Staff+", "Interview", "Prep", "Enterprise", "Culture", "Streaming"],
+  "sections": [
+    {
+      "title": "Netflix Culture — What You Need to Know to Interview",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>Freedom & Responsibility:</b> Netflix's most famous cultural value. It means: (1) You have extreme freedom to make decisions without approval — but you are fully responsible for the outcomes. (2) 'Use good judgment' is not a platitude; it's the operating principle. There are no expense policies, no approval chains for most decisions, no fixed vacation policy. (3) In an interview, this translates to: the interviewer wants to see that you can make high-judgment decisions independently. When discussing your past work, emphasize moments where you made a decision without supervision, with significant consequences, and it worked out (or you owned the failure).</p><p><b>The Keeper Test:</b> The single most important HR policy at Netflix: managers regularly ask 'If this person told me they were leaving for another company, would I fight to keep them?' If the answer is no, the person is let go with a generous severance. This creates a culture of: (1) High performance — only 'stunning colleagues' are kept. (2) Candor — feedback is direct, frequent, and expected. (3) No 'brilliant jerks' — regardless of technical skill, if someone damages team culture, they are removed. In interviews, expect behavioral questions that probe: how you handle direct feedback, how you give feedback to peers, and your stance on team culture vs individual performance.</p><p><b>Context over Control:</b> Leaders provide context (goals, constraints, strategy) but not control (specific instructions, approvals, processes). Engineers are expected to use the context to make their own decisions. This requires: (1) Strong judgment — knowing when to escalate and when to decide. (2) Strong communication — writing clear, concise context for others. (3) Bias for action — Netflix prefers a decision made with 70% of the information over waiting for 90%. In your interview responses, emphasize how you created context for your team (design docs, RFCs, strategy memos) and how you've made decisions with incomplete information.</p><p><b>How SAP engineers should frame their experience:</b> (1) SAP's consulting culture (you work with clients independently, make architectural decisions daily) maps to Freedom & Responsibility. (2) SAP's customer-facing nature (handling difficult stakeholders, presenting to executives) demonstrates the communication skills Netflix values. (3) SAP's complexity (working across modules, integrating systems) demonstrates judgment in high-stakes environments.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Netflix Interview Loop Structure",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>Loop overview (typically 5-6 rounds over 4-5 hours):</b> (1) Phone screen (45 min) — technical conversation + culture fit. Expect a system design discussion and questions about the Netflix culture deck. (2) System Design (1-2 rounds) — 'Design a system that...' Netflix questions often relate to content delivery, recommendation, or studio/production systems. (3) Coding (1 round) — LeetCode medium/hard in your language of choice. Netflix uses Python, Java, Go, and C++ primarily. (4) Behavioral/Culture (1 round) — deep dive into the Netflix culture values, often with a senior leader. (5) Presentation (for Staff+) — similar to Apple's technical presentation, you present a project you led. (6) Manager round — conversation with the hiring manager about team, priorities, expectations.</p><p><b>Staff+ leveling at Netflix:</b> Netflix has a flat structure with fewer levels than other FAANGs: IC3 (Senior), IC4 (Staff), IC5 (Principal), IC6 (Distinguished). Leveling is determined by: scope of impact (team vs org vs company), technical depth, and cross-functional leadership. SAP engineers typically enter at IC3-IC4 depending on experience. Netflix's compensation is 'top of market' — they pay at the 90th percentile for each role, with no RSUs (all cash, with the option to allocate some to stock). Total comp is not formulaic — it's set by the hiring manager and HR based on market analysis.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "System Design at Netflix",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>Typical system design questions:</b> (1) 'Design Netflix's content delivery network' — focused on Open Connect, caching, adaptive bitrate. (2) 'Design a recommendation system for Netflix' — personalized thumbnails, row ranking, A/B testing infrastructure. (3) 'Design Netflix's studio production pipeline' — managing content from greenlight to distribution, metadata, rights management. (4) 'Design a chaos engineering platform' — Netflix's Chaos Monkey and Simian Army.</p><p><b>How Netflix evaluates system design:</b> (1) <b>Microservices thinking:</b> Netflix is the pioneer of microservices. Your design should decompose into independently deployable services with clear APIs. Show that you understand the tradeoffs: more services = more operational complexity but better team autonomy. (2) <b>Resilience by default:</b> Every component should assume failure. Discuss circuit breakers (Hystrix), bulkheads, retry with backoff, timeouts, and fallbacks. Netflix's engineering culture assumes all systems will fail and builds for graceful degradation. (3) <b>A/B testing infrastructure:</b> Netflix runs thousands of A/B tests simultaneously. Your design should include a platform for experimentation — feature flags, metrics pipelines, statistical analysis, and gradual rollout. (4) <b>Cost awareness:</b> Netflix runs on AWS at massive scale. Discuss cost optimization: Spot Instances, reserved capacity, CDN cost per gigabyte, and the build-vs-buy decision for each component.</p><p><b>SAP engineers' angle:</b> Netflix's studio/production systems face many of the same challenges as SAP's PLM (Product Lifecycle Management) — managing content through a multi-stage workflow with versioning, approvals, rights management, and metadata. An SAP engineer working with SAP PLM or DMS can frame their experience as 'managing complex content workflows at scale' — directly applicable to Netflix's production pipeline.</p>"
+        }
+      ],
+      "codeBlock": ""
+    }
+  ],
+  "details": "<p><b>FAANG Interview Tip:</b> Netflix's interview process is unique because it's deeply tied to their culture deck. Read the Netflix culture deck before interviewing. Key signals they look for: (1) 'Informed captains' — you can make high-judgment decisions independently. (2) 'Radical candor' — you give and receive direct feedback. (3) 'Context over control' — you communicate context effectively. SAP engineers with consulting backgrounds should emphasize: independence, client-facing communication, and complex problem-solving in ambiguous environments. System design questions should emphasize microservices, resilience, and experimentation infrastructure.</p>"
+}

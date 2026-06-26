@@ -1,0 +1,52 @@
+{
+  "id": "sd-design-whiteboard",
+  "title": "Design Real-Time Collaborative Whiteboard (Miro/Excalidraw-Style)",
+  "category": "System Design",
+  "subcategory": "FAANG Whiteboarding",
+  "language": "text",
+  "description": "<p>Design a real-time collaborative whiteboard supporting hundreds of concurrent editors on the same canvas. Covers CRDTs vs OT for conflict-free collaboration, WebSocket connection management, canvas data model (shapes, arrows, text), undo/redo at scale, infinite canvas optimization, and how SAP's ALV grid interactive design provides a basic conceptual bridge.</p>",
+  "tags": ["FAANG", "Staff+", "System Design", "Whiteboard", "Collaboration", "CRDT", "Real-Time", "Canvas"],
+  "sections": [
+    {
+      "title": "Canvas Data Model & Operations",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>Data model:</b> A whiteboard canvas is an ordered collection of <b>shapes</b>. Each shape has: (1) A unique ID (UUID). (2) A type (rectangle, circle, text, arrow, path, image). (3) Position (x, y coordinates). (4) Dimensions (width, height, rotation). (5) Style properties (fill color, stroke color, stroke width, opacity, font). (6) Z-order index (determines which shapes appear above which). (7) Parent ID (for grouping/containers).</p><p><b>Operations on the canvas:</b> (1) Add shape — insert a new shape at a position. (2) Move shape — update position (x, y). (3) Resize shape — update dimensions. (4) Delete shape — remove from the canvas. (5) Update style — change color, font, etc. (6) Group/ungroup — create or dissolve a group of shapes. (7) Paste — insert clipboard contents as new shapes. Each operation must be <b>transactional</b> — either all fields of the operation are applied, or none are, across all connected clients.</p><p><b>SAP Bridge:</b> SAP's ALV (ABAP List Viewer) grid is an interactive table where users can rearrange columns, apply filters, and change layout settings. Each user has their own 'variant' — their view state. A collaborative whiteboard is like an ALV grid where everyone shares the same variant and can manipulate cells simultaneously. The ALV's row/column model maps to x,y coordinates; cell formatting maps to shape styles. The scalability challenge (not fundamentally different from ALV) is the concurrent editing conflict resolution — which SAP doesn't have because each user has their own variant.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "CRDTs vs OT — The Conflict Resolution Choice",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>The core problem:</b> Two users move the same shape simultaneously — user A drags it right, user B drags it down. When both operations arrive at the server and are broadcast to all clients, what is the final position? Without a conflict resolution strategy, clients will diverge.</p><p><b>Operational Transformation (OT) — used by Google Docs:</b> (1) Operations are transformed against concurrent operations to produce a consistent result. (2) Requires a central server (or deterministic ordering) to sequence operations. (3) Each client maintains a 'transformation function' that adjusts local operations before applying them. (4) OT is more complex than CRDT for free-form data (shapes on a canvas) because the transformation functions depend on the operation type and document structure. (5) Google Docs uses OT for text (where operations are insert/delete at a position), but OT becomes extremely complex for 2D operations.</p><p><b>CRDT (Conflict-Free Replicated Data Type) — used by Miro, Figma, Excalidraw:</b> (1) Each shape operation is tagged with a unique ID and a timestamp (or Lamport clock). (2) Operations are 'commutative' — applying them in any order on any replica produces the same final state. (3) No central coordinator needed — each client can apply operations in any order and converge. (4) For position updates (move/resize), the CRDT typically uses 'last-write-wins' with a Lamport clock — the operation with the highest timestamp wins. (5) For add/delete, the CRDT ensures that a deleted shape is never re-added by a concurrent add (delete wins over add via tombstone tracking).</p><p><b>Why Miro/Figma chose CRDTs:</b> Canvas operations are more commutative than text operations. 'Move shape A to position X' commutes with 'move shape B to position Y' — they don't conflict. Even when they do conflict (same shape), last-write-wins is acceptable — the shape ends up at one of the two positions. In contrast, 'delete character X' and 'insert character at X' in a text document require complex OT to converge. CRDTs are simpler to implement for a whiteboard because the data model is a set of independent objects, not a sequence.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Real-Time Connection Architecture",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>WebSocket connections:</b> Each client opens a persistent WebSocket connection to the server. The server maintains a map of (board_id → set of connected clients). When a client makes a change: (1) The client applies the change locally (optimistic update — user sees instant feedback). (2) The client sends the operation to the server via WebSocket. (3) The server receives the operation, appends it to an ordered operation log (Kafka or similar), and broadcasts it to all other connected clients on the same board. (4) Other clients apply the operation using the CRDT merge logic.</p><p><b>Connection management:</b> (1) Reconnection — if a client disconnects (network blip, laptop closed), the server stores missed operations in a buffer (last N seconds of ops). On reconnect, the server sends the buffered ops and the full current board state (for large disconnects > buffer window). (2) Presence — each connected client is represented by a cursor on other users' screens. Cursor positions are sent as frequent (but not every-pixel) updates via a separate low-priority WebSocket channel. Cursor updates are fire-and-forget — if one is dropped, the cursor just updates on the next one. (3) Backpressure — the server buffers outgoing ops per client. If a client is too slow (network congestion), the server drops old ops and sends a state snapshot instead. This prevents slow clients from causing the server's outgoing buffer to grow unboundedly.</p><p><b>Server architecture:</b> (1) A single board server can handle ~1000 concurrent connections on one node (limited by WebSocket connections and op broadcast fan-out). (2) Scaling: boards are sharded across server nodes by board_id. A consistent hash ring maps board_id → server node. (3) For very large boards (company-wide templates), use a pub/sub layer (Redis Pub/Sub or Kafka) to broadcast ops across all server nodes.</p>"
+        }
+      ],
+      "codeBlock": ""
+    },
+    {
+      "title": "Undo/Redo & Offline Support",
+      "description": [
+        {
+          "type": "text",
+          "value": "<p><b>Undo/redo at scale:</b> Undo in a collaborative environment is surprisingly complex. If user A adds shape X and user B deletes shape X, what does 'undo' mean for each user? Two approaches: (1) Per-user undo stack — each client maintains its own undo stack of operations it initiated. Undo reverses only the user's own operations. This is simple but confusing when collaborating ('why didn't my undo fix that?'). (2) 'Skip' undo — each operation is tagged with a 'causality group'. Undo skips all operations in the same causality group as the undone operation. Implemented via CRDT with a 'undo log' — a separate CRDT that tracks which operation IDs have been undone. The undo CRDT converges just like the main canvas data. This is what Miro and Figma use.</p><p><b>Offline support:</b> (1) The client maintains a local copy of the board state (IndexedDB or similar on the browser, SQLite on the desktop). (2) While offline, the client applies all local operations to the local state and queues the operations for sync. (3) On reconnection, the client sends the queue of operations with timestamps. The server merges each operation using CRDT logic — operations that conflict with remote operations from other users are resolved by last-write-wins. (4) The server sends back a snapshot of the current state plus any operations the client missed. The client reconciles its local state with the server state.</p><p><b>SAP Bridge:</b> SAP's offline-enablement (e.g., SAP Field Service Management, S/4HANA Cloud offline) uses the same pattern: local data store, queued operations, sync on reconnect, conflict resolution. The difference is that SAP's conflict resolution is typically manual (the user chooses which version to keep) while CRDTs resolve automatically.</p>"
+        }
+      ],
+      "codeBlock": ""
+    }
+  ],
+  "details": "<p><b>FAANG Interview Tip:</b> The collaborative whiteboard question is increasingly common — Meta asks it for E6+, Google for L6, and it's standard at Figma, Miro, and Notion. The key signals: (1) Deep understanding of the CRDT vs OT tradeoff — most candidates have heard of CRDT but can't explain why they chose it over OT for a canvas. (2) WebSocket lifecycle — reconnection, missed ops, backpressure. (3) Undo in collaborative context — shows you've thought about the hard edge cases. SAP ALV grid experience is a helpful analogy but focus on the CRDT concepts.</p>"
+}
