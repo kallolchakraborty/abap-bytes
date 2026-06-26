@@ -54,6 +54,14 @@
     html.dark .token.operator { color: #cbd5e1 !important; }
     html.dark .token.punctuation { color: #64748b !important; }
     html.dark .token.comment { color: #475569 !important; }
+    .tab-panel { display: none; }
+    .tab-panel.tab-active { display: block; }
+    .tab-label { padding: 0.5rem 1rem; font-size: 0.8125rem; font-weight: 600; color: #64748b; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; }
+    .tab-label:hover { color: #1a56db; }
+    .tab-label.tab-label-active { color: #1a56db; border-bottom-color: #1a56db; }
+    html.dark .tab-label { color: #94a3b8; }
+    html.dark .tab-label:hover { color: #60a5fa; }
+    html.dark .tab-label.tab-label-active { color: #60a5fa; border-bottom-color: #60a5fa; }
   </style>
 </head>
 <body class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-sans min-h-screen flex flex-col transition-colors duration-200 overflow-y-auto">
@@ -440,6 +448,7 @@
     </div>
   </footer>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js" defer></script>
   <script src="js/generated.js" defer></script>

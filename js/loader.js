@@ -339,12 +339,110 @@ function renderAdversarialResponse(ar) {
   if (ar.pattern) h += '<div class="ar-pattern"><strong>Pattern:</strong> '+ar.pattern+'</div>';
   return h + '</div>';
 }
+function renderMarkdown(content) {
+  if (!content) return '';
+  try {
+    if (typeof marked !== 'undefined' && marked.parse) return marked.parse(content);
+  } catch (e) {}
+  return '<div class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed whitespace-pre-line">'+escapeHtml(content)+'</div>';
+}
+function renderCardGrid(section) {
+  if (!section.cards || !section.cards.length) return '';
+  var cols = section.columns || 2;
+  var colClass = cols === 3 ? 'md:grid-cols-3' : 'md:grid-cols-2';
+  var cards = section.cards.map(function(card) {
+    var iconHtml = card.icon ? '<div class="w-10 h-10 rounded-xl bg-brand-500/10 dark:bg-brand-500/20 flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-[20px] text-brand-500">'+card.icon+'</span></div>' : '';
+    var bodyHtml = card.body ? renderMarkdown(card.body) : '';
+    return '<div class="flex gap-4 p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0E1115]">'
+      + iconHtml
+      + '<div class="flex flex-col gap-2">'
+      + (card.title ? '<h4 class="text-sm font-semibold text-slate-900 dark:text-white">'+card.title+'</h4>' : '')
+      + '<div class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">'+bodyHtml+'</div>'
+      + '</div></div>';
+  }).join('');
+  return '<div class="grid grid-cols-1 '+colClass+' gap-4">'+cards+'</div>';
+}
+function renderNewComparisonTable(section) {
+  if (!section.headers || !section.rows) return '';
+  var headers = section.headers.map(function(h) {
+    return '<th class="px-4 py-3 text-left text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider bg-slate-50 dark:bg-slate-800/40 border-b border-slate-200 dark:border-slate-800">'+escapeHtml(h)+'</th>';
+  }).join('');
+  var rows = section.rows.map(function(row, ri) {
+    var cells = row.map(function(cell, ci) {
+      var cls = 'text-sm border-b border-slate-100 dark:border-slate-800/60 px-4 py-3';
+      if (ci === 0) cls += ' font-semibold text-slate-900 dark:text-white whitespace-nowrap';
+      else cls += ' text-slate-600 dark:text-slate-400';
+      return '<td class="'+cls+'">'+escapeHtml(cell)+'</td>';
+    }).join('');
+    return '<tr'+(ri % 2 === 1 ? ' class="bg-slate-50/50 dark:bg-slate-800/10"' : '')+'>'+cells+'</tr>';
+  }).join('');
+  return '<div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 my-3"><table class="w-full min-w-[500px]"><thead><tr>'+headers+'</tr></thead><tbody>'+rows+'</tbody></table></div>';
+}
+function renderNewCodeBlock(section, langClass) {
+  if (!section.code) return '';
+  var lang = section.language ? 'language-'+section.language : langClass;
+  return codeBlock(section.code, lang);
+}
+function renderInteractive(section) {
+  if (!section.tabs || !section.tabs.length) return '';
+  var tabs = section.tabs.map(function(tab, idx) {
+    return '<div class="tab-panel'+(idx === 0 ? ' tab-active' : '')+'" data-tab="'+idx+'">'+
+      (tab.content ? renderMarkdown(tab.content) : '')+
+    '</div>';
+  }).join('');
+  var labels = section.tabs.map(function(tab, idx) {
+    return '<button class="tab-label'+(idx === 0 ? ' tab-label-active' : '')+'" data-tab="'+idx+'" onclick="switchTab(this)">'+tab.label+'</button>';
+  }).join('');
+  return '<div class="tab-container rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden my-3">'+
+    '<div class="tab-bar flex border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40">'+labels+'</div>'+
+    '<div class="tab-content p-5 bg-white dark:bg-[#0E1115]">'+tabs+'</div>'+
+  '</div>';
+}
+window.switchTab = function(btn) {
+  var container = btn.closest('.tab-container');
+  if (!container) return;
+  container.querySelectorAll('.tab-label').forEach(function(l) { l.classList.remove('tab-label-active'); });
+  container.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('tab-active'); });
+  btn.classList.add('tab-label-active');
+  var tabIdx = btn.getAttribute('data-tab');
+  var panel = container.querySelector('.tab-panel[data-tab="'+tabIdx+'"]');
+  if (panel) panel.classList.add('tab-active');
+};
+function renderNewTimeline(section) {
+  if (!section.events || !section.events.length) return '';
+  var events = section.events.map(function(ev, idx) {
+    return '<div class="flex gap-4'+(idx < section.events.length - 1 ? ' pb-6' : '')+'">'+
+      '<div class="flex flex-col items-center">'+
+        '<div class="w-3 h-3 rounded-full bg-brand-500 border-2 border-white dark:border-slate-900 shrink-0"></div>'+
+        (idx < section.events.length - 1 ? '<div class="w-px flex-1 bg-slate-200 dark:bg-slate-800 mt-1"></div>' : '')+
+      '</div>'+
+      '<div class="flex-1 min-w-0">'+
+        (ev.date ? '<span class="text-[10px] font-bold text-brand-500 uppercase tracking-wider">'+ev.date+'</span>' : '')+
+        (ev.title ? '<h4 class="text-sm font-semibold text-slate-900 dark:text-white mt-0.5">'+ev.title+'</h4>' : '')+
+        (ev.body ? '<div class="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">'+renderMarkdown(ev.body)+'</div>' : '')+
+      '</div></div>';
+  }).join('');
+  return '<div class="my-3">'+events+'</div>';
+}
+function renderMindmap(section) {
+  if (!section.code) return '';
+  var id = 'mermaid-' + Math.random().toString(36).substring(2, 8);
+  if (typeof mermaid !== 'undefined' && mermaid.run) {
+    setTimeout(function() {
+      try {
+        var el = document.getElementById(id);
+        if (el) mermaid.run({ nodes: [el] });
+      } catch (e) { console.error('Mermaid mindmap render error:', e); }
+    }, 50);
+  }
+  return '<div class="my-3 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0E1115] overflow-x-auto"><div class="mermaid" id="'+id+'">'+section.code+'</div></div>';
+}
 function renderSections(sections, dataId, langClass, extraClass) {
   if (!sections) return '';
   return '<div class="flex flex-col gap-8'+(extraClass||'')+'">'+sections.map(function(section, idx) {
     var sectionId = 'section-'+dataId+'-'+idx;
     var refClass = '';
-    if (section.title.indexOf('References') !== -1) refClass = ' references-section';
+    if (section.title && section.title.indexOf('References') !== -1) refClass = ' references-section';
     var sectionLangClass = section.language ? 'language-'+section.language : langClass;
     var extra = '';
     if (section.comparisonTable) extra += renderComparisonTable(section.comparisonTable);
@@ -354,7 +452,22 @@ function renderSections(sections, dataId, langClass, extraClass) {
     if (section.ambiguityScaffold) extra += renderAmbiguityScaffold(section.ambiguityScaffold);
     if (section.organizationalDimension) extra += renderOrganizationalDimension(section.organizationalDimension);
     if (section.adversarialResponse) extra += renderAdversarialResponse(section.adversarialResponse);
-    return '<div id="'+sectionId+'" class="scroll-mt-24 flex flex-col gap-3'+refClass+'"><h3 class="text-xl font-semibold text-slate-900 dark:text-white">'+section.title+'</h3>'+(section.description ? '<div class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">'+renderDescription(section.description)+'</div>' : '')+(section.codeBlock ? codeBlock(section.codeBlock, sectionLangClass) : '')+extra+'</div>';
+    var typeContent = '';
+    if (section.type === 'markdown' && section.content) typeContent = renderMarkdown(section.content);
+    else if (section.type === 'card-grid') typeContent = renderCardGrid(section);
+    else if (section.type === 'comparison-table' || section.type === 'table') typeContent = renderNewComparisonTable(section);
+    else if (section.type === 'code-block') typeContent = renderNewCodeBlock(section, sectionLangClass);
+    else if (section.type === 'interactive') typeContent = renderInteractive(section);
+    else if (section.type === 'timeline') typeContent = renderNewTimeline(section);
+    else if (section.type === 'mindmap') typeContent = renderMindmap(section);
+    var titleHtml = section.title ? '<h3 class="text-xl font-semibold text-slate-900 dark:text-white">'+section.title+'</h3>' : '';
+    return '<div id="'+sectionId+'" class="scroll-mt-24 flex flex-col gap-3'+refClass+'">'
+      + titleHtml
+      + (section.description ? '<div class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">'+renderDescription(section.description)+'</div>' : '')
+      + (section.codeBlock ? codeBlock(section.codeBlock, sectionLangClass) : '')
+      + typeContent
+      + extra
+    + '</div>';
   }).join('\n')+'</div>';
 }
 async function loadContent(hash) {
@@ -513,6 +626,7 @@ function addCopyButtonsToPreElements(container) {
   });
 }
 window.addEventListener('DOMContentLoaded', function() {
+  if (typeof mermaid !== 'undefined') mermaid.initialize({ startOnLoad: false });
   var initialHash = window.location.hash || '#faang-mindset';
   loadContent(initialHash);
   updateSidebarProgress(); updateSidebarBookmarks(); updateSidebarLinksUI();
