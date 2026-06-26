@@ -472,7 +472,8 @@ function renderSections(sections, dataId, langClass, extraClass) {
 }
 async function loadContent(hash) {
   if (window._scrollSpyCleanup) { window._scrollSpyCleanup(); window._scrollSpyCleanup = null; }
-  var path = (window.__ROUTE_MAP || {})[hash] || (window.__ROUTE_MAP || {})['#faang-mindset'];
+  var routeMap = window.__ROUTE_MAP || {};
+  var path = routeMap[hash] || routeMap['#faang-mindset'] || (hash ? 'content/abap/' + hash.replace('#','') + '.json' : null) || 'content/abap/faang-mindset.json';
   var contentArea = document.getElementById('docs-dynamic-content');
   if (!contentArea) return;
   contentArea.innerHTML = '<div class="animate-pulse space-y-6"><div class="h-8 bg-slate-200 dark:bg-slate-800 rounded w-3/4"></div><div class="h-4 bg-slate-200 dark:bg-slate-800 rounded w-1/2"></div><div class="h-40 bg-slate-200 dark:bg-slate-800 rounded"></div><div class="h-4 bg-slate-200 dark:bg-slate-800 rounded w-5/6"></div></div>';
@@ -626,7 +627,7 @@ function addCopyButtonsToPreElements(container) {
   });
 }
 window.addEventListener('DOMContentLoaded', function() {
-  if (typeof mermaid !== 'undefined') mermaid.initialize({ startOnLoad: false });
+  try { if (typeof mermaid !== 'undefined' && mermaid.initialize) mermaid.initialize({ startOnLoad: false }); } catch(e) {}
   var initialHash = window.location.hash || '#faang-mindset';
   loadContent(initialHash);
   updateSidebarProgress(); updateSidebarBookmarks(); updateSidebarLinksUI();
