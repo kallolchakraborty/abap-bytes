@@ -94,11 +94,6 @@ html.dark .glass-nav { background-color: rgba(15, 17, 21, 0.8); border-color: rg
   margin-left: auto !important;
   margin-right: auto !important;
 }
-main {
-  margin-left: auto !important;
-  margin-right: auto !important;
-  width: 100% !important;
-}
 
 .sidebar-sections { display: flex; flex-direction: column; gap: 2px; }
 .sidebar-section { margin-bottom: 2px; }
