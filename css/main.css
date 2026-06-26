@@ -137,6 +137,10 @@ html.dark .hero-ring { border-color: rgba(37, 99, 235, 0.12); }
 html.dark .grid-bg { background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.02) 1px, transparent 0) !important; }
 .flow-pulse { animation: flowPulse 0.5s ease-in-out 2; }
 @keyframes flowPulse { 0% { opacity: 0.3; transform: translateX(-2px); } 50% { opacity: 1; transform: translateX(3px); } 100% { opacity: 0.7; transform: translateX(0); } }
+#main-content p {
+  text-align: center !important;
+}
+
 .timeline-track { display: flex; flex-direction: column; }
 .timeline-entry { display: flex; gap: 1.25rem; opacity: 0; transform: translateY(16px); animation: timelineEntryUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; position: relative; padding-bottom: 1.75rem; }
 .timeline-entry::before { content: ''; position: absolute; left: 3.25rem; top: 2.25rem; bottom: 0; width: 1px; background: linear-gradient(to bottom, var(--brand-primary), transparent); }
